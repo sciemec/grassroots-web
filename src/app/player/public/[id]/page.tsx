@@ -4,7 +4,6 @@ import { LogProfileView } from "@/components/player/LogProfileView";
 import { AdBanner } from "@/components/ui/AdBanner";
 import PotentialCard from "@/components/player/PotentialCard";
 import { RepresentationForm } from "@/components/player/RepresentationForm";
-import TacticalPitch from "@/components/TacticalPitch";
 import PublicPassportTabs from "@/components/player/PublicPassportTabs";
 
 interface ShowcaseClip {
@@ -140,18 +139,19 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
             )}
           </div>
 
-          {/* Avatar — overlaps header */}
-          <div className="flex justify-center -mt-14 mb-4 px-5">
+          {/* Passport photo — overlaps header */}
+          <div className="flex justify-center -mt-16 mb-4 px-5">
             {profile.selfie_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={profile.selfie_url}
                 alt={profile.name}
-                className="h-28 w-28 rounded-full object-cover border-4 border-[#f0b429]/60 shadow-xl"
+                className="w-24 h-32 rounded-xl object-cover object-top border-4 border-[#f0b429]/60 shadow-xl"
               />
             ) : (
-              <div className="h-28 w-28 rounded-full bg-[#f0b429]/10 border-4 border-[#f0b429]/30 flex items-center justify-center">
-                <User className="h-12 w-12 text-[#f0b429]/40" />
+              <div className="w-24 h-32 rounded-xl bg-[#f0b429]/10 border-4 border-[#f0b429]/30 flex flex-col items-center justify-center gap-1">
+                <User className="h-10 w-10 text-[#f0b429]/40" />
+                <span className="text-[9px] text-[#f0b429]/30 uppercase tracking-widest">No photo</span>
               </div>
             )}
           </div>
@@ -202,11 +202,6 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
                 <span className="text-sm font-semibold capitalize text-white">{value}</span>
               </div>
             ))}
-          </div>
-
-          {/* Tactical position */}
-          <div className="mx-5 mb-5">
-            <TacticalPitch position={profile.position} />
           </div>
 
           {/* Bio */}

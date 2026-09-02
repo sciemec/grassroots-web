@@ -73,26 +73,33 @@ function PhysicalRadar({ axes }: { axes: PhysicalAxis[] }) {
   const N = axes.length;
   const CX = 145, CY = 135, R = 92, W = 290, H = 290;
   const LABEL_PAD = 18;
-  const gridRings = [0.33, 0.66, 1.0];
+  const gridRings = [0.25, 0.5, 0.75, 1.0];
 
   const values = axes.map((a) => a.percentile);
   const polygonPts = buildPolygon(values, CX, CY, R, N);
+  const available = axes.filter((a) => a.percentile !== null);
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }} aria-label="Physical DNA radar">
       {/* Grid rings */}
       {gridRings.map((f) => (
-        <polygon key={f} points={ringPts(CX, CY, R, f, N)} fill="none" stroke="#2a2a2a" strokeWidth={1} />
+        <polygon key={f} points={ringPts(CX, CY, R, f, N)} fill="none"
+          stroke="#1a3d26" strokeWidth={f === 1.0 ? 1.5 : 1} />
       ))}
 
-      {/* Spoke lines */}
+      {/* Spoke lines — colored + dashed if no data */}
       {axes.map((axis, i) => {
         const tip = pt(CX, CY, R, i, 1, N);
-        return <line key={axis.code} x1={CX} y1={CY} x2={tip.x} y2={tip.y} stroke="#2a2a2a" strokeWidth={1} />;
+        const hasData = axis.percentile !== null;
+        return (
+          <line key={axis.code} x1={CX} y1={CY} x2={tip.x} y2={tip.y}
+            stroke={hasData ? "#2e5a2e" : "#1a2a1a"} strokeWidth={1}
+            strokeDasharray={hasData ? undefined : "4 3"} />
+        );
       })}
 
       {/* Filled polygon */}
-      <polygon points={polygonPts} fill="#1a5c2a" fillOpacity={0.45} stroke="#c0dd97" strokeWidth={1.5} strokeLinejoin="round" />
+      <polygon points={polygonPts} fill="#1a5c2a" fillOpacity={0.5} stroke="#c0dd97" strokeWidth={2} strokeLinejoin="round" />
 
       {/* Dots */}
       {axes.map((axis, i) => {
@@ -101,7 +108,7 @@ function PhysicalRadar({ axes }: { axes: PhysicalAxis[] }) {
           return <circle key={`e-${axis.code}`} cx={p.x} cy={p.y} r={2} fill="#2a2a2a" />;
         }
         const p = pt(CX, CY, R, i, Math.max(0, Math.min(100, axis.percentile)) / 100, N);
-        return <circle key={`d-${axis.code}`} cx={p.x} cy={p.y} r={3} fill="#c0dd97" stroke="#0e0e0e" strokeWidth={1} />;
+        return <circle key={`d-${axis.code}`} cx={p.x} cy={p.y} r={4} fill="#c0dd97" stroke="#0e0e0e" strokeWidth={1.5} />;
       })}
 
       {/* Multi-line labels */}
@@ -120,6 +127,23 @@ function PhysicalRadar({ axes }: { axes: PhysicalAxis[] }) {
             {lines.map((line, li) => (
               <tspan key={li} x={lx} y={startY + li * lineH}>{line}</tspan>
             ))}
+          </text>
+        );
+      })}
+
+      {/* Score value labels next to each available dot */}
+      {available.map((axis) => {
+        const i = axes.findIndex((x) => x.code === axis.code);
+        const ang = toAngle(i, N);
+        const f = Math.max(0.08, Math.min(100, axis.percentile!)) / 100;
+        const nudgeF = f > 0.18 ? f - 0.14 : f + 0.16;
+        const p = pt(CX, CY, R, i, Math.max(0.08, nudgeF), N);
+        const cosA = Math.cos(ang);
+        const anchor = cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle";
+        return (
+          <text key={`val-${axis.code}`} x={p.x} y={p.y} textAnchor={anchor} dominantBaseline="middle"
+            fontSize={7} fontWeight={700} fill="#6abf60">
+            {Math.round(axis.percentile!)}
           </text>
         );
       })}
@@ -145,7 +169,7 @@ function TechnicalRadar({ drillScores }: { drillScores: DrillScore[] }) {
   const N = TECHNICAL_AXES.length;
   const CX = 145, CY = 135, R = 92, W = 290, H = 290;
   const LABEL_PAD = 18;
-  const gridRings = [0.33, 0.66, 1.0];
+  const gridRings = [0.25, 0.5, 0.75, 1.0];
 
   const axes = TECHNICAL_AXES.map(({ labels, matchPrefix }) => {
     const found = drillScores.find((d) => d.drillName.startsWith(matchPrefix));
@@ -156,31 +180,38 @@ function TechnicalRadar({ drillScores }: { drillScores: DrillScore[] }) {
   });
 
   const polygonPts = buildPolygon(axes.map((a) => a.value), CX, CY, R, N);
+  const available = axes.filter((a) => a.value !== null);
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }} aria-label="Technical passport radar">
       {/* Grid rings */}
       {gridRings.map((f) => (
-        <polygon key={f} points={ringPts(CX, CY, R, f, N)} fill="none" stroke="#2a2a2a" strokeWidth={1} />
+        <polygon key={f} points={ringPts(CX, CY, R, f, N)} fill="none"
+          stroke="#2a1a0a" strokeWidth={f === 1.0 ? 1.5 : 1} />
       ))}
 
-      {/* Spoke lines */}
+      {/* Spoke lines — colored + dashed if no data */}
       {axes.map((axis, i) => {
         const tip = pt(CX, CY, R, i, 1, N);
-        return <line key={i} x1={CX} y1={CY} x2={tip.x} y2={tip.y} stroke="#2a2a2a" strokeWidth={1} />;
+        const hasData = axis.value !== null;
+        return (
+          <line key={i} x1={CX} y1={CY} x2={tip.x} y2={tip.y}
+            stroke={hasData ? "#5a3a1a" : "#2a1a0a"} strokeWidth={1}
+            strokeDasharray={hasData ? undefined : "4 3"} />
+        );
       })}
 
       {/* Filled polygon */}
-      <polygon points={polygonPts} fill="#854f0b" fillOpacity={0.45} stroke="#fac775" strokeWidth={1.5} strokeLinejoin="round" />
+      <polygon points={polygonPts} fill="#854f0b" fillOpacity={0.4} stroke="#fac775" strokeWidth={2} strokeLinejoin="round" />
 
       {/* Dots */}
       {axes.map((axis, i) => {
         if (axis.value === null) {
           const p = pt(CX, CY, R, i, EMPTY_F, N);
-          return <circle key={`e-${i}`} cx={p.x} cy={p.y} r={2} fill="#2a2a2a" />;
+          return <circle key={`e-${i}`} cx={p.x} cy={p.y} r={2} fill="#3a2a1a" />;
         }
         const p = pt(CX, CY, R, i, Math.max(0, Math.min(100, axis.value)) / 100, N);
-        return <circle key={`d-${i}`} cx={p.x} cy={p.y} r={3} fill="#fac775" stroke="#0e0e0e" strokeWidth={1} />;
+        return <circle key={`d-${i}`} cx={p.x} cy={p.y} r={4} fill="#fac775" stroke="#0e0e0e" strokeWidth={1.5} />;
       })}
 
       {/* Multi-line labels */}
@@ -199,6 +230,23 @@ function TechnicalRadar({ drillScores }: { drillScores: DrillScore[] }) {
             {lines.map((line, li) => (
               <tspan key={li} x={lx} y={startY + li * lineH}>{line}</tspan>
             ))}
+          </text>
+        );
+      })}
+
+      {/* Score value labels next to each available dot */}
+      {available.map((axis, idx) => {
+        const i = axes.findIndex((x) => x.labels === axis.labels);
+        const ang = toAngle(i, N);
+        const f = Math.max(0.08, Math.min(100, axis.value!)) / 100;
+        const nudgeF = f > 0.18 ? f - 0.14 : f + 0.16;
+        const p = pt(CX, CY, R, i, Math.max(0.08, nudgeF), N);
+        const cosA = Math.cos(ang);
+        const anchor = cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle";
+        return (
+          <text key={`val-${idx}`} x={p.x} y={p.y} textAnchor={anchor} dominantBaseline="middle"
+            fontSize={7} fontWeight={700} fill="#f5a623">
+            {Math.round(axis.value!)}
           </text>
         );
       })}
