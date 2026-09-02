@@ -401,13 +401,9 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     }, "image/jpeg", 0.92);
   };
 
-  // ── Light theme CSS variable overrides (declared before any early return) ─
+  // ── Page background override (declared before any early return) ──────────
   const lightTheme = {
-    "--card":             "#ffffff",
-    "--border":           "#e5e7eb",
-    "--muted":            "#f3f4f6",
-    "--background":       "#f4f2ee",
-    "--muted-foreground": "#6b7280",
+    "--background": "#f4f2ee",
   } as React.CSSProperties;
 
   if (loading) {
@@ -746,7 +742,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           {/* ── EDIT PROFILE COLLAPSIBLE ──────────────────────────────────── */}
           <div className="rounded-2xl border border-white/10 bg-card overflow-hidden">
             <button type="button" onClick={() => setShowEditPanel((v) => !v)}
-              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors">
+              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors">
               <span className="flex items-center gap-2">
                 <User className="h-4 w-4 text-[#f0b429]" />
                 Edit Profile
@@ -1034,7 +1030,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm overflow-hidden">
             <button type="button"
               onClick={() => { setShowInvitePanel((v) => !v); setInviteCode(null); setInviteError(""); }}
-              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors">
+              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors">
               <span className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-[#f0b429]" />
                 Invite Parent / Guardian
