@@ -761,7 +761,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 {/* Profile completion bar */}
                 <div className="rounded-xl border border-white/15 bg-background/50 p-4">
                   <div className="mb-2 flex items-center justify-between">
-                    <p className="text-sm font-medium">Profile completion</p>
+                    <p className="text-sm font-medium text-white">Profile completion</p>
                     <p className="text-sm font-bold text-primary">{count}/{total} · {pct}%</p>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
@@ -972,7 +972,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             </div>
             {aiNarrative ? (
               <>
-                <p className="mb-3 text-sm leading-relaxed text-muted-foreground">{aiNarrative}</p>
+                <p className="mb-3 text-sm leading-relaxed text-emerald-400">{aiNarrative}</p>
                 <button onClick={generateNarrative} disabled={generatingNarrative}
                   className="text-xs text-accent hover:text-[#f0b429] transition-colors">
                   {generatingNarrative ? "Regenerating…" : "↻ Regenerate"}
@@ -980,7 +980,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
               </>
             ) : (
               <>
-                <p className="mb-3 text-sm text-muted-foreground">
+                <p className="mb-3 text-sm text-emerald-400">
                   Generate a 3-sentence professional scouting profile — written by AI, based on your position and club. Shown to scouts on your public profile.
                 </p>
                 <button onClick={generateNarrative} disabled={generatingNarrative || !profile?.position}
@@ -990,7 +990,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                     : <><Sparkles className="h-3.5 w-3.5" /> Generate narrative</>}
                 </button>
                 {!profile?.position && (
-                  <p className="mt-2 text-xs text-muted-foreground">Complete your position in Edit Profile first</p>
+                  <p className="mt-2 text-xs text-emerald-400">Complete your position in Edit Profile first</p>
                 )}
               </>
             )}

@@ -70,14 +70,14 @@ export function HighlightReel({
           <h3 className="font-semibold text-white">Highlight Reel</h3>
         </div>
         {mode === "self" ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-emerald-400">
             No highlights yet.{" "}
             <a href="/player/showcase" className="text-[#f0b429] hover:underline">
               Upload your first skill clip →
             </a>
           </p>
         ) : (
-          <p className="text-sm text-muted-foreground">This player has no public highlights yet.</p>
+          <p className="text-sm text-emerald-400">This player has no public highlights yet.</p>
         )}
       </div>
     );

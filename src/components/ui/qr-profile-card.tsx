@@ -57,7 +57,7 @@ export function QRProfileCard({ playerId, playerName, ageGroup, province, selfie
       <div className="mb-4 flex items-center gap-2">
         <QrCode className="h-4 w-4 text-primary" />
         <h3 className="font-semibold text-white">Player QR Card</h3>
-        <span className="ml-auto text-xs text-muted-foreground">For trials & scouting</span>
+        <span className="ml-auto text-xs text-emerald-400">For trials & scouting</span>
       </div>
 
       <div className="flex items-center gap-5">
@@ -76,14 +76,14 @@ export function QRProfileCard({ playerId, playerName, ageGroup, province, selfie
             ) : null}
             <div>
               <p className="font-bold text-white text-lg leading-tight">{playerName}</p>
-              {ageGroup && <p className="text-sm text-muted-foreground capitalize">{ageGroup.replace("u", "U")} · {province ?? "Zimbabwe"}</p>}
-              {school && <p className="text-xs text-muted-foreground">{school}</p>}
+              {ageGroup && <p className="text-sm text-emerald-400 capitalize">{ageGroup.replace("u", "U")} · {province ?? "Zimbabwe"}</p>}
+              {school && <p className="text-xs text-emerald-400">{school}</p>}
               {tournament && (
                 <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#f0b429]/20 px-2 py-0.5 text-xs font-semibold text-[#f0b429]">
                   🏆 {tournament}
                 </span>
               )}
-              <p className="mt-1 text-xs text-muted-foreground">Scan to view full profile & TalentID score</p>
+              <p className="mt-1 text-xs text-emerald-400">Scan to view full profile & TalentID score</p>
             </div>
           </div>
 

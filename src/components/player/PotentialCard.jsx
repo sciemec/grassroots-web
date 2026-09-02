@@ -132,8 +132,8 @@ function PotentialCardEmpty({ playerName }) {
   return (
     <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center space-y-3">
       <div className="text-4xl">🔮</div>
-      <h3 className="font-semibold text-foreground">Prediction Unlocking...</h3>
-      <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+      <h3 className="font-semibold text-white">Prediction Unlocking...</h3>
+      <p className="text-sm text-emerald-400 max-w-xs mx-auto">
         {playerName ? `${playerName} needs` : 'You need'} at least 3 logged training sessions
         for THUTO to generate a talent prediction. Keep training and logging!
       </p>
