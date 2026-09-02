@@ -348,38 +348,49 @@ export default function PublicPassportTabs({
         </div>
       </div>
 
+      {/* Full-width tab buttons (only when player has both datasets) */}
+      {hasPhysical && hasTechnical && (
+        <div style={{ display: "flex", margin: "0 8px 6px", borderRadius: 10, overflow: "hidden", border: "1px solid #2a2a2a" }}>
+          <button
+            onClick={() => setTab("physical")}
+            style={{
+              flex: 1, padding: "10px 0", border: "none", cursor: "pointer",
+              background: activeTab === "physical" ? "#1a5c2a" : "#181818",
+              color: activeTab === "physical" ? "#c0dd97" : "#555",
+              fontSize: 10, fontWeight: 800, textTransform: "uppercase" as const,
+              letterSpacing: "0.07em", borderRight: "1px solid #2a2a2a",
+              transition: "background 0.15s, color 0.15s",
+            }}
+          >
+            Physical DNA
+          </button>
+          <button
+            onClick={() => setTab("technical")}
+            style={{
+              flex: 1, padding: "10px 0", border: "none", cursor: "pointer",
+              background: activeTab === "technical" ? "#854f0b" : "#181818",
+              color: activeTab === "technical" ? "#fac775" : "#555",
+              fontSize: 10, fontWeight: 800, textTransform: "uppercase" as const,
+              letterSpacing: "0.07em",
+              transition: "background 0.15s, color 0.15s",
+            }}
+          >
+            Technical
+          </button>
+        </div>
+      )}
+
       {/* Inner radar card */}
       <div style={{ background: "#151515", borderRadius: 14, margin: "0 8px 8px", padding: "12px 10px 10px" }}>
         {/* Title row */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {/* Tab buttons */}
-            {hasPhysical && hasTechnical ? (
-              <div style={{ display: "flex", gap: 1, background: "#2a2a2a", borderRadius: 8, padding: 2 }}>
-                <button onClick={() => setTab("physical")} style={{
-                  padding: "5px 9px", border: "none", cursor: "pointer", borderRadius: 6,
-                  background: activeTab === "physical" ? "#1a5c2a" : "transparent",
-                  color: activeTab === "physical" ? "#c0dd97" : "#555",
-                  fontSize: 9, fontWeight: 800, textTransform: "uppercase" as const, letterSpacing: "0.06em",
-                }}>
-                  Physical DNA
-                </button>
-                <button onClick={() => setTab("technical")} style={{
-                  padding: "5px 9px", border: "none", cursor: "pointer", borderRadius: 6,
-                  background: activeTab === "technical" ? "#854f0b" : "transparent",
-                  color: activeTab === "technical" ? "#fac775" : "#555",
-                  fontSize: 9, fontWeight: 800, textTransform: "uppercase" as const, letterSpacing: "0.06em",
-                }}>
-                  Technical
-                </button>
-              </div>
-            ) : (
-              <span style={{ color: "#c8962a", fontSize: 9, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                {activeTab === "physical" ? "Physical DNA" : "Technical"}
-              </span>
-            )}
-            <span style={{ color: "#555", fontSize: 9 }}>{axisCount} axes</span>
-          </div>
+          <span style={{
+            color: activeTab === "physical" ? "#c0dd97" : "#fac775",
+            fontSize: 9, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.1em",
+          }}>
+            {activeTab === "physical" ? "Physical DNA" : "Technical"}&nbsp;
+            <span style={{ color: "#555", fontWeight: 400 }}>· {axisCount} axes</span>
+          </span>
           {/* Level badge */}
           <span style={{
             background: "#c0dd97", color: "#0e1a04",
