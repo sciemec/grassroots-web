@@ -401,6 +401,15 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     }, "image/jpeg", 0.92);
   };
 
+  // ── Light theme CSS variable overrides (declared before any early return) ─
+  const lightTheme = {
+    "--card":             "#ffffff",
+    "--border":           "#e5e7eb",
+    "--muted":            "#f3f4f6",
+    "--background":       "#f4f2ee",
+    "--muted-foreground": "#6b7280",
+  } as React.CSSProperties;
+
   if (loading) {
     return (
       <div className="flex h-screen bg-[#f4f2ee]" style={lightTheme}>
@@ -535,15 +544,6 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
 
     doc.save(`GRS-Profile-${(user?.name ?? "player").replace(/\s+/g, "-")}.pdf`);
   };
-
-  // ── Light theme CSS variable overrides ────────────────────────────────────
-  const lightTheme = {
-    "--card":             "#ffffff",
-    "--border":           "#e5e7eb",
-    "--muted":            "#f3f4f6",
-    "--background":       "#f4f2ee",
-    "--muted-foreground": "#6b7280",
-  } as React.CSSProperties;
 
   const { count, total, pct } = calcCompletion(watchedValues);
 
