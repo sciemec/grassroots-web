@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, TrendingUp, Calendar, Award, LineChart, Activity } from "lucide-react";
+import {
+  LineChart as ReLineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, Legend,
+} from "recharts";
 import { useAuthStore } from "@/lib/auth-store";
 
 interface TrainingSession {
@@ -115,33 +119,40 @@ export default function PlayerProgressPage() {
                 <LineChart className="h-4 w-4 text-emerald-500" />
                 <h2 className="text-sm font-bold" style={{ color: "#f0b429" }}>Form Score Trend</h2>
               </div>
-              
-              <div className="relative h-48">
-                <div className="absolute bottom-0 left-0 right-0 flex items-end gap-1 h-40">
-                  {(() => {
-                    const reversed = sessions.slice().reverse();
-                    return reversed.map((session, i) => {
-                    const height = (session.overallForm / 100) * 160;
-                    const isImproving = i > 0 && session.overallForm > reversed[i - 1].overallForm;
-                    return (
-                      <div key={i} className="flex-1 flex flex-col items-center group">
-                        <div 
-                          className={`w-full rounded-t transition-all cursor-pointer ${isImproving ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                          style={{ height: `${Math.max(height, 4)}px`, minHeight: '4px' }}
-                          title={`Session ${i+1}: ${session.overallForm}`}
-                        />
-                        <div className="text-[8px] text-gray-600 mt-1 -rotate-45 origin-top-left">
-                          {i+1}
-                        </div>
-                      </div>
-                    );
-                  });
-                  })()}
-                </div>
-              </div>
 
-              <p className="mt-4 text-center text-[9px] text-gray-500">
-                Session progression (oldest → newest) • Green = improving • Gold = maintaining/dip
+              <ResponsiveContainer width="100%" height={220}>
+                <ReLineChart
+                  data={sessions.slice().reverse().map((s, i) => ({
+                    session: `S${i + 1}`,
+                    form:    s.overallForm,
+                    power:   s.explosivePower,
+                  }))}
+                  margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <XAxis dataKey="session" tick={{ fill: "#6b7280", fontSize: 10 }} />
+                  <YAxis domain={[0, 100]} tick={{ fill: "#6b7280", fontSize: 10 }} />
+                  <Tooltip
+                    contentStyle={{ background: "#111827", border: "1px solid #374151", borderRadius: 8 }}
+                    labelStyle={{ color: "#f0b429", fontWeight: 700 }}
+                    itemStyle={{ color: "#d1fae5" }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11, color: "#9ca3af" }} />
+                  <Line
+                    type="monotone" dataKey="form" name="Form score"
+                    stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: "#10b981" }}
+                    activeDot={{ r: 5 }}
+                  />
+                  <Line
+                    type="monotone" dataKey="power" name="Explosive power %"
+                    stroke="#f0b429" strokeWidth={2} dot={{ r: 3, fill: "#f0b429" }}
+                    strokeDasharray="4 2" activeDot={{ r: 5 }}
+                  />
+                </ReLineChart>
+              </ResponsiveContainer>
+
+              <p className="mt-3 text-center text-[9px] text-gray-500">
+                Oldest → newest · Green = form score · Gold dashed = explosive power
               </p>
             </div>
           ) : (
