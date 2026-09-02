@@ -67,7 +67,7 @@ async function getShowcaseClips(id: string): Promise<ShowcaseClip[]> {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/showcase/discover?user_id=${id}`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 60, tags: [`player-${id}`] } }
     );
     if (!res.ok) return [];
     const data = await res.json();
@@ -82,7 +82,7 @@ async function getPublicProfile(id: string): Promise<PublicProfile | null> {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/player/public/${id}`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 60, tags: [`player-${id}`] } }
     );
     if (!res.ok) return null;
     return res.json();

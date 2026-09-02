@@ -197,6 +197,10 @@ export default function PlayerProfilePage() {
       reset(data);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+      // Fire-and-forget: purge the public profile cache so scouts see changes immediately
+      if (res.data?.id) {
+        fetch(`/api/revalidate/player/${res.data.id}`, { method: "POST" }).catch(() => {});
+      }
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg ?? "Failed to save. Please try again.");
