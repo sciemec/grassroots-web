@@ -20,7 +20,7 @@ interface PhysicalAxis {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const EMPTY_F = 0.03; // null axes collapse near centre, not at dead-zero
-const CX = 145, CY = 140, R = 92; // reference-exact radar geometry
+const CX = 180, CY = 148, R = 100; // radar geometry — fits 343px card width
 
 // Display labels include \n for multi-line SVG tspan rendering
 const PHYSICAL_DEFAULTS = [
@@ -86,7 +86,7 @@ function RadarSVG({ cfg }: { cfg: RadarCfg }) {
   const N = axes.length;
 
   return (
-    <svg width={290} height={290} viewBox="0 0 290 290" role="img" aria-label="Radar chart">
+    <svg viewBox="0 0 360 300" style={{ width: "100%", display: "block" }} role="img" aria-label="Radar chart">
       {/* 3 grid rings */}
       {[1, 2, 3].map(ring => {
         const r = R * ring / 3;
@@ -195,7 +195,7 @@ export default function PublicPassportTabs({
 
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "1rem 0" }}>
-      <div style={{ width: 320, background: "#0e0e0e", borderRadius: 28, padding: 14, border: "1px solid #2a2a2a" }}>
+      <div style={{ width: 343, background: "#0e0e0e", borderRadius: 28, padding: 14, border: "1px solid #2a2a2a" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 6px 14px" }}>
@@ -203,7 +203,7 @@ export default function PublicPassportTabs({
             <svg width={18} height={18} viewBox="0 0 24 24">
               <path d="M4 4h9v4H8v4h5v4H8v8H4z" fill="#c8962a" />
             </svg>
-            <span style={{ color: "#fff", fontSize: 14, fontWeight: 500 }}>Player passport</span>
+            <span style={{ color: "#fff", fontSize: 14, fontWeight: 500 }}>GRS Player Passport</span>
           </div>
           <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
