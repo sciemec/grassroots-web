@@ -1,21 +1,9 @@
 import { ShieldCheck, MapPin, Ruler, Trophy, User, Scale, Footprints, Zap, CheckCircle } from "lucide-react";
-import { HighlightReel } from "@/components/player/HighlightReel";
 import { LogProfileView } from "@/components/player/LogProfileView";
 import { AdBanner } from "@/components/ui/AdBanner";
 import PotentialCard from "@/components/player/PotentialCard";
 import { RepresentationForm } from "@/components/player/RepresentationForm";
 import PublicPassportTabs from "@/components/player/PublicPassportTabs";
-
-interface ShowcaseClip {
-  id: string;
-  skill_type: string;
-  video_url: string | null;
-  thumbnail_url: string | null;
-  ai_rating: number;
-  top_strength: string;
-  scout_note: string;
-  view_count: number;
-}
 
 interface GrsTest {
   aqScore: number | null;
@@ -62,21 +50,6 @@ interface PublicProfile {
   trained_minutes: number;
 }
 
-async function getShowcaseClips(id: string): Promise<ShowcaseClip[]> {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/showcase/discover?user_id=${id}`,
-      { next: { revalidate: 60, tags: [`player-${id}`] } }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    const raw = data?.data ?? data;
-    return Array.isArray(raw) ? raw : [];
-  } catch {
-    return [];
-  }
-}
-
 async function getPublicProfile(id: string): Promise<PublicProfile | null> {
   try {
     const res = await fetch(
@@ -92,10 +65,7 @@ async function getPublicProfile(id: string): Promise<PublicProfile | null> {
 
 export default async function PublicPlayerProfile({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [profile, showcaseClips] = await Promise.all([
-    getPublicProfile(id),
-    getShowcaseClips(id),
-  ]);
+  const profile = await getPublicProfile(id);
 
   if (!profile) {
     return (
@@ -312,14 +282,6 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
               This profile was verified by GrassRoots Sports · grassrootssports.live
             </p>
           </div>
-        </div>
-
-        {/* Highlight Reel — showcase + AI-generated clips */}
-        <div className="mt-6">
-          <HighlightReel
-            clips={showcaseClips}
-            mode="public"
-          />
         </div>
 
         {/* Talent Prediction — scouts see this as the key signal */}

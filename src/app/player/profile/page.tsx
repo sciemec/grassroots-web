@@ -1083,9 +1083,6 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           })()}
 
 
-          {/* ── HIGHLIGHT REEL ────────────────────────────────────────────── */}
-          <HighlightReel mode="self" />
-
           {/* ── INVITE PARENT ─────────────────────────────────────────────── */}
           <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm overflow-hidden">
             <button type="button"
