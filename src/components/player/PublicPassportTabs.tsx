@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface DrillScore {
@@ -304,8 +302,6 @@ export default function PublicPassportTabs({
   dailyStreak?: number;
   trainedMinutes?: number;
 }) {
-  const [tab, setTab] = useState<"physical" | "technical">("physical");
-
   // Always 7 physical axes — fill with null if backend returned empty array
   const resolvedAxes: PhysicalAxis[] = physicalAxes.length === 7
     ? physicalAxes
@@ -316,7 +312,6 @@ export default function PublicPassportTabs({
 
   const hasPhysical = resolvedAxes.some((a) => a.percentile !== null);
   const hasTechnical = drillScores.length > 0;
-  const activeTab = !hasPhysical && hasTechnical ? "technical" : tab;
 
   const xp = xpTotal ?? 0;
   const streak = dailyStreak ?? 0;
@@ -326,7 +321,6 @@ export default function PublicPassportTabs({
     ? playerName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
     : "?";
   const posAbbr = position ? getPosAbbr(position) : "–";
-  const axisCount = activeTab === "physical" ? resolvedAxes.length : TECHNICAL_AXES.length;
 
   return (
     <div style={{
@@ -334,13 +328,12 @@ export default function PublicPassportTabs({
       borderRadius: 28,
       border: "1px solid #2a2a2a",
       overflow: "hidden",
-      maxWidth: 320,
+      maxWidth: 640,
       margin: "0 auto",
     }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* Passport "F" icon */}
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             <rect width="22" height="22" rx="5" fill="#1a3404" />
             <text x="6" y="16" fontSize="12" fontWeight="900" fill="#c0dd97" fontFamily="monospace">F</text>
@@ -349,10 +342,13 @@ export default function PublicPassportTabs({
             Player passport
           </span>
         </div>
-        {/* Share icon */}
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" />
-        </svg>
+        <span style={{
+          background: "#c0dd97", color: "#0e1a04",
+          fontSize: 8, fontWeight: 900, padding: "2px 8px", borderRadius: 20,
+          letterSpacing: "0.06em",
+        }}>
+          LVL {level}
+        </span>
       </div>
 
       {/* Identity strip */}
@@ -396,118 +392,66 @@ export default function PublicPassportTabs({
         </div>
       </div>
 
-      {/* Full-width tab buttons (only when player has both datasets) */}
-      {hasPhysical && hasTechnical && (
-        <div style={{ display: "flex", margin: "0 8px 6px", borderRadius: 10, overflow: "hidden", border: "1px solid #2a2a2a" }}>
-          <button
-            onClick={() => setTab("physical")}
-            style={{
-              flex: 1, padding: "10px 0", border: "none", cursor: "pointer",
-              background: activeTab === "physical" ? "#1a5c2a" : "#181818",
-              color: activeTab === "physical" ? "#c0dd97" : "#555",
-              fontSize: 10, fontWeight: 800, textTransform: "uppercase" as const,
-              letterSpacing: "0.07em", borderRight: "1px solid #2a2a2a",
-              transition: "background 0.15s, color 0.15s",
-            }}
-          >
-            Physical DNA
-          </button>
-          <button
-            onClick={() => setTab("technical")}
-            style={{
-              flex: 1, padding: "10px 0", border: "none", cursor: "pointer",
-              background: activeTab === "technical" ? "#854f0b" : "#181818",
-              color: activeTab === "technical" ? "#fac775" : "#555",
-              fontSize: 10, fontWeight: 800, textTransform: "uppercase" as const,
-              letterSpacing: "0.07em",
-              transition: "background 0.15s, color 0.15s",
-            }}
-          >
-            Technical
-          </button>
+      {/* Dual radar — both shown side by side */}
+      {!hasPhysical && !hasTechnical ? (
+        <div style={{ background: "#151515", borderRadius: 14, margin: "0 8px 8px", padding: "28px 16px 24px", textAlign: "center" }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: "50%",
+            background: "#1a1a1a", border: "1px dashed #333",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            margin: "0 auto 12px",
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </div>
+          <p style={{ color: "#555", fontSize: 11, fontWeight: 700, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            No training data yet
+          </p>
+          <p style={{ color: "#3a3a3a", fontSize: 10, margin: 0, lineHeight: 1.5 }}>
+            Complete a GRS drill session to unlock this player&apos;s athletic passport
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, margin: "0 8px 8px" }}>
+          {/* Physical DNA */}
+          <div style={{ background: "#151515", borderRadius: 14, padding: "10px 6px 8px" }}>
+            <p style={{ color: "#c0dd97", fontSize: 8, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.1em", margin: "0 0 6px", textAlign: "center" }}>
+              Physical DNA <span style={{ color: "#555", fontWeight: 400 }}>· 7 axes</span>
+            </p>
+            <PhysicalRadar axes={resolvedAxes} />
+            <p style={{ color: "#444", fontSize: 7, margin: "6px 0 0", textAlign: "center", lineHeight: 1.4 }}>
+              EUROFIT percentile · Zimbabwe peers
+            </p>
+          </div>
+
+          {/* Technical */}
+          <div style={{ background: "#151515", borderRadius: 14, padding: "10px 6px 8px" }}>
+            <p style={{ color: "#fac775", fontSize: 8, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.1em", margin: "0 0 6px", textAlign: "center" }}>
+              Technical <span style={{ color: "#555", fontWeight: 400 }}>· 9 axes</span>
+            </p>
+            <TechnicalRadar drillScores={drillScores} />
+            <p style={{ color: "#444", fontSize: 7, margin: "6px 0 0", textAlign: "center", lineHeight: 1.4 }}>
+              Gemini-assessed from drill footage
+            </p>
+          </div>
         </div>
       )}
-
-      {/* Inner radar card */}
-      <div style={{ background: "#151515", borderRadius: 14, margin: "0 8px 8px", padding: "12px 10px 10px" }}>
-        {/* Title row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <span style={{
-            color: activeTab === "physical" ? "#c0dd97" : "#fac775",
-            fontSize: 9, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.1em",
-          }}>
-            {activeTab === "physical" ? "Physical DNA" : "Technical"}&nbsp;
-            <span style={{ color: "#555", fontWeight: 400 }}>· {axisCount} axes</span>
-          </span>
-          {/* Level badge */}
-          <span style={{
-            background: "#c0dd97", color: "#0e1a04",
-            fontSize: 8, fontWeight: 900, padding: "2px 8px", borderRadius: 20,
-            letterSpacing: "0.06em",
-          }}>
-            LVL {level}
-          </span>
-        </div>
-
-        {/* Radar or empty state */}
-        {!hasPhysical && !hasTechnical ? (
-          <div style={{ textAlign: "center", padding: "28px 16px 20px" }}>
-            <div style={{
-              width: 52, height: 52, borderRadius: "50%",
-              background: "#1a1a1a", border: "1px dashed #333",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 12px",
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
-            </div>
-            <p style={{ color: "#555", fontSize: 11, fontWeight: 700, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              No training data yet
-            </p>
-            <p style={{ color: "#3a3a3a", fontSize: 10, margin: 0, lineHeight: 1.5 }}>
-              Complete a GRS drill session to unlock this player&apos;s athletic passport
-            </p>
-          </div>
-        ) : activeTab === "physical" ? (
-          <PhysicalRadar axes={resolvedAxes} />
-        ) : (
-          <TechnicalRadar drillScores={drillScores} />
-        )}
-
-        {/* Source row — only shown when there is real data */}
-        {(hasPhysical || hasTechnical) && (
-          <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 8 }}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 3h6M9 3v7l-4.5 9a1 1 0 00.9 1.5h13.2a1 1 0 00.9-1.5L15 10V3" />
-            </svg>
-            <span style={{ color: "#444", fontSize: 8 }}>
-              {activeTab === "physical"
-                ? "EUROFIT percentile · Zimbabwe peers · centre = no data"
-                : "Gemini-assessed from drill footage · centre = no data"}
-            </span>
-          </div>
-        )}
-      </div>
 
       {/* Bottom nav */}
       <div style={{
         display: "flex", justifyContent: "space-around", alignItems: "center",
         borderTop: "1px solid #232323", padding: "12px 0",
       }}>
-        {/* Home */}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
         </svg>
-        {/* Football */}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c0dd97" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" /><path d="M12 2a10 10 0 00-6.88 2.77L9 9l3-7zm0 0a10 10 0 016.88 2.77L15 9l-3-7zM2 12h7l-2-4m15 4h-7l2-4M5.12 19.23L9 15l-4 1.5m13.88 2.73L15 15l4 1.5M9 15l3 7m0 0l3-7" />
         </svg>
-        {/* Calendar */}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
         </svg>
-        {/* User */}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
         </svg>
