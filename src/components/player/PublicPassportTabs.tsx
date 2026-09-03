@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface DrillScore {
@@ -18,6 +20,10 @@ interface PhysicalAxis {
 // ─── Radar geometry ───────────────────────────────────────────────────────────
 
 const EMPTY_F = 0.03;
+const CX = 145, CY = 140, R = 92, W = 290, H = 290;
+const LABEL_PAD = 24;
+// 3 grid rings at 1/3, 2/3, full — matching prototype
+const GRID_RINGS = [1 / 3, 2 / 3, 1.0];
 
 function toAngle(i: number, n: number) {
   return (i * 2 * Math.PI) / n - Math.PI / 2;
@@ -45,16 +51,16 @@ function ringPts(cx: number, cy: number, r: number, f: number, n: number): strin
   }).join(" ");
 }
 
-// ─── Physical DNA radar (7 axes, green) ───────────────────────────────────────
+// ─── Physical DNA (7 axes, green) ─────────────────────────────────────────────
 
 const PHYSICAL_DEFAULTS: PhysicalAxis[] = [
-  { code: "explosiveness_0_10m", label: "Explosiveness",      percentile: null },
-  { code: "top_end_speed",       label: "Top speed",          percentile: null },
-  { code: "change_of_direction", label: "Change of direction",percentile: null },
-  { code: "vertical_leap",       label: "Vertical leap",      percentile: null },
-  { code: "functional_strength", label: "Strength",           percentile: null },
-  { code: "core_stability",      label: "Core stability",     percentile: null },
-  { code: "aerobic_endurance",   label: "Stamina",            percentile: null },
+  { code: "explosiveness_0_10m", label: "Explosiveness",       percentile: null },
+  { code: "top_end_speed",       label: "Top speed",           percentile: null },
+  { code: "change_of_direction", label: "Change of direction", percentile: null },
+  { code: "vertical_leap",       label: "Vertical leap",       percentile: null },
+  { code: "functional_strength", label: "Strength",            percentile: null },
+  { code: "core_stability",      label: "Core stability",      percentile: null },
+  { code: "aerobic_endurance",   label: "Stamina",             percentile: null },
 ];
 
 const PHYSICAL_LABELS: string[][] = [
@@ -69,23 +75,17 @@ const PHYSICAL_LABELS: string[][] = [
 
 function PhysicalRadar({ axes }: { axes: PhysicalAxis[] }) {
   const N = axes.length;
-  const CX = 145, CY = 135, R = 92, W = 290, H = 290;
-  const LABEL_PAD = 18;
-  const gridRings = [0.25, 0.5, 0.75, 1.0];
-
-  const values = axes.map((a) => a.percentile);
-  const polygonPts = buildPolygon(values, CX, CY, R, N);
-  const available = axes.filter((a) => a.percentile !== null);
+  const polygonPts = buildPolygon(axes.map((a) => a.percentile), CX, CY, R, N);
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }} aria-label="Physical DNA radar">
-      {/* Grid rings */}
-      {gridRings.map((f) => (
+      {/* 3 grid rings */}
+      {GRID_RINGS.map((f) => (
         <polygon key={f} points={ringPts(CX, CY, R, f, N)} fill="none"
           stroke="#1a3d26" strokeWidth={f === 1.0 ? 1.5 : 1} />
       ))}
 
-      {/* Spoke lines — colored + dashed if no data */}
+      {/* Spokes */}
       {axes.map((axis, i) => {
         const tip = pt(CX, CY, R, i, 1, N);
         const hasData = axis.percentile !== null;
@@ -96,20 +96,22 @@ function PhysicalRadar({ axes }: { axes: PhysicalAxis[] }) {
         );
       })}
 
-      {/* Filled polygon */}
-      <polygon points={polygonPts} fill="#1a5c2a" fillOpacity={0.5} stroke="#c0dd97" strokeWidth={2} strokeLinejoin="round" />
+      {/* Filled polygon — fill #1a5c2a, stroke #97c459 */}
+      <polygon points={polygonPts} fill="#1a5c2a" fillOpacity={0.5}
+        stroke="#97c459" strokeWidth={2} strokeLinejoin="round" />
 
-      {/* Dots */}
+      {/* Dots — #c0dd97 */}
       {axes.map((axis, i) => {
         if (axis.percentile === null) {
           const p = pt(CX, CY, R, i, EMPTY_F, N);
           return <circle key={`e-${axis.code}`} cx={p.x} cy={p.y} r={2} fill="#2a2a2a" />;
         }
-        const p = pt(CX, CY, R, i, Math.max(0, Math.min(100, axis.percentile)) / 100, N);
+        const f = Math.max(0, Math.min(100, axis.percentile)) / 100;
+        const p = pt(CX, CY, R, i, f, N);
         return <circle key={`d-${axis.code}`} cx={p.x} cy={p.y} r={4} fill="#c0dd97" stroke="#0e0e0e" strokeWidth={1.5} />;
       })}
 
-      {/* Multi-line labels */}
+      {/* Axis labels at R + 24 */}
       {axes.map((axis, i) => {
         const ang = toAngle(i, N);
         const lx = CX + (R + LABEL_PAD) * Math.cos(ang);
@@ -120,7 +122,8 @@ function PhysicalRadar({ axes }: { axes: PhysicalAxis[] }) {
         const lineH = 9;
         const startY = ly - ((lines.length - 1) * lineH) / 2;
         return (
-          <text key={`l-${axis.code}`} textAnchor={anchor} fontSize={8} fontWeight={axis.percentile !== null ? 700 : 400}
+          <text key={`l-${axis.code}`} textAnchor={anchor} fontSize={8}
+            fontWeight={axis.percentile !== null ? 700 : 400}
             fill={axis.percentile !== null ? "#c0dd97" : "#3e3e3e"}>
             {lines.map((line, li) => (
               <tspan key={li} x={lx} y={startY + li * lineH}>{line}</tspan>
@@ -129,19 +132,19 @@ function PhysicalRadar({ axes }: { axes: PhysicalAxis[] }) {
         );
       })}
 
-      {/* Score value labels next to each available dot */}
-      {available.map((axis) => {
-        const i = axes.findIndex((x) => x.code === axis.code);
+      {/* Value labels near each dot */}
+      {axes.map((axis, i) => {
+        if (axis.percentile === null) return null;
         const ang = toAngle(i, N);
-        const f = Math.max(0.08, Math.min(100, axis.percentile!)) / 100;
+        const f = Math.max(0.08, Math.min(100, axis.percentile)) / 100;
         const nudgeF = f > 0.18 ? f - 0.14 : f + 0.16;
         const p = pt(CX, CY, R, i, Math.max(0.08, nudgeF), N);
         const cosA = Math.cos(ang);
         const anchor = cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle";
         return (
-          <text key={`val-${axis.code}`} x={p.x} y={p.y} textAnchor={anchor} dominantBaseline="middle"
-            fontSize={7} fontWeight={700} fill="#6abf60">
-            {Math.round(axis.percentile!)}
+          <text key={`val-${axis.code}`} x={p.x} y={p.y} textAnchor={anchor}
+            dominantBaseline="middle" fontSize={7} fontWeight={700} fill="#6abf60">
+            {Math.round(axis.percentile)}
           </text>
         );
       })}
@@ -149,7 +152,7 @@ function PhysicalRadar({ axes }: { axes: PhysicalAxis[] }) {
   );
 }
 
-// ─── Technical radar (9 axes, amber) ─────────────────────────────────────────
+// ─── Technical (9 axes, amber) ────────────────────────────────────────────────
 
 const TECHNICAL_AXES = [
   { labels: ["First touch", "& control"], matchPrefix: "First Touch"   },
@@ -157,7 +160,7 @@ const TECHNICAL_AXES = [
   { labels: ["Passing", "accuracy"],      matchPrefix: "Passing"       },
   { labels: ["Shooting"],                 matchPrefix: "Shooting"      },
   { labels: ["Crossing"],                 matchPrefix: "Crossing"      },
-  { labels: ["Free kick"],                matchPrefix: "Free Kick"     },
+  { labels: ["Free kick"],               matchPrefix: "Free Kick"     },
   { labels: ["Heading"],                  matchPrefix: "Heading"       },
   { labels: ["Juggling"],                 matchPrefix: "Ball Juggling" },
   { labels: ["Throw-in"],                 matchPrefix: "Throw-In"      },
@@ -165,10 +168,6 @@ const TECHNICAL_AXES = [
 
 function TechnicalRadar({ drillScores }: { drillScores: DrillScore[] }) {
   const N = TECHNICAL_AXES.length;
-  const CX = 145, CY = 135, R = 92, W = 290, H = 290;
-  const LABEL_PAD = 18;
-  const gridRings = [0.25, 0.5, 0.75, 1.0];
-
   const axes = TECHNICAL_AXES.map(({ labels, matchPrefix }) => {
     const found = drillScores.find((d) => d.drillName.startsWith(matchPrefix));
     return {
@@ -178,17 +177,16 @@ function TechnicalRadar({ drillScores }: { drillScores: DrillScore[] }) {
   });
 
   const polygonPts = buildPolygon(axes.map((a) => a.value), CX, CY, R, N);
-  const available = axes.filter((a) => a.value !== null);
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }} aria-label="Technical passport radar">
-      {/* Grid rings */}
-      {gridRings.map((f) => (
+      {/* 3 grid rings */}
+      {GRID_RINGS.map((f) => (
         <polygon key={f} points={ringPts(CX, CY, R, f, N)} fill="none"
           stroke="#2a1a0a" strokeWidth={f === 1.0 ? 1.5 : 1} />
       ))}
 
-      {/* Spoke lines — colored + dashed if no data */}
+      {/* Spokes */}
       {axes.map((axis, i) => {
         const tip = pt(CX, CY, R, i, 1, N);
         const hasData = axis.value !== null;
@@ -199,20 +197,22 @@ function TechnicalRadar({ drillScores }: { drillScores: DrillScore[] }) {
         );
       })}
 
-      {/* Filled polygon */}
-      <polygon points={polygonPts} fill="#854f0b" fillOpacity={0.4} stroke="#fac775" strokeWidth={2} strokeLinejoin="round" />
+      {/* Filled polygon — fill #854f0b, stroke #ef9f27 */}
+      <polygon points={polygonPts} fill="#854f0b" fillOpacity={0.4}
+        stroke="#ef9f27" strokeWidth={2} strokeLinejoin="round" />
 
-      {/* Dots */}
+      {/* Dots — #fac775 */}
       {axes.map((axis, i) => {
         if (axis.value === null) {
           const p = pt(CX, CY, R, i, EMPTY_F, N);
           return <circle key={`e-${i}`} cx={p.x} cy={p.y} r={2} fill="#3a2a1a" />;
         }
-        const p = pt(CX, CY, R, i, Math.max(0, Math.min(100, axis.value)) / 100, N);
+        const f = Math.max(0, Math.min(100, axis.value)) / 100;
+        const p = pt(CX, CY, R, i, f, N);
         return <circle key={`d-${i}`} cx={p.x} cy={p.y} r={4} fill="#fac775" stroke="#0e0e0e" strokeWidth={1.5} />;
       })}
 
-      {/* Multi-line labels */}
+      {/* Axis labels at R + 24 */}
       {axes.map((axis, i) => {
         const ang = toAngle(i, N);
         const lx = CX + (R + LABEL_PAD) * Math.cos(ang);
@@ -223,7 +223,8 @@ function TechnicalRadar({ drillScores }: { drillScores: DrillScore[] }) {
         const lineH = 9;
         const startY = ly - ((lines.length - 1) * lineH) / 2;
         return (
-          <text key={`l-${i}`} textAnchor={anchor} fontSize={8} fontWeight={axis.value !== null ? 700 : 400}
+          <text key={`l-${i}`} textAnchor={anchor} fontSize={8}
+            fontWeight={axis.value !== null ? 700 : 400}
             fill={axis.value !== null ? "#fac775" : "#4a3a2a"}>
             {lines.map((line, li) => (
               <tspan key={li} x={lx} y={startY + li * lineH}>{line}</tspan>
@@ -232,19 +233,19 @@ function TechnicalRadar({ drillScores }: { drillScores: DrillScore[] }) {
         );
       })}
 
-      {/* Score value labels next to each available dot */}
-      {available.map((axis, idx) => {
-        const i = axes.findIndex((x) => x.labels === axis.labels);
+      {/* Value labels near each dot */}
+      {axes.map((axis, i) => {
+        if (axis.value === null) return null;
         const ang = toAngle(i, N);
-        const f = Math.max(0.08, Math.min(100, axis.value!)) / 100;
+        const f = Math.max(0.08, Math.min(100, axis.value)) / 100;
         const nudgeF = f > 0.18 ? f - 0.14 : f + 0.16;
         const p = pt(CX, CY, R, i, Math.max(0.08, nudgeF), N);
         const cosA = Math.cos(ang);
         const anchor = cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle";
         return (
-          <text key={`val-${idx}`} x={p.x} y={p.y} textAnchor={anchor} dominantBaseline="middle"
-            fontSize={7} fontWeight={700} fill="#f5a623">
-            {Math.round(axis.value!)}
+          <text key={`val-${i}`} x={p.x} y={p.y} textAnchor={anchor}
+            dominantBaseline="middle" fontSize={7} fontWeight={700} fill="#f5a623">
+            {Math.round(axis.value)}
           </text>
         );
       })}
@@ -267,12 +268,8 @@ const POSITION_ABBR: Record<string, string> = {
 
 function getPosAbbr(position: string): string {
   const key = position.toLowerCase().trim();
-  if (POSITION_ABBR[key]) return POSITION_ABBR[key];
-  // fallback: first 2 chars uppercase
-  return position.slice(0, 2).toUpperCase();
+  return POSITION_ABBR[key] ?? position.slice(0, 2).toUpperCase();
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatTrainedTime(minutes: number): string {
   if (minutes <= 0) return "0m";
@@ -282,6 +279,10 @@ function formatTrainedTime(minutes: number): string {
   if (m === 0) return `${h}h`;
   return `${h}h ${m}m`;
 }
+
+// ─── Tab type ─────────────────────────────────────────────────────────────────
+
+type TabKey = "physical" | "technical";
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
@@ -302,16 +303,16 @@ export default function PublicPassportTabs({
   dailyStreak?: number;
   trainedMinutes?: number;
 }) {
-  // Always 7 physical axes — fill with null if backend returned empty array
+  // Default to Technical tab on load (matches prototype)
+  const [activeTab, setActiveTab] = useState<TabKey>("technical");
+
   const resolvedAxes: PhysicalAxis[] = physicalAxes.length === 7
     ? physicalAxes
-    : PHYSICAL_DEFAULTS.map((def) => {
-        const found = physicalAxes.find((a) => a.code === def.code);
-        return found ?? def;
-      });
+    : PHYSICAL_DEFAULTS.map((def) => physicalAxes.find((a) => a.code === def.code) ?? def);
 
   const hasPhysical = resolvedAxes.some((a) => a.percentile !== null);
   const hasTechnical = drillScores.length > 0;
+  const hasAnyData = hasPhysical || hasTechnical;
 
   const xp = xpTotal ?? 0;
   const streak = dailyStreak ?? 0;
@@ -322,16 +323,21 @@ export default function PublicPassportTabs({
     : "?";
   const posAbbr = position ? getPosAbbr(position) : "–";
 
+  const isPhysical = activeTab === "physical";
+  const activeColor = isPhysical ? "#c0dd97" : "#fac775";
+  const activeBg    = isPhysical ? "#0d2a12" : "#2a1800";
+
   return (
     <div style={{
       background: "#0e0e0e",
       borderRadius: 28,
       border: "1px solid #2a2a2a",
       overflow: "hidden",
-      maxWidth: 640,
+      maxWidth: 320,
       margin: "0 auto",
     }}>
-      {/* Header */}
+
+      {/* Header — passport logo + level badge */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -392,8 +398,39 @@ export default function PublicPassportTabs({
         </div>
       </div>
 
-      {/* Dual radar — both shown side by side */}
-      {!hasPhysical && !hasTechnical ? (
+      {/* Tab buttons */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", margin: "0 12px 10px", borderRadius: 10, overflow: "hidden", border: "1px solid #222" }}>
+        <button
+          onClick={() => setActiveTab("physical")}
+          style={{
+            background: isPhysical ? activeBg : "#111",
+            border: "none", cursor: "pointer", padding: "9px 0",
+            color: isPhysical ? "#c0dd97" : "#555",
+            fontSize: 9, fontWeight: 800, letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            transition: "background 0.2s, color 0.2s",
+          }}
+        >
+          Physical DNA
+        </button>
+        <button
+          onClick={() => setActiveTab("technical")}
+          style={{
+            background: !isPhysical ? "#2a1800" : "#111",
+            border: "none", cursor: "pointer", padding: "9px 0",
+            color: !isPhysical ? "#fac775" : "#555",
+            fontSize: 9, fontWeight: 800, letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            borderLeft: "1px solid #222",
+            transition: "background 0.2s, color 0.2s",
+          }}
+        >
+          Technical
+        </button>
+      </div>
+
+      {/* Radar area */}
+      {!hasAnyData ? (
         <div style={{ background: "#151515", borderRadius: 14, margin: "0 8px 8px", padding: "28px 16px 24px", textAlign: "center" }}>
           <div style={{
             width: 52, height: 52, borderRadius: "50%",
@@ -413,27 +450,37 @@ export default function PublicPassportTabs({
           </p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, margin: "0 8px 8px" }}>
-          {/* Physical DNA */}
-          <div style={{ background: "#151515", borderRadius: 14, padding: "10px 6px 8px" }}>
-            <p style={{ color: "#c0dd97", fontSize: 8, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.1em", margin: "0 0 6px", textAlign: "center" }}>
-              Physical DNA <span style={{ color: "#555", fontWeight: 400 }}>· 7 axes</span>
-            </p>
-            <PhysicalRadar axes={resolvedAxes} />
-            <p style={{ color: "#444", fontSize: 7, margin: "6px 0 0", textAlign: "center", lineHeight: 1.4 }}>
-              EUROFIT percentile · Zimbabwe peers
-            </p>
+        <div style={{ margin: "0 8px 8px" }}>
+          {/* Title row — attribute count + accent */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 4px 8px" }}>
+            <span style={{ color: activeColor, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              {isPhysical ? "7 attributes" : "9 categories"}
+            </span>
+            <span style={{
+              background: activeBg, color: activeColor,
+              fontSize: 8, fontWeight: 900, padding: "2px 8px", borderRadius: 20,
+              border: `1px solid ${activeColor}44`,
+            }}>
+              {isPhysical ? "EUROFIT" : "AI-assessed"}
+            </span>
           </div>
 
-          {/* Technical */}
-          <div style={{ background: "#151515", borderRadius: 14, padding: "10px 6px 8px" }}>
-            <p style={{ color: "#fac775", fontSize: 8, fontWeight: 900, textTransform: "uppercase" as const, letterSpacing: "0.1em", margin: "0 0 6px", textAlign: "center" }}>
-              Technical <span style={{ color: "#555", fontWeight: 400 }}>· 9 axes</span>
-            </p>
-            <TechnicalRadar drillScores={drillScores} />
-            <p style={{ color: "#444", fontSize: 7, margin: "6px 0 0", textAlign: "center", lineHeight: 1.4 }}>
-              Gemini-assessed from drill footage
-            </p>
+          {/* Single radar */}
+          <div style={{ background: "#151515", borderRadius: 14, padding: "8px 6px 4px" }}>
+            {isPhysical
+              ? <PhysicalRadar axes={resolvedAxes} />
+              : <TechnicalRadar drillScores={drillScores} />
+            }
+          </div>
+
+          {/* Source row with flask icon */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "8px 0 4px" }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={activeColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={0.6}>
+              <path d="M9 3h6m-5 0v6l-4.5 9A1 1 0 006 20h12a1 1 0 00.9-1.45L14 9V3" />
+            </svg>
+            <span style={{ color: "#555", fontSize: 8 }}>
+              {isPhysical ? "EUROFIT percentile · Zimbabwe peers" : "Gemini-assessed from drill footage"}
+            </span>
           </div>
         </div>
       )}
