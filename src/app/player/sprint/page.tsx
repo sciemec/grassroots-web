@@ -125,8 +125,26 @@ export default function SprintMechanicsPage() {
   const [history,      setHistory]      = useState<HistoryEntry[]>([]);
   const [histLoading,  setHistLoading]  = useState(false);
   const [openHist,     setOpenHist]     = useState<string | null>(null);
+  const [coachRating,       setCoachRating]       = useState<{ rating: number; rated_at: string } | null>(null);
+  const [coachRatingLoaded, setCoachRatingLoaded] = useState(false);
 
   // ── Fetch history ─────────────────────────────────────────────────────────
+
+  const fetchCoachRating = async () => {
+    if (!token || coachRatingLoaded) return;
+    setCoachRatingLoaded(true);
+    try {
+      const r = await fetch(`${API_URL}/player/skill-ratings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.ok) {
+        const json = await r.json();
+        const list = Array.isArray(json.data) ? json.data : [];
+        const match = list.find((x: { skill_code: string }) => x.skill_code === "sprint");
+        if (match) setCoachRating({ rating: match.rating, rated_at: match.rated_at });
+      }
+    } catch { /* silent */ }
+  };
 
   const fetchHistory = async () => {
     if (!token) return;
@@ -144,7 +162,7 @@ export default function SprintMechanicsPage() {
     }
   };
 
-  useEffect(() => { fetchHistory(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchHistory(); fetchCoachRating(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Video upload → measure ────────────────────────────────────────────────
 
@@ -375,6 +393,21 @@ Return this exact JSON structure:
             />
           </div>
 
+          {coachRating && (
+            <div style={{ backgroundColor: "white", borderRadius: 16, padding: 20, border: "2px solid #ede9fe", marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#7c3aed" }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.05em" }}>Coach Assessment</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontSize: 14, color: "#374151" }}>Coach Rating</span>
+                <span style={{ fontSize: 22, fontWeight: 800, color: "#7c3aed" }}>{coachRating.rating}<span style={{ fontSize: 14, color: "#9ca3af", fontWeight: 400 }}>/10</span></span>
+              </div>
+              <div style={{ height: 8, backgroundColor: "#f3f4f6", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${coachRating.rating * 10}%`, backgroundColor: "#7c3aed", borderRadius: 4, transition: "width 0.4s ease" }} />
+              </div>
+            </div>
+          )}
           <button onClick={() => setPhase("upload")}
             style={{ width: "100%", padding: "14px", backgroundColor: "#1a5c2a", color: "white", border: "none", borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: "pointer" }}>
             Next: Upload Sprint Video →
