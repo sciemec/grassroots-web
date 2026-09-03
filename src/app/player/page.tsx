@@ -217,6 +217,8 @@ export default function PlayerDashboardHome() {
   const [todayDone,     setTodayDone]     = useState(false);
   const [athleticScore, setAthleteScore]  = useState<number | null>(null);
   const [lastTestDays,  setLastTestDays]  = useState<number | null>(null);
+  const [profilePct,    setProfilePct]    = useState<number | null>(null);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -277,6 +279,27 @@ export default function PlayerDashboardHome() {
         const latest = items[0];
         if (latest?.aq_score != null) setAqScore(Math.round(latest.aq_score));
         else if (latest?.overall_score != null) setAqScore(Math.round(latest.overall_score));
+      })
+      .catch(() => {});
+
+    api.get("/profile")
+      .then((res) => {
+        const data = res.data;
+        const p    = data?.profile;
+        const pct: number = p?.profile_complete_pct ?? 0;
+        setProfilePct(pct);
+        if (pct < 100) {
+          const missing: string[] = [];
+          if (!p?.photo_url)               missing.push("Photo");
+          if (!data?.province)             missing.push("Province");
+          if (!p?.position_primary)        missing.push("Position");
+          if (!p?.club && !p?.school)      missing.push("Club / School");
+          if (!p?.dominant_foot)           missing.push("Dominant foot");
+          if (!p?.height_cm)              missing.push("Height");
+          if (!p?.weight_kg)              missing.push("Weight");
+          if (!p?.gender)                  missing.push("Gender");
+          setMissingFields(missing.slice(0, 4));
+        }
       })
       .catch(() => {});
   }, [hydrated, user]);
@@ -399,6 +422,40 @@ export default function PlayerDashboardHome() {
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             SECTION 1 – MY PATHWAY
         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+        {/* ── Profile completion prompt ─────────────────────────────────────── */}
+        {user && profilePct !== null && profilePct < 100 && (
+          <div className="rounded-2xl border p-4 shadow-sm" style={{ backgroundColor: "#fffbeb", borderColor: "#fde68a" }}>
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="min-w-0">
+                <p className="text-xs font-black text-gray-900">Your profile is {profilePct}% complete</p>
+                <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                  Scouts can&apos;t find you until your profile is full
+                </p>
+              </div>
+              <span className="text-lg font-black shrink-0" style={{ color: "#1a5c2a" }}>{profilePct}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-gray-200 mb-3">
+              <div className="h-1.5 rounded-full transition-all"
+                style={{ width: `${profilePct}%`, backgroundColor: profilePct >= 70 ? "#1a5c2a" : "#f0b429" }} />
+            </div>
+            {missingFields.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {missingFields.map((f) => (
+                  <span key={f} className="text-[11px] font-semibold px-2.5 py-1 rounded-full border"
+                    style={{ borderColor: "#d97706", color: "#92400e", backgroundColor: "#fef3c7" }}>
+                    + {f}
+                  </span>
+                ))}
+              </div>
+            )}
+            <Link href="/player/profile"
+              className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide rounded-xl px-3 py-2 transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}>
+              Complete Profile <ArrowRight size={11} />
+            </Link>
+          </div>
+        )}
+
         {/* ── Training streak card ──────────────────────────────────────────── */}
         {user && (() => {
           const hoursLeft = Math.max(0, Math.floor(
