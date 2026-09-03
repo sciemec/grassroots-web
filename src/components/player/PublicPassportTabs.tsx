@@ -449,24 +449,45 @@ export default function PublicPassportTabs({
           </span>
         </div>
 
-        {/* Radar */}
-        {activeTab === "physical"
-          ? <PhysicalRadar axes={resolvedAxes} />
-          : <TechnicalRadar drillScores={drillScores} />
-        }
+        {/* Radar or empty state */}
+        {!hasPhysical && !hasTechnical ? (
+          <div style={{ textAlign: "center", padding: "28px 16px 20px" }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: "50%",
+              background: "#1a1a1a", border: "1px dashed #333",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 12px",
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </div>
+            <p style={{ color: "#555", fontSize: 11, fontWeight: 700, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              No training data yet
+            </p>
+            <p style={{ color: "#3a3a3a", fontSize: 10, margin: 0, lineHeight: 1.5 }}>
+              Complete a GRS drill session to unlock this player&apos;s athletic passport
+            </p>
+          </div>
+        ) : activeTab === "physical" ? (
+          <PhysicalRadar axes={resolvedAxes} />
+        ) : (
+          <TechnicalRadar drillScores={drillScores} />
+        )}
 
-        {/* Source row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 8 }}>
-          {/* Flask icon */}
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 3h6M9 3v7l-4.5 9a1 1 0 00.9 1.5h13.2a1 1 0 00.9-1.5L15 10V3" />
-          </svg>
-          <span style={{ color: "#444", fontSize: 8 }}>
-            {activeTab === "physical"
-              ? "EUROFIT percentile · Zimbabwe peers · centre = no data"
-              : "Gemini-assessed from drill footage · centre = no data"}
-          </span>
-        </div>
+        {/* Source row — only shown when there is real data */}
+        {(hasPhysical || hasTechnical) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 8 }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 3h6M9 3v7l-4.5 9a1 1 0 00.9 1.5h13.2a1 1 0 00.9-1.5L15 10V3" />
+            </svg>
+            <span style={{ color: "#444", fontSize: 8 }}>
+              {activeTab === "physical"
+                ? "EUROFIT percentile · Zimbabwe peers · centre = no data"
+                : "Gemini-assessed from drill footage · centre = no data"}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Bottom nav */}
