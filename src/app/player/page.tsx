@@ -15,6 +15,7 @@ import {
   IconBook,
   IconLock,
   IconUsers,
+  IconStar,
   IconChevronRight,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
@@ -218,6 +219,14 @@ export default function PlayerHubPage() {
           iconColor={OL}
           title="Football Skill Analysis"
           subtitle="Deep technique breakdown"
+        />
+        <HubCard
+          href="/player/skill-ratings"
+          icon={IconStar}
+          iconBg={O}
+          iconColor={OL}
+          title="Coach Ratings"
+          subtitle="Your technical skills rated by your coach"
         />
 
         {/* Section 3 — Showcase */}
