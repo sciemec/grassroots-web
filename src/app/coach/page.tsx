@@ -8,7 +8,7 @@ import {
   Users, Target, Activity, Zap, Dumbbell, Calendar,
   TrendingUp, TrendingDown, BarChart3, Award, Video,
   UserSearch, Shield, Flame, Globe, Bell, Crosshair, BarChart2, Layers,
-  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic, UserCheck, Clapperboard, Wind, HeartPulse, ShoppingBag,
+  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic, UserCheck, Clapperboard, Wind, HeartPulse, ShoppingBag, Star,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -157,6 +157,7 @@ export default function CoachHubPage() {
           <HubCard href="/coach/registered-players" icon={UserCheck}  iconBg="#f0fdf4" iconColor="#1a5c2a" label="Player Registry" desc="Register players · build talent passports" badge="new" />
           <HubCard href="/coach/recruitment"        icon={Shield}     iconBg="#ede9fe" iconColor="#7c3aed" label="Recruitment"     desc="Track recruitment targets"     />
           <HubCard href="/coach/scouting"           icon={UserSearch} iconBg="#fef3c7" iconColor="#d97706" label="Scouting"        desc="Scout discovery feed"          />
+          <HubCard href="/coach/skill-ratings"      icon={Star}       iconBg="#fefce8" iconColor="#ca8a04" label="Skill Ratings"   desc="Rate your squad's technical skills" badge="new" />
         </div>
 
         {/* ── 2. Match & Tactics ─────────────────────────────────────── */}
