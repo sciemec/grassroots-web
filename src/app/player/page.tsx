@@ -448,7 +448,7 @@ export default function PlayerDashboardHome() {
                 ))}
               </div>
             )}
-            <Link href="/player/profile"
+            <Link href="/player/profile?edit=1"
               className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide rounded-xl px-3 py-2 transition-opacity hover:opacity-90"
               style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}>
               Complete Profile <ArrowRight size={11} />

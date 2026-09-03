@@ -35,6 +35,7 @@ import { SportSelector } from "@/components/sports/sport-selector";
 import { SPORT_MAP, SportKey } from "@/config/sports";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
+import { useSearchParams } from "next/navigation";
 
 import { getPositionConfig, POSITION_ICON_REGISTRY } from "@/config/positions";
 
@@ -120,6 +121,7 @@ function calcCompletion(data: Partial<FormData>): { count: number; total: number
 }
 
 export default function PlayerProfilePage() {
+  const searchParams = useSearchParams();
   const user = useAuthStore((s) => s.user);
   const [profile, setProfile]           = useState<Profile | null>(null);
   const [loading, setLoading]           = useState(true);
@@ -144,7 +146,7 @@ export default function PlayerProfilePage() {
   const [cropDragStart, setCropDragStart] = useState({ x: 0, y: 0 });
 
   // Edit panel + Invite Parent state
-  const [showEditPanel, setShowEditPanel]     = useState(false);
+  const [showEditPanel, setShowEditPanel]     = useState(() => searchParams.get("edit") === "1");
   const [showInvitePanel, setShowInvitePanel] = useState(false);
   const [inviteAgeGroup, setInviteAgeGroup]   = useState<"u13" | "u17">("u17");
   const [inviteCode, setInviteCode]           = useState<string | null>(null);
