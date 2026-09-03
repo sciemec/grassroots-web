@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
 import { PlayerGamificationPanel } from "@/components/player/PlayerGamificationPanel";
-import PlayerPassportCard from "@/components/player/PlayerPassportCard";
+import PublicPassportTabs from "@/components/player/PublicPassportTabs";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import { ScoutViewBadge } from "@/components/player/ScoutViewBadge";
 import { ProUpgradeBanner } from "@/components/player/ProUpgradeBanner";
@@ -136,6 +136,14 @@ export default function PlayerProfilePage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef  = useRef<HTMLInputElement>(null);
 
+  const [passportData, setPassportData] = useState<{
+    physical:  { code: string; label: string; percentile: number | null }[];
+    technical: { label: string; avgSubScore: number | null }[];
+    xp_total:       number;
+    daily_streak:   number;
+    trained_minutes: number;
+  } | null>(null);
+
   // ── Crop modal ────────────────────────────────────────────────────────────
   const cropCanvasRef   = useRef<HTMLCanvasElement>(null);
   const cropImageRef    = useRef<HTMLImageElement | null>(null);
@@ -187,6 +195,13 @@ export default function PlayerProfilePage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user, reset]);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get("/player/passport-data")
+      .then((res) => setPassportData(res.data))
+      .catch(() => {});
+  }, [user]);
 
   const onSubmit = async (data: FormData) => {
     setError("");
@@ -718,8 +733,21 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           {/* ── GAMIFICATION PANEL — star of the show ─────────────────────── */}
           <PlayerGamificationPanel />
 
-          {/* ── PLAYER PASSPORT CARD ──────────────────────────────────────── */}
-          <PlayerPassportCard playerName={user?.name ?? undefined} />
+          {/* ── PLAYER PASSPORT ───────────────────────────────────────────── */}
+          <PublicPassportTabs
+            physicalAxes={passportData?.physical ?? []}
+            drillScores={(passportData?.technical ?? []).map((t) => ({
+              drillName:    t.label,
+              score:        0,
+              topStrength:  null,
+              avgSubScore:  t.avgSubScore,
+            }))}
+            playerName={user?.name ?? undefined}
+            position={watchedValues.position ?? undefined}
+            xpTotal={passportData?.xp_total ?? 0}
+            dailyStreak={passportData?.daily_streak ?? 0}
+            trainedMinutes={passportData?.trained_minutes ?? 0}
+          />
 
           {/* ── PROFILE COMPLETION PROMPT ─────────────────────────────────── */}
           {pct < 100 && (
