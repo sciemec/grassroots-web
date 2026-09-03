@@ -31,7 +31,10 @@ export default function MySportsPage() {
   useEffect(() => {
     // guests allowed — no login redirect
     api.get("/profile/sports")
-      .then((r) => setEntries(r.data ?? []))
+      .then((r) => {
+        const _r = r.data?.data ?? r.data;
+        setEntries(Array.isArray(_r) ? _r : []);
+      })
       .catch(() => {
         // Seed from primary sport in profile if no multi-sport data yet
         api.get("/profile").then((r) => {
