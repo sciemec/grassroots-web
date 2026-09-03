@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,7 @@ import {
   Layers, UserCircle, BarChart2, ListChecks, Milestone, BadgeCheck,
   Wind, Footprints, Target, Swords, Hand, Palette, Sprout, Dna,
   Play, HeartPulse, ScanLine, Camera, Wand2, Film, ArrowUpRight,
-  Bell, Users, Eye,
+  Bell, Users, Eye, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { getCurrentStreak } from "@/lib/success/streak";
@@ -128,67 +128,67 @@ function DarkCTA({ href, icon: Icon, iconColor, title, sub }: {
 // Sport-specific Skill Lab cards
 const SPORT_SKILL_CARDS: Record<string, { href: string; icon: React.ElementType; iconBg: string; iconColor: string; label: string; desc: string }[]> = {
   football:   [
-    { href: "/player/dribbling",   icon: Wind,        iconBg: "#dbeafe", iconColor: "#2563eb", label: "Dribbling",      desc: "1v1 Â· close control Â· AI feedback" },
-    { href: "/player/first-touch", icon: Hand,        iconBg: "#dcfce7", iconColor: "#16a34a", label: "First Touch",    desc: "Receive Â· control Â· turn under pressure" },
-    { href: "/player/shooting",    icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Shooting",       desc: "Technique Â· power Â· placement Â· AI score" },
-    { href: "/player/sprint",      icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Sprint",         desc: "Speed Â· acceleration Â· 20m benchmark" },
-    { href: "/player/passing",     icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",        desc: "Vision Â· technique Â· AI score" },
-    { href: "/player/tackling",    icon: Swords,      iconBg: "#ede9fe", iconColor: "#7c3aed", label: "Tackling",       desc: "Timing Â· body shape Â· defensive skills" },
+    { href: "/player/dribbling",   icon: Wind,        iconBg: "#dbeafe", iconColor: "#2563eb", label: "Dribbling",      desc: "1v1 · close control · AI feedback" },
+    { href: "/player/first-touch", icon: Hand,        iconBg: "#dcfce7", iconColor: "#16a34a", label: "First Touch",    desc: "Receive · control · turn under pressure" },
+    { href: "/player/shooting",    icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Shooting",       desc: "Technique · power · placement · AI score" },
+    { href: "/player/sprint",      icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Sprint",         desc: "Speed · acceleration · 20m benchmark" },
+    { href: "/player/passing",     icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",        desc: "Vision · technique · AI score" },
+    { href: "/player/tackling",    icon: Swords,      iconBg: "#ede9fe", iconColor: "#7c3aed", label: "Tackling",       desc: "Timing · body shape · defensive skills" },
     { href: "/player/similar",     icon: ScanLine,    iconBg: "#f0fdf4", iconColor: "#15803d", label: "Players Like Me",desc: "Find athletes with your style" },
   ],
   rugby: [
-    { href: "/player/sprint",   icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Speed & Evasion",desc: "Acceleration Â· side-step Â· line breaks" },
-    { href: "/player/passing",  icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",        desc: "Offloads Â· spiral pass Â· quick ball" },
-    { href: "/player/tackling", icon: Swords,      iconBg: "#ede9fe", iconColor: "#7c3aed", label: "Tackling",       desc: "Low body position Â· wrap Â· drive" },
-    { href: "/player/drills",   icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Rugby Drills",   desc: "Lineout Â· scrum Â· contact drills" },
+    { href: "/player/sprint",   icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Speed & Evasion",desc: "Acceleration · side-step · line breaks" },
+    { href: "/player/passing",  icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",        desc: "Offloads · spiral pass · quick ball" },
+    { href: "/player/tackling", icon: Swords,      iconBg: "#ede9fe", iconColor: "#7c3aed", label: "Tackling",       desc: "Low body position · wrap · drive" },
+    { href: "/player/drills",   icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Rugby Drills",   desc: "Lineout · scrum · contact drills" },
   ],
   netball: [
-    { href: "/player/passing",  icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",        desc: "Chest pass Â· lob Â· shoulder pass" },
-    { href: "/player/shooting", icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Shooting",       desc: "Goal circle Â· angles Â· under pressure" },
-    { href: "/player/sprint",   icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Footwork",       desc: "Pivoting Â· landing Â· court movement" },
-    { href: "/player/drills",   icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Netball Drills", desc: "Intercepts Â· feeds Â· defending" },
+    { href: "/player/passing",  icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",        desc: "Chest pass · lob · shoulder pass" },
+    { href: "/player/shooting", icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Shooting",       desc: "Goal circle · angles · under pressure" },
+    { href: "/player/sprint",   icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Footwork",       desc: "Pivoting · landing · court movement" },
+    { href: "/player/drills",   icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Netball Drills", desc: "Intercepts · feeds · defending" },
   ],
   athletics: [
-    { href: "/player/sprint",        icon: Footprints,iconBg: "#fef3c7", iconColor: "#d97706", label: "Sprint",           desc: "Reaction Â· acceleration Â· finish" },
-    { href: "/player/biomechanics",  icon: Activity,  iconBg: "#dcfce7", iconColor: "#15803d", label: "Movement Check",   desc: "Stride Â· arm mechanics Â· technique AI" },
-    { href: "/player/drills",        icon: Dumbbell,  iconBg: "#dbeafe", iconColor: "#2563eb", label: "Athletics Drills", desc: "Bounding Â· hurdles Â· plyometrics" },
-    { href: "/player/assessment",    icon: Star,      iconBg: "#fdf4ff", iconColor: "#a21caf", label: "Athletic Profile", desc: "6-test battery Â· speed Â· jump Â· balance" },
+    { href: "/player/sprint",        icon: Footprints,iconBg: "#fef3c7", iconColor: "#d97706", label: "Sprint",           desc: "Reaction · acceleration · finish" },
+    { href: "/player/biomechanics",  icon: Activity,  iconBg: "#dcfce7", iconColor: "#15803d", label: "Movement Check",   desc: "Stride · arm mechanics · technique AI" },
+    { href: "/player/drills",        icon: Dumbbell,  iconBg: "#dbeafe", iconColor: "#2563eb", label: "Athletics Drills", desc: "Bounding · hurdles · plyometrics" },
+    { href: "/player/assessment",    icon: Star,      iconBg: "#fdf4ff", iconColor: "#a21caf", label: "Athletic Profile", desc: "6-test battery · speed · jump · balance" },
   ],
   basketball: [
-    { href: "/player/dribbling", icon: Wind,        iconBg: "#dbeafe", iconColor: "#2563eb", label: "Ball Handling",     desc: "Crossover Â· hesitation Â· tight control" },
-    { href: "/player/shooting",  icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Shooting",          desc: "Form Â· mid-range Â· three-point AI score" },
-    { href: "/player/passing",   icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",           desc: "Bounce pass Â· assist vision Â· timing" },
-    { href: "/player/drills",    icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Basketball Drills", desc: "Pick & roll Â· layup Â· defensive slides" },
+    { href: "/player/dribbling", icon: Wind,        iconBg: "#dbeafe", iconColor: "#2563eb", label: "Ball Handling",     desc: "Crossover · hesitation · tight control" },
+    { href: "/player/shooting",  icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Shooting",          desc: "Form · mid-range · three-point AI score" },
+    { href: "/player/passing",   icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",           desc: "Bounce pass · assist vision · timing" },
+    { href: "/player/drills",    icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Basketball Drills", desc: "Pick & roll · layup · defensive slides" },
   ],
   cricket: [
-    { href: "/player/drills",    icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Batting Drills",    desc: "Stance Â· shot selection Â· footwork" },
-    { href: "/player/drills",    icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Bowling Drills",    desc: "Run-up Â· release Â· swing / seam" },
-    { href: "/player/sprint",    icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Running",           desc: "Between wickets Â· acceleration" },
-    { href: "/player/drills",    icon: Star,        iconBg: "#fdf4ff", iconColor: "#a21caf", label: "Cricket Drills",    desc: "Fielding Â· catching Â· throwing" },
+    { href: "/player/drills",    icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Batting Drills",    desc: "Stance · shot selection · footwork" },
+    { href: "/player/drills",    icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Bowling Drills",    desc: "Run-up · release · swing / seam" },
+    { href: "/player/sprint",    icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Running",           desc: "Between wickets · acceleration" },
+    { href: "/player/drills",    icon: Star,        iconBg: "#fdf4ff", iconColor: "#a21caf", label: "Cricket Drills",    desc: "Fielding · catching · throwing" },
   ],
   swimming: [
-    { href: "/player/sprint",       icon: Footprints,iconBg: "#fef3c7", iconColor: "#d97706", label: "Speed Sets",      desc: "Sprint intervals Â· turn training" },
-    { href: "/player/biomechanics", icon: Activity,  iconBg: "#dcfce7", iconColor: "#15803d", label: "Stroke Check",    desc: "Technique analysis Â· AI feedback" },
-    { href: "/player/drills",       icon: Dumbbell,  iconBg: "#dbeafe", iconColor: "#2563eb", label: "Swimming Drills", desc: "Catch Â· pull Â· kick patterns" },
-    { href: "/player/drills",       icon: TrendingUp,iconBg: "#dcfce7", iconColor: "#16a34a", label: "Endurance",       desc: "Distance sets Â· pace control" },
+    { href: "/player/sprint",       icon: Footprints,iconBg: "#fef3c7", iconColor: "#d97706", label: "Speed Sets",      desc: "Sprint intervals · turn training" },
+    { href: "/player/biomechanics", icon: Activity,  iconBg: "#dcfce7", iconColor: "#15803d", label: "Stroke Check",    desc: "Technique analysis · AI feedback" },
+    { href: "/player/drills",       icon: Dumbbell,  iconBg: "#dbeafe", iconColor: "#2563eb", label: "Swimming Drills", desc: "Catch · pull · kick patterns" },
+    { href: "/player/drills",       icon: TrendingUp,iconBg: "#dcfce7", iconColor: "#16a34a", label: "Endurance",       desc: "Distance sets · pace control" },
   ],
   tennis: [
-    { href: "/player/sprint",   icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Footwork",       desc: "Split step Â· recovery Â· court coverage" },
-    { href: "/player/drills",   icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Groundstrokes",  desc: "Forehand Â· backhand Â· consistency" },
-    { href: "/player/drills",   icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Serve",          desc: "Toss Â· contact Â· spin variation" },
-    { href: "/player/drills",   icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Tennis Drills",  desc: "Net play Â· approach Â· volleys" },
+    { href: "/player/sprint",   icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Footwork",       desc: "Split step · recovery · court coverage" },
+    { href: "/player/drills",   icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Groundstrokes",  desc: "Forehand · backhand · consistency" },
+    { href: "/player/drills",   icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Serve",          desc: "Toss · contact · spin variation" },
+    { href: "/player/drills",   icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Tennis Drills",  desc: "Net play · approach · volleys" },
   ],
   volleyball: [
-    { href: "/player/passing",  icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Setting",           desc: "Hand position Â· tempo Â· vision" },
-    { href: "/player/sprint",   icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Court Movement",    desc: "Dig Â· chase Â· dive technique" },
-    { href: "/player/drills",   icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Attacking",         desc: "Approach Â· arm swing Â· block" },
-    { href: "/player/drills",   icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Volleyball Drills", desc: "Serve Â· receive Â· transition" },
+    { href: "/player/passing",  icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Setting",           desc: "Hand position · tempo · vision" },
+    { href: "/player/sprint",   icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Court Movement",    desc: "Dig · chase · dive technique" },
+    { href: "/player/drills",   icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Attacking",         desc: "Approach · arm swing · block" },
+    { href: "/player/drills",   icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Volleyball Drills", desc: "Serve · receive · transition" },
   ],
   hockey: [
-    { href: "/player/dribbling", icon: Wind,        iconBg: "#dbeafe", iconColor: "#2563eb", label: "Stick Skills",   desc: "Close control Â· 3D skills Â· evasion" },
-    { href: "/player/passing",   icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",        desc: "Flat Â· hit Â· aerial Â· self-pass" },
-    { href: "/player/shooting",  icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Shooting",       desc: "Drag flick Â· slap Â· deflection" },
-    { href: "/player/drills",    icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Hockey Drills",  desc: "Press Â· defence Â· penalty corners" },
+    { href: "/player/dribbling", icon: Wind,        iconBg: "#dbeafe", iconColor: "#2563eb", label: "Stick Skills",   desc: "Close control · 3D skills · evasion" },
+    { href: "/player/passing",   icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",        desc: "Flat · hit · aerial · self-pass" },
+    { href: "/player/shooting",  icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Shooting",       desc: "Drag flick · slap · deflection" },
+    { href: "/player/drills",    icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Hockey Drills",  desc: "Press · defence · penalty corners" },
   ],
 };
 
@@ -219,6 +219,7 @@ export default function PlayerDashboardHome() {
   const [lastTestDays,  setLastTestDays]  = useState<number | null>(null);
   const [profilePct,    setProfilePct]    = useState<number | null>(null);
   const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [showMore,      setShowMore]      = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -323,7 +324,7 @@ export default function PlayerDashboardHome() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
 
-      {/* â"€â"€ Brand header â"€â"€ */}
+      {/* ── Brand header ── */}
       <div style={{ backgroundColor: "#1a5c2a", borderBottom: "3px solid #f0b429" }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -345,7 +346,7 @@ export default function PlayerDashboardHome() {
         </div>
       </div>
 
-      {/* â"€â"€ Live wire ticker â"€â"€ */}
+      {/* ── Live wire ticker ── */}
       <div style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
           <span className="shrink-0 inline-flex items-center gap-1 rounded text-[9px] font-black uppercase tracking-widest px-2 py-0.5 text-white"
@@ -356,7 +357,7 @@ export default function PlayerDashboardHome() {
         </div>
       </div>
 
-      {/* â"€â"€ Sport switcher bar â"€â"€ */}
+      {/* ── Sport switcher bar ── */}
       <div style={{ backgroundColor: "white", borderBottom: "1px solid #e5e7eb" }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2.5">
           <SportSwitcher activeSport={activeSport} onSelect={setActiveSport} size="sm" />
@@ -365,7 +366,7 @@ export default function PlayerDashboardHome() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-7">
 
-        {/* â"€â"€ Hero card â"€â"€ */}
+        {/* ── Hero card ── */}
         <div className="rounded-2xl overflow-hidden shadow-sm">
           <div className="relative px-5 pt-6 pb-5" style={{ background: "#1a5c2a" }}>
             <div className="flex items-start justify-between gap-4">
@@ -375,7 +376,7 @@ export default function PlayerDashboardHome() {
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
-                    <ShieldCheck size={9} /> {currentStage.label} Â· {currentStage.sub}
+                    <ShieldCheck size={9} /> {currentStage.label} · {currentStage.sub}
                   </span>
                   {(user as unknown as Record<string, string> | null)?.province && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
@@ -419,10 +420,8 @@ export default function PlayerDashboardHome() {
             ))}
           </div>
         </div>
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 1 – MY PATHWAY
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
-        {/* ── Profile completion prompt ─────────────────────────────────────── */}
+
+        {/* ── Profile completion prompt ── */}
         {user && profilePct !== null && profilePct < 100 && (
           <div className="rounded-2xl border p-4 shadow-sm" style={{ backgroundColor: "#fffbeb", borderColor: "#fde68a" }}>
             <div className="flex items-start justify-between gap-3 mb-3">
@@ -456,7 +455,7 @@ export default function PlayerDashboardHome() {
           </div>
         )}
 
-        {/* ── Training streak card ──────────────────────────────────────────── */}
+        {/* ── Training streak card ── */}
         {user && (() => {
           const hoursLeft = Math.max(0, Math.floor(
             (new Date(new Date().setHours(24, 0, 0, 0)).getTime() - Date.now()) / 3_600_000
@@ -530,9 +529,9 @@ export default function PlayerDashboardHome() {
           );
         })()}
 
+        {/* ── Section 1: My Pathway ── */}
         <section>
-          <SectionLabel>1 Â· My Pathway</SectionLabel>
-          {/* Stage progress bar */}
+          <SectionLabel>1 · My Pathway</SectionLabel>
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -545,7 +544,6 @@ export default function PlayerDashboardHome() {
                 Full Plan
               </Link>
             </div>
-            {/* Progress steps */}
             <div className="relative">
               <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-100" />
               <div className="absolute top-4 left-0 h-0.5 bg-[#1a5c2a] transition-all"
@@ -590,11 +588,9 @@ export default function PlayerDashboardHome() {
           </div>
         </section>
 
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 2 – TODAY
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+        {/* ── Section 2: Today ── */}
         <section>
-          <SectionLabel>2 Â· Today</SectionLabel>
+          <SectionLabel>2 · Today</SectionLabel>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* Daily check-in status */}
             <Link href="/player/success/checkin"
@@ -628,10 +624,10 @@ export default function PlayerDashboardHome() {
               </div>
               <p className="text-xs leading-snug" style={{ color: "rgba(240,180,41,0.7)" }}>
                 {lastTestDays === null
-                  ? "6-test battery Â· sprint, jump, ball, reaction, balance, endurance"
+                  ? "6-test battery · sprint, jump, ball, reaction, balance, endurance"
                   : lastTestDays === 0
-                  ? "Tested today Â· great work!"
-                  : `Last tested ${lastTestDays}d ago Â· ${lastTestDays >= 7 ? "test due!" : "keep it up"}`}
+                  ? "Tested today · great work!"
+                  : `Last tested ${lastTestDays}d ago · ${lastTestDays >= 7 ? "test due!" : "keep it up"}`}
               </p>
               <ArrowRight size={12} style={{ color: "#f0b429" }} className="mt-auto group-hover:translate-x-0.5 transition-transform" />
             </Link>
@@ -648,224 +644,205 @@ export default function PlayerDashboardHome() {
           </div>
         </section>
 
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 3 – MY DRILLS
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+        {/* ══════════════════════════════════════════════════════════
+            SECTION 3 — CORE TOOLS (12 prominent tiles)
+        ══════════════════════════════════════════════════════════ */}
         <section>
-          <SectionLabel>3 Â· My Drills</SectionLabel>
+          <SectionLabel>3 · Core Tools</SectionLabel>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <HubCard href="/player/drills" icon={Dumbbell} iconBg="#dbeafe" iconColor="#2563eb"
-              label="Drill Library" desc="500+ drills Â· age group Â· position-specific" />
             <HubCard href="/player/sessions/new" icon={Activity} iconBg="#dcfce7" iconColor="#16a34a"
-              label="Log Session" desc="Record training Â· track load Â· save notes" />
-            <HubCard href="/player/sessions" icon={ListChecks} iconBg="#f0fdf4" iconColor="#15803d"
-              label="My Sessions" desc="Full history Â· filter by sport Â· stats" />
-            <HubCard href="/player/position-fit" icon={Crosshair} iconBg="#ffe4e6" iconColor="#dc2626"
-              label="Position Finder" desc="GRS Engine finds your best position" />
-            <HubCard href="/player/pitch" icon={Play} iconBg="#dcfce7" iconColor="#15803d"
-              label="Train Now" desc="Pitch mode Â· live session Â· THUTO coaching" />
-            <HubCard href="/player/training-formats" icon={Layers} iconBg="#dbeafe" iconColor="#1d4ed8"
-              label="Training Formats" desc="Rondo Â· SSG Â· shooting Â· drills" />
-            <HubCard href="/player/conditioning" icon={HeartPulse} iconBg="#fee2e2" iconColor="#dc2626"
-              label="Conditioning" desc="Fitness plans Â· endurance Â· speed work" />
-            <HubCard href="/player/tactics" icon={Layers} iconBg="#f0fdf4" iconColor="#1a5c2a"
-              label="Tactics Academy" desc="Formations Â· your role Â· simulations" />
-            <HubCard href="/warmup/the-11-plus" icon={Wind} iconBg="#f0fdf4" iconColor="#1a5c2a"
-              label="FIFA 11+" desc="20 min · 3 parts · injury prevention · F-MARC" badge="new" />
-            <HubCard href="/warmup" icon={HeartPulse} iconBg="#fee2e2" iconColor="#dc2626"
-              label="Warm-Up Hub" desc="All injury-prevention programmes" />
-          </div>
-        </section>
-
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 4 – AI ANALYSIS
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
-        <section>
-          <SectionLabel>4 Â· AI Analysis</SectionLabel>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              label="Log Session" desc="Record training · track load · save notes" />
             <HubCard href="/player/match-eye" icon={Eye} iconBg="#fee2e2" iconColor="#dc2626"
-              label="Match Eye" desc="Upload match video Â· AI analyses your performance" badge="ai" />
+              label="Match Eye" desc="Upload match video · AI analyses your performance" badge="ai" />
             <HubCard href="/player/analyse" icon={Flame} iconBg="#fff7ed" iconColor="#ea580c"
-              label="Fitness Tests" desc="5-test battery Â· speed Â· jump Â· balance Â· reaction Â· agility" badge="ai" />
-            <HubCard href="/player/biomechanics" icon={Activity} iconBg="#dcfce7" iconColor="#15803d"
-              label="Movement Check" desc="Film a drill Â· AI scores your movement Â· see your weak spots" />
-            <HubCard href="/player/gemini-drills" icon={Wand2} iconBg="#fdf4ff" iconColor="#7c3aed"
-              label="Gemini Drills" desc="AI drill coaching Â· 10 sports Â· guided sessions" />
-            <HubCard href="/player/general-analysis" icon={Film} iconBg="#f0fdf4" iconColor="#1a5c2a"
-              label="General Analysis" desc="Any football footage - match, drill, street play - open AI feedback" badge="ai" />
-            <HubCard href="/player/capture" icon={Camera} iconBg="#f0fdf4" iconColor="#15803d"
-              label="Football Skill Analysis" desc="10 drills · protocols · AI coaching · metrics" badge="new" />
-            <HubCard href="/player/assessment" icon={Star} iconBg="#fdf4ff" iconColor="#a21caf"
-              label="Athletic Profile" desc="6-test battery Â· jump Â· sprint Â· balance Â· drill analysis" />
-            <HubCard href="/player/success" icon={Zap} iconBg="#fef3c7" iconColor="#d97706"
-              label="Success Engine" desc="Daily check-in Â· streak Â· goal tracking" />
-            <HubCard href="/player/potential" icon={TrendingUp} iconBg="#dcfce7" iconColor="#16a34a"
-              label="My Potential" desc="THUTO score Â· peak level Â· comparable players" />
-            <HubCard href="/player/valuation" icon={BarChart2} iconBg="#fef3c7" iconColor="#b45309"
-              label="My Valuation" desc="Estimated market value Â· Zimbabwe percentile" />
-            <HubCard href="/player/dna" icon={Dna} iconBg="#ede9fe" iconColor="#7c3aed"
-              label="Player DNA" desc="Playing style fingerprint Â· traits" />
-            <HubCard href="/player/attributes" icon={Activity} iconBg="#dcfce7" iconColor="#15803d"
-              label="Physical Attributes" desc="Percentile dashboard Â· weekly AI focus Â· log measurements" badge="new" />
-            <HubCard href="/player/attributes?test=yoyo" icon={HeartPulse} iconBg="#fef2f2" iconColor="#dc2626"
-              label="Yo-Yo IR1 Test" desc="Beep test · camera tracks shuttles · aerobic score vs FIFA norms" badge="new" />
-          </div>
-        </section>
-
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 4b – SKILL LAB (sport-specific)
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
-        <section>
-          <SectionLabel>4b Â· Skill Lab</SectionLabel>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {(SPORT_SKILL_CARDS[activeSport] ?? SPORT_SKILL_CARDS.football).map((card) => (
-              <HubCard key={card.label} href={card.href} icon={card.icon}
-                iconBg={card.iconBg} iconColor={card.iconColor}
-                label={card.label} desc={card.desc} />
-            ))}
-          </div>
-        </section>
-
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 5 – MY ACADEMICS
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
-        <section>
-          <SectionLabel>5 Â· My Academics</SectionLabel>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Academic tracker card */}
-            <Link href="/player/academics"
-              className="group bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:border-[#1a5c2a] transition-all">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "#fef3c7" }}>
-                    <BookMarked size={18} style={{ color: "#d97706" }} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-black text-gray-900">Academic Tracker</h4>
-                    <p className="text-[11px] text-gray-400 mt-0.5">Grades Â· school Â· scholarship score</p>
-                  </div>
-                </div>
-                <ChevronRight size={14} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all mt-1" />
-              </div>
-              <p className="text-xs text-gray-500 mt-4 leading-relaxed">
-                Scouts and colleges look at both your sports ability <em>and</em> your grades.
-                Log your results term by term and track your scholarship readiness.
-              </p>
-              <div className="mt-4 flex items-center gap-2 rounded-lg px-3 py-2"
-                style={{ backgroundColor: "#fffbeb", border: "1px solid #fde68a" }}>
-                <GraduationCap size={12} style={{ color: "#d97706" }} />
-                <p className="text-[10px] font-bold text-amber-700">Two pillars to go pro: Athletics + Academics</p>
-              </div>
-            </Link>
-
-            {/* Scholarship pathway */}
-            <Link href="/player/pathway"
-              className="group rounded-2xl p-5 flex flex-col justify-between hover:opacity-90 transition-all shadow-sm"
-              style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(96,165,250,0.15)" }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: "rgba(96,165,250,0.13)", border: "1px solid rgba(96,165,250,0.2)" }}>
-                  <Globe size={17} style={{ color: "#60a5fa" }} />
-                </div>
-                <div>
-                  <p className="text-sm font-black" style={{ color: "#f0b429" }}>Scholarship Pathway</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: "rgba(240,180,41,0.65)" }}>NCAA Â· European academies Â· local clubs</p>
-                </div>
-              </div>
-              <p className="text-xs mt-4 leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
-                Map your route from Zimbabwe to a football scholarship or professional contract. Coach outreach templates included.
-              </p>
-              <div className="flex items-center gap-1.5 mt-4">
-                <ArrowRight size={12} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: "#f0b429" }}>View My Plan</span>
-              </div>
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
-            <HubCard href="/player/business-school" icon={BookOpen} iconBg="#fef3c7" iconColor="#b45309"
-              label="Business School" desc="Sports business · sponsorship · contracts" />
-          </div>
-        </section>
-
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 6 – MY SHOWCASE
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
-        <section>
-          <SectionLabel>6 Â· My Showcase</SectionLabel>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              label="Fitness Tests" desc="Speed · jump · balance · reaction · Yo-Yo IR1" badge="ai" />
+            <HubCard href="/player/sessions" icon={ListChecks} iconBg="#f0fdf4" iconColor="#15803d"
+              label="My Sessions" desc="Full history · filter by sport · stats" />
+            <HubCard href="/player/drills" icon={Dumbbell} iconBg="#dbeafe" iconColor="#2563eb"
+              label="Drill Library" desc="500+ drills · age group · position-specific" />
+            <HubCard href="/player/profile" icon={UserCircle} iconBg="#f0fdf4" iconColor="#15803d"
+              label="My Profile" desc="Photo · bio · stats · club · school" />
             <HubCard href="/player/talent-id" icon={Award} iconBg="#f3e8ff" iconColor="#9333ea"
-              label="Scout Profile" desc="Visibility Â· Plays Like Â· CV share" />
+              label="Scout Profile" desc="Visibility · Plays Like · CV share" />
             <HubCard href="/player/passport" icon={BookOpen} iconBg="#e0f2fe" iconColor="#0284c7"
               label="Talent Passport" desc="Shareable QR profile for scouts" />
-            <HubCard href="/player/vault" icon={Video} iconBg="#fce7f3" iconColor="#db2777"
-              label="Highlight Vault" desc="Upload clips Â· reels Â· AI highlights" />
-            <HubCard href="/player/scholarship-reel" icon={TrendingUp} iconBg="#fdf4ff" iconColor="#7c3aed"
-              label="Scholarship Reel" desc="10 best clips Â· scouts see this first" />
+            <HubCard href="/player/academics" icon={BookMarked} iconBg="#fef3c7" iconColor="#d97706"
+              label="Academic Tracker" desc="Grades · school · scholarship score" />
             <HubCard href="/player/showcase" icon={Radio} iconBg="#fce7f3" iconColor="#be185d"
-              label="Showcase Clips" desc="Skill videos Â· AI rating Â· open for scouting" />
-            <HubCard href="/player/profile" icon={UserCircle} iconBg="#f0fdf4" iconColor="#15803d"
-              label="My Profile" desc="Photo Â· bio Â· stats Â· club Â· school" />
+              label="Showcase Clips" desc="Skill videos · AI rating · open for scouting" />
             <HubCard href="/player/verification" icon={BadgeCheck} iconBg="#dbeafe" iconColor="#1d4ed8"
-              label="Verification" desc="ID check Â· verified badge Â· QR card" />
+              label="Verification" desc="ID check · verified badge · QR card" />
             <HubCard href="/player/stats" icon={BarChart2} iconBg="#fef3c7" iconColor="#b45309"
-              label="My Stats" desc="Match stats history Â· all sports" />
-            <HubCard href="/player/progress" icon={TrendingUp} iconBg="#dcfce7" iconColor="#15803d"
-              label="My Progress" desc="Form trends Â· improvement over time" />
-            <HubCard href="/player/milestones" icon={Milestone} iconBg="#fce7f3" iconColor="#db2777"
-              label="Milestones" desc="Achievements Â· goals reached Â· career wins" />
-            <HubCard href="/player/coaching" icon={Users} iconBg="#dbeafe" iconColor="#1d4ed8"
-              label="Find a Coach" desc="Book sessions · match with local coaches" />
-            <HubCard href="/player/notifications" icon={Bell} iconBg="#fef3c7" iconColor="#d97706"
-              label="Notifications" desc="Alerts · scout views · opportunity updates" />
-          </div>
-          {/* Leaderboard + Arena CTAs */}
-          <div className="grid sm:grid-cols-2 gap-3 mt-3">
-            <DarkCTA href="/talent-leaderboard" icon={Trophy} iconColor="#f0b429"
-              title="THUTO Leaderboard" sub="See your national ranking" />
-            <DarkCTA href="/arena" icon={Globe} iconColor="#60a5fa"
-              title="The Arena" sub="Post Â· connect Â· get discovered" />
+              label="My Stats" desc="Match stats history · all sports" />
           </div>
         </section>
 
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 7 – MY STORY
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
-        <section>
-          <SectionLabel>7 Â· My Story</SectionLabel>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <HubCard href="/player/story" icon={BookOpen} iconBg="#f0fdf4" iconColor="#15803d"
-              label="My Story" desc="Your personal journey in football" />
-            <HubCard href="/player/nutrition" icon={TrendingUp} iconBg="#f0fdf4" iconColor="#15803d"
-              label="Nutrition" desc="Meal logging Â· macros Â· recovery" />
-            <HubCard href="/player/subscription" icon={Star} iconBg="#fef3c7" iconColor="#d97706"
-              label="Upgrade" desc="EcoCash Â· Stripe Â· unlock all features" badge="Pro" />
-            <HubCard href="/player/development" icon={Sprout} iconBg="#dcfce7" iconColor="#15803d"
-              label="Development" desc="Long-term tracking Â· growth plan" />
-            <HubCard href="/player/brand" icon={Palette} iconBg="#fce7f3" iconColor="#be185d"
-              label="Brand Studio" desc="Photo Â· profile enhancement Â· image" />
-            <HubCard href="/player/sports" icon={Globe} iconBg="#e0f2fe" iconColor="#0284c7"
-              label="My Sports" desc="Switch sport · multi-sport profile" />
-          </div>
-        </section>
+        {/* ── More toggle ── */}
+        <button
+          onClick={() => setShowMore((v) => !v)}
+          className="w-full flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-5 py-3.5 shadow-sm hover:border-[#1a5c2a] transition-all"
+        >
+          <span className="text-xs font-black uppercase tracking-wider text-gray-600">
+            {showMore ? "Show Less" : "More Tools"}
+          </span>
+          {showMore
+            ? <ChevronUp size={15} className="text-gray-400" />
+            : <ChevronDown size={15} className="text-gray-400" />}
+        </button>
 
-        {/* â"€â"€ 8 Â· Guardian Access â"€â"€ */}
-        <section>
-          <SectionLabel>8 Â· Guardian</SectionLabel>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <HubCard href="/parent/invite" icon={ShieldCheck} iconBg="#dcfce7" iconColor="#15803d"
-              label="Invite Parent" desc="Share a code Â· give guardian access to your progress" />
-            <HubCard href="/parent" icon={UserCircle} iconBg="#eff6ff" iconColor="#2563eb"
-              label="Guardian Hub" desc="Parent dashboard Â· alerts Â· WhatsApp reports" />
-          </div>
-        </section>
+        {showMore && (
+          <>
+            {/* ── Training ── */}
+            <section>
+              <SectionLabel>Training</SectionLabel>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <HubCard href="/player/position-fit" icon={Crosshair} iconBg="#ffe4e6" iconColor="#dc2626"
+                  label="Position Finder" desc="GRS Engine finds your best position" />
+                <HubCard href="/player/pitch" icon={Play} iconBg="#dcfce7" iconColor="#15803d"
+                  label="Train Now" desc="Pitch mode · live session · THUTO coaching" />
+                <HubCard href="/player/training-formats" icon={Layers} iconBg="#dbeafe" iconColor="#1d4ed8"
+                  label="Training Formats" desc="Rondo · SSG · shooting · drills" />
+                <HubCard href="/player/conditioning" icon={HeartPulse} iconBg="#fee2e2" iconColor="#dc2626"
+                  label="Conditioning" desc="Fitness plans · endurance · speed work" />
+                <HubCard href="/player/tactics" icon={Layers} iconBg="#f0fdf4" iconColor="#1a5c2a"
+                  label="Tactics Academy" desc="Formations · your role · simulations" />
+                <HubCard href="/warmup/the-11-plus" icon={Wind} iconBg="#f0fdf4" iconColor="#1a5c2a"
+                  label="FIFA 11+" desc="20 min · 3 parts · injury prevention · F-MARC" badge="new" />
+                <HubCard href="/warmup" icon={HeartPulse} iconBg="#fee2e2" iconColor="#dc2626"
+                  label="Warm-Up Hub" desc="All injury-prevention programmes" />
+              </div>
+            </section>
 
-        {/* â"€â"€ Weekly Challenges â"€â"€ */}
+            {/* ── Skill Lab (sport-specific) ── */}
+            <section>
+              <SectionLabel>Skill Lab</SectionLabel>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {(SPORT_SKILL_CARDS[activeSport] ?? SPORT_SKILL_CARDS.football).map((card) => (
+                  <HubCard key={card.label} href={card.href} icon={card.icon}
+                    iconBg={card.iconBg} iconColor={card.iconColor}
+                    label={card.label} desc={card.desc} />
+                ))}
+              </div>
+            </section>
+
+            {/* ── AI Tools ── */}
+            <section>
+              <SectionLabel>AI Tools</SectionLabel>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <HubCard href="/player/biomechanics" icon={Activity} iconBg="#dcfce7" iconColor="#15803d"
+                  label="Movement Check" desc="Film a drill · AI scores your movement · see your weak spots" />
+                <HubCard href="/player/gemini-drills" icon={Wand2} iconBg="#fdf4ff" iconColor="#7c3aed"
+                  label="Gemini Drills" desc="AI drill coaching · 10 sports · guided sessions" />
+                <HubCard href="/player/general-analysis" icon={Film} iconBg="#f0fdf4" iconColor="#1a5c2a"
+                  label="General Analysis" desc="Any footage · open AI feedback" badge="ai" />
+                <HubCard href="/player/capture" icon={Camera} iconBg="#f0fdf4" iconColor="#15803d"
+                  label="Football Skill Analysis" desc="10 drills · protocols · AI coaching · metrics" badge="new" />
+                <HubCard href="/player/assessment" icon={Star} iconBg="#fdf4ff" iconColor="#a21caf"
+                  label="Athletic Profile" desc="6-test battery · jump · sprint · balance · drill analysis" />
+                <HubCard href="/player/success" icon={Zap} iconBg="#fef3c7" iconColor="#d97706"
+                  label="Success Engine" desc="Daily check-in · streak · goal tracking" />
+                <HubCard href="/player/potential" icon={TrendingUp} iconBg="#dcfce7" iconColor="#16a34a"
+                  label="My Potential" desc="THUTO score · peak level · comparable players" />
+                <HubCard href="/player/valuation" icon={BarChart2} iconBg="#fef3c7" iconColor="#b45309"
+                  label="My Valuation" desc="Estimated market value · Zimbabwe percentile" />
+                <HubCard href="/player/dna" icon={Dna} iconBg="#ede9fe" iconColor="#7c3aed"
+                  label="Player DNA" desc="Playing style fingerprint · traits" />
+                <HubCard href="/player/attributes" icon={Activity} iconBg="#dcfce7" iconColor="#15803d"
+                  label="Physical Attributes" desc="Percentile dashboard · weekly AI focus · log measurements" badge="new" />
+                <HubCard href="/player/attributes?test=yoyo" icon={HeartPulse} iconBg="#fef2f2" iconColor="#dc2626"
+                  label="Yo-Yo IR1 Test" desc="Beep test · camera tracks shuttles · aerobic score vs FIFA norms" badge="new" />
+              </div>
+            </section>
+
+            {/* ── Showcase & Discovery ── */}
+            <section>
+              <SectionLabel>Showcase &amp; Discovery</SectionLabel>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <HubCard href="/player/vault" icon={Video} iconBg="#fce7f3" iconColor="#db2777"
+                  label="Highlight Vault" desc="Upload clips · reels · AI highlights" />
+                <HubCard href="/player/scholarship-reel" icon={TrendingUp} iconBg="#fdf4ff" iconColor="#7c3aed"
+                  label="Scholarship Reel" desc="10 best clips · scouts see this first" />
+                <HubCard href="/player/progress" icon={TrendingUp} iconBg="#dcfce7" iconColor="#15803d"
+                  label="My Progress" desc="Form trends · improvement over time" />
+                <HubCard href="/player/milestones" icon={Milestone} iconBg="#fce7f3" iconColor="#db2777"
+                  label="Milestones" desc="Achievements · goals reached · career wins" />
+                <HubCard href="/player/coaching" icon={Users} iconBg="#dbeafe" iconColor="#1d4ed8"
+                  label="Find a Coach" desc="Book sessions · match with local coaches" />
+                <HubCard href="/player/notifications" icon={Bell} iconBg="#fef3c7" iconColor="#d97706"
+                  label="Notifications" desc="Alerts · scout views · opportunity updates" />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                <DarkCTA href="/talent-leaderboard" icon={Trophy} iconColor="#f0b429"
+                  title="THUTO Leaderboard" sub="See your national ranking" />
+                <DarkCTA href="/arena" icon={Globe} iconColor="#60a5fa"
+                  title="The Arena" sub="Post · connect · get discovered" />
+              </div>
+            </section>
+
+            {/* ── Life & Career ── */}
+            <section>
+              <SectionLabel>Life &amp; Career</SectionLabel>
+              <div className="mb-3">
+                <Link href="/player/pathway"
+                  className="group rounded-2xl p-5 flex flex-col justify-between hover:opacity-90 transition-all shadow-sm"
+                  style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(96,165,250,0.15)" }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ backgroundColor: "rgba(96,165,250,0.13)", border: "1px solid rgba(96,165,250,0.2)" }}>
+                      <Globe size={17} style={{ color: "#60a5fa" }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black" style={{ color: "#f0b429" }}>Scholarship Pathway</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: "rgba(240,180,41,0.65)" }}>NCAA · European academies · local clubs</p>
+                    </div>
+                  </div>
+                  <p className="text-xs mt-4 leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    Map your route from Zimbabwe to a football scholarship or professional contract. Coach outreach templates included.
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-4">
+                    <ArrowRight size={12} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: "#f0b429" }}>View My Plan</span>
+                  </div>
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <HubCard href="/player/business-school" icon={BookOpen} iconBg="#fef3c7" iconColor="#b45309"
+                  label="Business School" desc="Sports business · sponsorship · contracts" />
+                <HubCard href="/player/story" icon={BookOpen} iconBg="#f0fdf4" iconColor="#15803d"
+                  label="My Story" desc="Your personal journey in football" />
+                <HubCard href="/player/nutrition" icon={TrendingUp} iconBg="#f0fdf4" iconColor="#15803d"
+                  label="Nutrition" desc="Meal logging · macros · recovery" />
+                <HubCard href="/player/subscription" icon={Star} iconBg="#fef3c7" iconColor="#d97706"
+                  label="Upgrade" desc="EcoCash · Stripe · unlock all features" badge="Pro" />
+                <HubCard href="/player/development" icon={Sprout} iconBg="#dcfce7" iconColor="#15803d"
+                  label="Development" desc="Long-term tracking · growth plan" />
+                <HubCard href="/player/brand" icon={Palette} iconBg="#fce7f3" iconColor="#be185d"
+                  label="Brand Studio" desc="Photo · profile enhancement · image" />
+                <HubCard href="/player/sports" icon={Globe} iconBg="#e0f2fe" iconColor="#0284c7"
+                  label="My Sports" desc="Switch sport · multi-sport profile" />
+              </div>
+            </section>
+
+            {/* ── Guardian ── */}
+            <section>
+              <SectionLabel>Guardian</SectionLabel>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <HubCard href="/parent/invite" icon={ShieldCheck} iconBg="#dcfce7" iconColor="#15803d"
+                  label="Invite Parent" desc="Share a code · give guardian access to your progress" />
+                <HubCard href="/parent" icon={UserCircle} iconBg="#eff6ff" iconColor="#2563eb"
+                  label="Guardian Hub" desc="Parent dashboard · alerts · WhatsApp reports" />
+              </div>
+            </section>
+          </>
+        )}
+
+        {/* ── Weekly Challenges ── */}
         <WeeklyChallenges
           playerAqScore={aqScore ?? 0}
           playerSessionCount={sessionCount ?? 0}
         />
 
-        {/* â"€â"€ Identity footer â"€â"€ */}
+        {/* ── Identity footer ── */}
         <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px]"
@@ -873,7 +850,7 @@ export default function PlayerDashboardHome() {
             <div>
               <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user?.name || "Active Session"}</p>
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {(user as unknown as Record<string, string> | null)?.province || "Zimbabwe"} Â· {currentStage.label}
+                {(user as unknown as Record<string, string> | null)?.province || "Zimbabwe"} · {currentStage.label}
               </p>
             </div>
           </div>
