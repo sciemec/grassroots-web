@@ -22,6 +22,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 interface AddForm { player_email: string; shirt_no: string; position: string }
+interface CoachRating { player_id: string; skill_code: string; rating: number; }
 
 export default function CoachSquadPage() {
   const router = useRouter();
@@ -34,10 +35,12 @@ export default function CoachSquadPage() {
   const [addError, setAddError] = useState("");
   const [adding, setAdding] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [coachRatings, setCoachRatings] = useState<Record<string, CoachRating[]>>({});
 
   useEffect(() => {
     fetchSquad();
-  }, [user, router]);
+    fetchCoachRatings();
+  }, [user, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchSquad = () => {
     setLoading(true);
@@ -49,6 +52,21 @@ export default function CoachSquadPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  const fetchCoachRatings = () => {
+    api.get("/coach/skill-ratings")
+      .then((res) => {
+        const _r = res.data?.data ?? res.data;
+        const arr: CoachRating[] = Array.isArray(_r) ? _r : [];
+        const grouped: Record<string, CoachRating[]> = {};
+        arr.forEach((r) => {
+          if (!grouped[r.player_id]) grouped[r.player_id] = [];
+          grouped[r.player_id].push(r);
+        });
+        setCoachRatings(grouped);
+      })
+      .catch(() => {});
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -229,6 +247,7 @@ export default function CoachSquadPage() {
                     <th className="px-4 py-3 font-medium">Position</th>
                     <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium">Joined</th>
+                    <th className="px-4 py-3 font-medium">Ratings</th>
                     <th className="px-4 py-3 font-medium"></th>
                   </tr>
                 </thead>
@@ -259,6 +278,20 @@ export default function CoachSquadPage() {
                         </td>
                         <td className="px-4 py-3.5 text-xs text-muted-foreground">
                           {new Date(m.joined_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {(() => {
+                            const pid = (m as { player_id?: string }).player_id ?? m.id;
+                            const ratings = coachRatings[pid] ?? [];
+                            if (ratings.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
+                            const avg = ratings.reduce((s, r) => s + r.rating, 0) / ratings.length;
+                            const colour = avg >= 7 ? "bg-green-500/15 text-green-700" : avg >= 5 ? "bg-amber-500/15 text-amber-700" : "bg-red-500/15 text-red-700";
+                            return (
+                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${colour}`}>
+                                {avg.toFixed(1)}<span className="ml-0.5 opacity-60">/10</span>
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3.5">
                           <button
