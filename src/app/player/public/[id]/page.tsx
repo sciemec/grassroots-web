@@ -225,57 +225,6 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
             </div>
           )}
 
-          {/* Passport Radar — always shown, empty axes collapse to centre */}
-          <div className="mx-5 mb-5">
-            <PublicPassportTabs
-              drillScores={profile.drill_scores ?? []}
-              physicalAxes={profile.physical_axes ?? []}
-              playerName={profile.name}
-              position={profile.position}
-              xpTotal={profile.xp_total ?? 0}
-              dailyStreak={profile.daily_streak ?? 0}
-              trainedMinutes={profile.trained_minutes ?? 0}
-            />
-          </div>
-
-          {/* Drill Analysis Scores — detail bars below the radar */}
-          {profile.drill_scores && profile.drill_scores.length > 0 && (
-            <div className="mx-5 mb-5">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#f0b429]/50 mb-2">
-                AI Drill Analysis
-              </p>
-              <div className="space-y-2">
-                {profile.drill_scores.slice(0, 5).map((drill) => (
-                  <div key={drill.drillName} className="rounded-xl bg-[#f0b429]/5 px-4 py-3">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-xs font-semibold text-white truncate pr-2">{drill.drillName}</p>
-                      <span className={`text-sm font-extrabold shrink-0 ${
-                        drill.score >= 8 ? "text-[#f0b429]" :
-                        drill.score >= 5 ? "text-white" :
-                        "text-white/50"
-                      }`}>
-                        {drill.score.toFixed(1)}<span className="text-[10px] font-normal text-[#f0b429]/30">/10</span>
-                      </span>
-                    </div>
-                    {/* Score bar */}
-                    <div className="h-1 rounded-full bg-white/10">
-                      <div
-                        className="h-1 rounded-full"
-                        style={{
-                          width: `${(drill.score / 10) * 100}%`,
-                          background: drill.score >= 8 ? "#f0b429" : drill.score >= 5 ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)",
-                        }}
-                      />
-                    </div>
-                    {drill.topStrength && (
-                      <p className="mt-1.5 text-[10px] text-[#f0b429]/40 leading-snug">{drill.topStrength}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Footer */}
           <div className="border-t border-[#f0b429]/5 px-5 py-4 text-center">
             <p className="text-[10px] text-[#f0b429]/30">
@@ -283,6 +232,56 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
             </p>
           </div>
         </div>
+
+        {/* Passport Radar — full-width below the card */}
+        <div className="mt-6">
+          <PublicPassportTabs
+            drillScores={profile.drill_scores ?? []}
+            physicalAxes={profile.physical_axes ?? []}
+            playerName={profile.name}
+            position={profile.position}
+            xpTotal={profile.xp_total ?? 0}
+            dailyStreak={profile.daily_streak ?? 0}
+            trainedMinutes={profile.trained_minutes ?? 0}
+          />
+        </div>
+
+        {/* Drill Analysis Scores */}
+        {profile.drill_scores && profile.drill_scores.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-[#f0b429]/10 bg-[#f0b429]/5 p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#f0b429]/50 mb-3">
+              AI Drill Analysis
+            </p>
+            <div className="space-y-2">
+              {profile.drill_scores.slice(0, 5).map((drill) => (
+                <div key={drill.drillName} className="rounded-xl bg-[#f0b429]/5 px-4 py-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-semibold text-white truncate pr-2">{drill.drillName}</p>
+                    <span className={`text-sm font-extrabold shrink-0 ${
+                      drill.score >= 8 ? "text-[#f0b429]" :
+                      drill.score >= 5 ? "text-white" :
+                      "text-white/50"
+                    }`}>
+                      {drill.score.toFixed(1)}<span className="text-[10px] font-normal text-[#f0b429]/30">/10</span>
+                    </span>
+                  </div>
+                  <div className="h-1 rounded-full bg-white/10">
+                    <div
+                      className="h-1 rounded-full"
+                      style={{
+                        width: `${(drill.score / 10) * 100}%`,
+                        background: drill.score >= 8 ? "#f0b429" : drill.score >= 5 ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)",
+                      }}
+                    />
+                  </div>
+                  {drill.topStrength && (
+                    <p className="mt-1.5 text-[10px] text-[#f0b429]/40 leading-snug">{drill.topStrength}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Talent Prediction — scouts see this as the key signal */}
         <div className="mt-6">
