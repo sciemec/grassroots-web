@@ -74,7 +74,7 @@ export default function GrassrootsSportsLanding() {
               Get Started <ChevronRight size={14} />
             </Link>
             <Link
-              href="/talent-leaderboard"
+              href="/players"
               className="bg-white border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shadow-3xs"
             >
               Discover Talent <Users size={14} />
