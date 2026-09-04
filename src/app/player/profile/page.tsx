@@ -134,6 +134,7 @@ export default function PlayerProfilePage() {
   const [selectedSport, setSelectedSport] = useState<SportKey>("football");
   const [photoUrl, setPhotoUrl]         = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [serverPct, setServerPct]       = useState<number | null>(null);
   const photoInputRef  = useRef<HTMLInputElement>(null);
 
   const [passportData, setPassportData] = useState<{
@@ -176,6 +177,7 @@ export default function PlayerProfilePage() {
         setProfile(res.data);
         setPhotoUrl(res.data.photo_url ?? null);
         if (res.data.sport) setSelectedSport(res.data.sport as SportKey);
+        if (res.data.profile?.profile_complete_pct != null) setServerPct(res.data.profile.profile_complete_pct);
         reset({
           sport:          res.data.sport ?? res.data.profile?.sport ?? "football",
           position:       res.data.profile?.position_primary ?? "",
@@ -211,6 +213,7 @@ export default function PlayerProfilePage() {
       const payload = { ...rest, position_primary: position || undefined, dominant_foot: preferred_foot || undefined };
       const res = await api.patch("/profile", payload);
       setProfile(res.data);
+      if (res.data?.profile?.profile_complete_pct != null) setServerPct(res.data.profile.profile_complete_pct);
       reset(data);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -275,7 +278,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
 
   const copyProfileLink = () => {
     if (!profile?.id) return;
-    navigator.clipboard.writeText(`https://grassrootssports.live/player/public/${profile.id}`);
+    navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL ?? "https://grassrootssports.live"}/player/public/${profile.id}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -556,7 +559,8 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     doc.save(`GRS-Profile-${(user?.name ?? "player").replace(/\s+/g, "-")}.pdf`);
   };
 
-  const { count, total, pct } = calcCompletion(watchedValues);
+  const { count, total, pct: localPct } = calcCompletion(watchedValues);
+  const pct = isDirty ? localPct : (serverPct ?? localPct);
 
   const activePositionKey = (watchedValues.position || "").toLowerCase();
   let lookupKey = "fallback";
