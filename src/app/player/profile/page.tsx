@@ -174,7 +174,7 @@ export default function PlayerProfilePage() {
     if (!user) return;
     api.get("/profile")
       .then((res) => {
-        setProfile(res.data);
+        setProfile({ ...res.data, scout_visible: res.data.profile?.scout_visible ?? false });
         setPhotoUrl(res.data.photo_url ?? null);
         if (res.data.sport) setSelectedSport(res.data.sport as SportKey);
         if (res.data.profile?.profile_complete_pct != null) setServerPct(res.data.profile.profile_complete_pct);
