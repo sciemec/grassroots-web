@@ -68,7 +68,6 @@ const NAV_ITEMS = [
   { href: '/player/business-school',   label: 'Business School',    icon: <Briefcase size={18} /> },
   { href: '/arena',                    label: 'The Arena',          icon: <Globe size={18} /> },
   { href: '/player/pitch',             label: 'Pitch',              icon: <Flag size={18} /> },
-  { href: '/world-cup',                label: 'World Cup',          icon: <Trophy size={18} /> },
   { href: '/player/subscription',      label: 'Subscription',       icon: <CreditCard size={18} /> },
   { href: '/player/notifications',     label: 'Notifications',      icon: <Bell size={18} /> },
   { href: '/parent/invite',            label: 'Invite Parent',      icon: <Heart size={18} /> },
