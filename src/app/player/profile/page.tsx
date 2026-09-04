@@ -1023,11 +1023,11 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
             <div className="mb-3 flex items-center gap-2">
               <Brain className="h-4 w-4 text-[#f0b429]" />
-              <h3 className="font-semibold text-[#f0b429]">AI Scout Narrative</h3>
+              <h3 className="font-bold text-[#f0b429]">AI Scout Narrative</h3>
             </div>
             {aiNarrative ? (
               <>
-                <p className="mb-3 text-sm leading-relaxed text-emerald-400">{aiNarrative}</p>
+                <p className="mb-3 text-sm leading-relaxed text-[#f0b429]/80">{aiNarrative}</p>
                 <button onClick={generateNarrative} disabled={generatingNarrative}
                   className="text-xs text-accent hover:text-[#f0b429] transition-colors">
                   {generatingNarrative ? "Regenerating…" : "↻ Regenerate"}
@@ -1035,7 +1035,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
               </>
             ) : (
               <>
-                <p className="mb-3 text-sm text-emerald-400">
+                <p className="mb-3 text-sm text-[#f0b429]/70">
                   Generate a 3-sentence professional scouting profile — written by AI, based on your position and club. Shown to scouts on your public profile.
                 </p>
                 <button onClick={generateNarrative} disabled={generatingNarrative || (profile !== null && !watchedValues.position)}
