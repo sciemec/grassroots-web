@@ -17,6 +17,10 @@ import {
   IconUsers,
   IconStar,
   IconChevronRight,
+  IconArrowRight,
+  IconShield,
+  IconActivity,
+  IconHandFinger,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -181,12 +185,68 @@ export default function PlayerHubPage() {
         {/* Section 2 — Train & get assessed */}
         <SectionLabel label="Train & get assessed" />
         <HubCard
-          href="/player/sports"
+          href="/player/dribbling"
           icon={IconBallFootball}
           iconBg={O}
           iconColor={OL}
-          title="Skill Lab"
-          subtitle="Dribbling, shooting, passing & more"
+          title="Dribbling"
+          subtitle="Ball control, direction changes, awareness"
+        />
+        <HubCard
+          href="/player/first-touch"
+          icon={IconHandFinger}
+          iconBg={O}
+          iconColor={OL}
+          title="First Touch"
+          subtitle="Cushioning, direction, speed of play"
+        />
+        <HubCard
+          href="/player/passing"
+          icon={IconArrowRight}
+          iconBg={O}
+          iconColor={OL}
+          title="Passing"
+          subtitle="Weight, accuracy, decision-making"
+        />
+        <HubCard
+          href="/player/tackling"
+          icon={IconShield}
+          iconBg={O}
+          iconColor={OL}
+          title="Tackling"
+          subtitle="Approach, timing, recovery"
+        />
+        <HubCard
+          href="/player/shooting"
+          icon={IconTarget}
+          iconBg={O}
+          iconColor={OL}
+          title="Shooting"
+          subtitle="Striking technique, follow-through"
+        />
+        <HubCard
+          href="/player/sprint"
+          icon={IconRun}
+          iconBg={O}
+          iconColor={OL}
+          title="Sprint"
+          subtitle="Arm drive, knee drive, stride rhythm"
+        />
+        <HubCard
+          href="/player/biomechanics"
+          icon={IconActivity}
+          iconBg={O}
+          iconColor={OL}
+          title="Movement Check"
+          subtitle="Full-body movement scan"
+        />
+        <HubCard
+          href="/player/assessment"
+          icon={IconRun}
+          iconBg={O}
+          iconColor={OL}
+          title="Fitness Tests"
+          subtitle="Sprint, jump, agility + Yo-Yo test"
         />
         <HubCard
           href="/player/drills"
@@ -203,14 +263,6 @@ export default function PlayerHubPage() {
           iconColor={OL}
           title="Match Eye"
           subtitle="Upload a clip, get AI feedback"
-        />
-        <HubCard
-          href="/player/assessment"
-          icon={IconRun}
-          iconBg={O}
-          iconColor={OL}
-          title="Fitness Tests"
-          subtitle="Sprint, jump, agility + Yo-Yo test"
         />
         <HubCard
           href="/player/analyse"
