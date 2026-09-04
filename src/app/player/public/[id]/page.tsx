@@ -4,6 +4,7 @@ import { AdBanner } from "@/components/ui/AdBanner";
 import PotentialCard from "@/components/player/PotentialCard";
 import { RepresentationForm } from "@/components/player/RepresentationForm";
 import PublicPassportTabs from "@/components/player/PublicPassportTabs";
+import { PublicProfileCompletionNudge } from "@/components/player/PublicProfileCompletionNudge";
 
 interface GrsTest {
   aqScore: number | null;
@@ -82,6 +83,12 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
   }
 
   const isVerified = profile.verification_status === "approved";
+
+  // Profile strength for the completion nudge (4 key fields × 10% each, base 60%)
+  const BASE_PCT = 60;
+  const keyFields = [profile.sport, profile.position, profile.province, profile.age_group];
+  const filledCount = keyFields.filter(Boolean).length;
+  const profilePct = Math.min(100, BASE_PCT + filledCount * 10);
 
   return (
     <>
@@ -232,6 +239,16 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
             </p>
           </div>
         </div>
+
+        {/* Profile completion nudge — only visible to the profile owner */}
+        <PublicProfileCompletionNudge
+          profileId={profile.id}
+          sport={profile.sport || undefined}
+          position={profile.position || undefined}
+          province={profile.province || undefined}
+          ageGroup={profile.age_group || undefined}
+          pct={profilePct}
+        />
 
         {/* Passport Radar — full-width below the card */}
         <div className="mt-6">
