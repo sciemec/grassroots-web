@@ -25,6 +25,7 @@ import PublicPassportTabs from "@/components/player/PublicPassportTabs";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import { ScoutViewBadge } from "@/components/player/ScoutViewBadge";
 import { ProUpgradeBanner } from "@/components/player/ProUpgradeBanner";
+import { ProfileStrengthCard } from "@/components/player/ProfileStrengthCard";
 import PotentialCard from "@/components/player/PotentialCard";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -281,6 +282,18 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL ?? "https://grassrootssports.live"}/player/public/${profile.id}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  // Called by ProfileStrengthCard after it saves a single field
+  const handleFieldSaved = (apiKey: string, value: string) => {
+    // Sync into react-hook-form so progress bar + chips update immediately
+    const formKey =
+      apiKey === "position_primary" ? "position" :
+      apiKey === "dominant_foot"    ? "preferred_foot" :
+      apiKey as keyof FormData;
+    reset((prev) => ({ ...prev, [formKey]: value }));
+    // Also update serverPct estimate (add ~10% per field saved)
+    setServerPct((prev) => Math.min(100, (prev ?? pct) + 10));
   };
 
   const generateInvite = async () => {
@@ -748,58 +761,14 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           />
 
           {/* ── PROFILE COMPLETION PROMPT ─────────────────────────────────── */}
-          {pct < 100 && (
-            <div className="rounded-2xl border border-[#f0b429]/20 bg-[#f0b429]/5 px-4 py-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold text-[#f0b429] uppercase tracking-wide">Profile strength</p>
-                <span className="text-xs font-bold text-[#f0b429]">{pct}%</span>
-              </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10 mb-3">
-                <div
-                  className="h-full rounded-full bg-[#f0b429] transition-all duration-500"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {!watchedValues.position && (
-                  <button
-                    type="button"
-                    onClick={() => setShowEditPanel(true)}
-                    className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1 text-xs font-medium text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors"
-                  >
-                    + Position
-                  </button>
-                )}
-                {!watchedValues.province && (
-                  <button
-                    type="button"
-                    onClick={() => setShowEditPanel(true)}
-                    className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1 text-xs font-medium text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors"
-                  >
-                    + Province
-                  </button>
-                )}
-                {!watchedValues.height_cm && (
-                  <button
-                    type="button"
-                    onClick={() => setShowEditPanel(true)}
-                    className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1 text-xs font-medium text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors"
-                  >
-                    + Height
-                  </button>
-                )}
-                {!watchedValues.date_of_birth && (
-                  <button
-                    type="button"
-                    onClick={() => setShowEditPanel(true)}
-                    className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1 text-xs font-medium text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors"
-                  >
-                    + Date of birth
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+          <ProfileStrengthCard
+            sport={watchedValues.sport ?? profile?.sport ?? undefined}
+            position={watchedValues.position ?? profile?.position ?? undefined}
+            province={watchedValues.province ?? profile?.province ?? undefined}
+            ageGroup={watchedValues.age_group ?? profile?.age_group ?? undefined}
+            pct={pct}
+            onFieldSaved={handleFieldSaved}
+          />
 
           {/* ── SCOUT DISCOVERY STRIP ─────────────────────────────────────── */}
           <div className="flex gap-3">
