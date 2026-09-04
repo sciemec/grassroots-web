@@ -154,7 +154,7 @@ export default function PlayerProfilePage() {
   const [cropDragStart, setCropDragStart] = useState({ x: 0, y: 0 });
 
   // Edit panel + Invite Parent state
-  const [showEditPanel, setShowEditPanel]     = useState(() => searchParams.get("edit") === "1");
+  const [showEditPanel, setShowEditPanel]     = useState(() => searchParams?.get("edit") === "1");
   const [showInvitePanel, setShowInvitePanel] = useState(false);
   const [inviteAgeGroup, setInviteAgeGroup]   = useState<"u13" | "u17">("u17");
   const [inviteCode, setInviteCode]           = useState<string | null>(null);
@@ -246,9 +246,9 @@ export default function PlayerProfilePage() {
         : "";
 
       const prompt = `Generate a 3-sentence professional scouting profile narrative (third person) for this player:
-Name: ${user?.name}, Sport: ${profile.sport}, Position: ${profile.position},
-Province: ${profile.province}, Age group: ${profile.age_group},
-Club/School: ${profile.club || profile.school || "unattached"}.
+Name: ${user?.name}, Sport: ${watchedValues.sport ?? profile.sport}, Position: ${watchedValues.position},
+Province: ${watchedValues.province ?? profile.province}, Age group: ${watchedValues.age_group ?? profile.age_group},
+Club/School: ${watchedValues.club || watchedValues.school || profile.club || profile.school || "unattached"}.
 Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntuFlair}${joyFlair}`;
 
       const reply = await queryAI(prompt, "scout");
