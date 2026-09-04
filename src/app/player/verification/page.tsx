@@ -191,12 +191,18 @@ export default function PlayerVerificationPage() {
     }
     setSubmitError("");
     setFile(f);
-    setPreview(URL.createObjectURL(f));
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(f);
+    });
   };
 
   const clearFile = () => {
     setFile(null);
-    setPreview(null);
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
     setSubmitError("");
   };
 
@@ -278,7 +284,7 @@ export default function PlayerVerificationPage() {
             )}
             {verif != null && verif.ai_confidence_score !== null && status === "approved" && (
               <p className="mt-2 text-xs text-green-700 font-medium">
-                Identity match: {Math.round((verif!.ai_confidence_score ?? 0) * 100)}%
+                Identity match: {Math.round((verif.ai_confidence_score ?? 0) * 100)}%
               </p>
             )}
             {verif?.reviewed_at && (
