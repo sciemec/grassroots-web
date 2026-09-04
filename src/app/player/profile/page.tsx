@@ -156,7 +156,7 @@ export default function PlayerProfilePage() {
   // Edit panel + Invite Parent state
   const [showEditPanel, setShowEditPanel]     = useState(() => searchParams?.get("edit") === "1");
   const [showInvitePanel, setShowInvitePanel] = useState(false);
-  const [inviteAgeGroup, setInviteAgeGroup]   = useState<"u13" | "u17">("u17");
+  const [inviteAgeGroup, setInviteAgeGroup]   = useState<string>("u17");
   const [inviteCode, setInviteCode]           = useState<string | null>(null);
   const [inviteExpiry, setInviteExpiry]       = useState<string | null>(null);
   const [inviteLoading, setInviteLoading]     = useState(false);
@@ -284,18 +284,12 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     setInviteLoading(true);
     setInviteError("");
     try {
-      const token = useAuthStore.getState().token;
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/guardian/invite`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
-        body: JSON.stringify({ age_group: inviteAgeGroup }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setInviteError(data.message ?? "Failed to generate code."); return; }
-      setInviteCode(data.invite_code);
-      setInviteExpiry(data.expires_at);
-    } catch {
-      setInviteError("Network error. Try again.");
+      const res = await api.post("/guardian/invite", { age_group: inviteAgeGroup });
+      setInviteCode(res.data.invite_code);
+      setInviteExpiry(res.data.expires_at);
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setInviteError(msg ?? "Network error. Try again.");
     } finally {
       setInviteLoading(false);
     }
@@ -1071,13 +1065,13 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 <p className="mb-3 text-sm text-emerald-400">
                   Generate a 3-sentence professional scouting profile — written by AI, based on your position and club. Shown to scouts on your public profile.
                 </p>
-                <button onClick={generateNarrative} disabled={generatingNarrative || !profile?.position}
+                <button onClick={generateNarrative} disabled={generatingNarrative || (profile !== null && !watchedValues.position)}
                   className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2 text-xs font-semibold text-[#1a3a1a] transition-colors hover:bg-[#f5c542] disabled:opacity-40">
                   {generatingNarrative
                     ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating…</>
                     : <><Sparkles className="h-3.5 w-3.5" /> Generate narrative</>}
                 </button>
-                {!profile?.position && (
+                {profile !== null && !watchedValues.position && (
                   <p className="mt-2 text-xs text-emerald-400">Complete your position in Edit Profile first</p>
                 )}
               </>
@@ -1134,7 +1128,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 <div className="mb-4">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Your Age Group</p>
                   <div className="flex gap-2">
-                    {(["u13", "u17"] as const).map((ag) => (
+                    {AGE_GROUPS.map((ag) => (
                       <button key={ag} type="button" onClick={() => setInviteAgeGroup(ag)}
                         className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${
                           inviteAgeGroup === ag
