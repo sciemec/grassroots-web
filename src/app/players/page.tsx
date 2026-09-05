@@ -32,16 +32,21 @@ const SPORTS = [
 
 const AGE_GROUPS: Record<string, string> = {
   u12:    "Under 12",
+  u13:    "Under 13",
   u14:    "Under 14",
+  u15:    "Under 15",
   u16:    "Under 16",
+  u17:    "Under 17",
   u18:    "Under 18",
+  u19:    "Under 19",
   u20:    "Under 20",
+  u21:    "Under 21",
   u23:    "Under 23",
   senior: "Senior (24+)",
 };
 
 const SPORT_EMOJI: Record<string, string> = {
-  football: "⚽", rugby: "🏉", athletics: "🏃", netball: "🏐",
+  football: "⚽", rugby: "🏉", athletics: "🏃", netball: "⛹️",
   basketball: "🏀", cricket: "🏏", swimming: "🏊", tennis: "🎾",
   volleyball: "🏐", hockey: "🏑",
 };
@@ -148,7 +153,7 @@ export default function PlayersPage() {
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/players/browse?${params.toString()}`,
-        { cache: "no-store" }
+        { next: { revalidate: 60 } }
       );
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const json = await res.json();
@@ -162,13 +167,19 @@ export default function PlayersPage() {
     }
   }, [province, sport, ageGroup]);
 
+  // Reset to page 1 and fetch immediately when filters change.
+  // Keeping filter change and page change in separate effects caused a
+  // double-fetch when the user was on page > 1 (fetchPlayers reference changed
+  // AND setPage(1) both fired the second effect).
   useEffect(() => {
     setPage(1);
-  }, [province, sport, ageGroup]);
+    fetchPlayers(1);
+  }, [province, sport, ageGroup]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (page === 1) return; // already fetched by the filter effect above
     fetchPlayers(page);
-  }, [fetchPlayers, page]);
+  }, [page, fetchPlayers]);
 
   const activeFilters = [province, sport, ageGroup].filter(Boolean).length;
 
@@ -182,7 +193,7 @@ export default function PlayersPage() {
     <div className="min-h-screen bg-[#1a5c2a]">
       <PublicNavbar />
 
-      <div className="mx-auto max-w-4xl px-4 py-10">
+      <div className="mx-auto max-w-4xl px-4 pt-24 pb-10">
 
         {/* Header */}
         <div className="mb-8 text-center">
