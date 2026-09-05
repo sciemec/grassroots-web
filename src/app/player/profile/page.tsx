@@ -18,6 +18,7 @@ import {
   Download,
   Users,
   ChevronDown,
+  QrCode,
 } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
 import { PlayerGamificationPanel } from "@/components/player/PlayerGamificationPanel";
@@ -164,6 +165,10 @@ export default function PlayerProfilePage() {
   const [inviteLoading, setInviteLoading]     = useState(false);
   const [inviteError, setInviteError]         = useState("");
   const [inviteCopied, setInviteCopied]       = useState(false);
+  const [showQRPanel, setShowQRPanel]           = useState(false);
+  const [showPotentialPanel, setShowPotentialPanel] = useState(false);
+  const [showNarrativePanel, setShowNarrativePanel] = useState(false);
+  const [showPlaysLikePanel, setShowPlaysLikePanel] = useState(false);
 
   const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -1005,49 +1010,86 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
 
           {/* ── QR PROFILE CARD ───────────────────────────────────────────── */}
           {user && (
-            <QRProfileCard
-              playerId={String(user.id)}
-              playerName={user.name}
-              ageGroup={profile?.age_group ?? user.age_group}
-              province={profile?.province ?? user.province}
-              selfieUrl={photoUrl ?? undefined}
-            />
+            <div className="rounded-2xl border border-white/10 bg-card overflow-hidden">
+              <button type="button" onClick={() => setShowQRPanel((v) => !v)}
+                className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors">
+                <span className="flex items-center gap-2">
+                  <QrCode className="h-4 w-4 text-[#f0b429]" />
+                  QR Code &amp; Identity Card
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showQRPanel ? "rotate-180" : ""}`} />
+              </button>
+              {showQRPanel && (
+                <div className="border-t border-white/10 px-4 pb-4 pt-3">
+                  <QRProfileCard
+                    playerId={String(user.id)}
+                    playerName={user.name}
+                    ageGroup={profile?.age_group ?? user.age_group}
+                    province={profile?.province ?? user.province}
+                    selfieUrl={photoUrl ?? undefined}
+                  />
+                </div>
+              )}
+            </div>
           )}
 
           {/* ── TALENT PREDICTION ─────────────────────────────────────────── */}
           {user && (
-            <PotentialCard playerId={String(user.id)} playerName={user.name} />
+            <div className="rounded-2xl border border-white/10 bg-card overflow-hidden">
+              <button type="button" onClick={() => setShowPotentialPanel((v) => !v)}
+                className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors">
+                <span className="flex items-center gap-2">
+                  <Award className="h-4 w-4 text-[#f0b429]" />
+                  Talent Prediction
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showPotentialPanel ? "rotate-180" : ""}`} />
+              </button>
+              {showPotentialPanel && (
+                <div className="border-t border-white/10 px-4 pb-4 pt-3">
+                  <PotentialCard playerId={String(user.id)} playerName={user.name} />
+                </div>
+              )}
+            </div>
           )}
 
           {/* ── AI SCOUT NARRATIVE ────────────────────────────────────────── */}
-          <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <Brain className="h-4 w-4 text-[#f0b429]" />
-              <h3 className="font-bold text-[#f0b429]">AI Scout Narrative</h3>
-            </div>
-            {aiNarrative ? (
-              <>
-                <p className="mb-3 text-sm leading-relaxed text-[#f0b429]/80">{aiNarrative}</p>
-                <button onClick={generateNarrative} disabled={generatingNarrative}
-                  className="text-xs text-accent hover:text-[#f0b429] transition-colors">
-                  {generatingNarrative ? "Regenerating…" : "↻ Regenerate"}
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="mb-3 text-sm text-[#f0b429]/70">
-                  Generate a 3-sentence professional scouting profile — written by AI, based on your position and club. Shown to scouts on your public profile.
-                </p>
-                <button onClick={generateNarrative} disabled={generatingNarrative || (profile !== null && !watchedValues.position)}
-                  className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2 text-xs font-semibold text-[#1a3a1a] transition-colors hover:bg-[#f5c542] disabled:opacity-40">
-                  {generatingNarrative
-                    ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating…</>
-                    : <><Sparkles className="h-3.5 w-3.5" /> Generate narrative</>}
-                </button>
-                {profile !== null && !watchedValues.position && (
-                  <p className="mt-2 text-xs text-emerald-400">Complete your position in Edit Profile first</p>
+          <div className="rounded-2xl border border-white/10 bg-card overflow-hidden">
+            <button type="button" onClick={() => setShowNarrativePanel((v) => !v)}
+              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors">
+              <span className="flex items-center gap-2">
+                <Brain className="h-4 w-4 text-[#f0b429]" />
+                AI Scout Narrative
+                {aiNarrative && <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-bold text-green-400">Generated</span>}
+              </span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${showNarrativePanel ? "rotate-180" : ""}`} />
+            </button>
+            {showNarrativePanel && (
+              <div className="border-t border-white/10 px-5 pb-5 pt-4">
+                {aiNarrative ? (
+                  <>
+                    <p className="mb-3 text-sm leading-relaxed text-[#f0b429]/80">{aiNarrative}</p>
+                    <button onClick={generateNarrative} disabled={generatingNarrative}
+                      className="text-xs text-accent hover:text-[#f0b429] transition-colors">
+                      {generatingNarrative ? "Regenerating…" : "↻ Regenerate"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="mb-3 text-sm text-[#f0b429]/70">
+                      Generate a 3-sentence professional scouting profile — written by AI, based on your position and club. Shown to scouts on your public profile.
+                    </p>
+                    <button onClick={generateNarrative} disabled={generatingNarrative || (profile !== null && !watchedValues.position)}
+                      className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2 text-xs font-semibold text-[#1a3a1a] transition-colors hover:bg-[#f5c542] disabled:opacity-40">
+                      {generatingNarrative
+                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating…</>
+                        : <><Sparkles className="h-3.5 w-3.5" /> Generate narrative</>}
+                    </button>
+                    {profile !== null && !watchedValues.position && (
+                      <p className="mt-2 text-xs text-emerald-400">Complete your position in Edit Profile first</p>
+                    )}
+                  </>
                 )}
-              </>
+              </div>
             )}
           </div>
 
@@ -1056,23 +1098,31 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             const comparisons = getComparisons(profile?.position ?? "", profile?.sport ?? "football");
             if (!comparisons.length) return null;
             return (
-              <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
-                <div className="mb-3 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-[#f0b429]" />
-                  <h3 className="font-semibold text-[#f0b429]">Plays Like…</h3>
-                </div>
-                <p className="mb-3 text-xs text-muted-foreground">Based on your position and sport, scouts may compare you to:</p>
-                <div className="flex flex-wrap gap-2">
-                  {comparisons.map((name) => (
-                    <span key={name}
-                      className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1.5 text-xs font-medium text-[#f0b429]">
-                      {name}
-                    </span>
-                  ))}
-                </div>
-                <p className="mt-3 text-xs text-muted-foreground italic">
-                  Comparisons are based on playing style and position — not performance level.
-                </p>
+              <div className="rounded-2xl border border-white/10 bg-card overflow-hidden">
+                <button type="button" onClick={() => setShowPlaysLikePanel((v) => !v)}
+                  className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-[#f0b429]" />
+                    Plays Like…
+                  </span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${showPlaysLikePanel ? "rotate-180" : ""}`} />
+                </button>
+                {showPlaysLikePanel && (
+                  <div className="border-t border-white/10 px-5 pb-5 pt-4">
+                    <p className="mb-3 text-xs text-muted-foreground">Based on your position and sport, scouts may compare you to:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {comparisons.map((name) => (
+                        <span key={name}
+                          className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1.5 text-xs font-medium text-[#f0b429]">
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="mt-3 text-xs text-muted-foreground italic">
+                      Comparisons are based on playing style and position — not performance level.
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })()}
