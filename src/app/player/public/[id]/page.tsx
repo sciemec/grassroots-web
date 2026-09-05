@@ -31,11 +31,11 @@ interface PublicProfile {
   sport: string;
   position: string;
   age_group: string;
-  province: string;
-  preferred_foot: string;
-  height_cm: string;
-  weight_kg: string;
-  bio: string;
+  province: string | null;
+  preferred_foot: string | null;
+  height_cm: string | null;
+  weight_kg: string | null;
+  bio: string | null;
   verification_status: string;
   selfie_url: string | null;
   club: string | null;
@@ -86,11 +86,22 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
 
   const isVerified = profile.verification_status === "approved";
 
-  // Profile strength for the completion nudge (4 key fields × 10% each, base 60%)
-  const BASE_PCT = 60;
-  const keyFields = [profile.sport, profile.position, profile.province, profile.age_group];
-  const filledCount = keyFields.filter(Boolean).length;
-  const profilePct = Math.min(100, BASE_PCT + filledCount * 10);
+  // Profile strength — matches the 10-field checklist in PublicProfileAccordion
+  const profileFields = [
+    profile.sport,
+    profile.position,
+    profile.province,
+    profile.age_group,
+    profile.height_cm,
+    profile.weight_kg,
+    profile.preferred_foot,
+    profile.club ?? profile.school,
+    profile.bio,
+    profile.verification_status === "approved" ? "yes" : null,
+  ];
+  const profilePct = Math.round(
+    (profileFields.filter(Boolean).length / profileFields.length) * 100
+  );
 
   return (
     <>
