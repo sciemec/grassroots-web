@@ -10,7 +10,6 @@ import {
   Target,
   CheckCircle,
   XCircle,
-  Edit,
   FileText,
 } from "lucide-react";
 import PotentialCard from "./PotentialCard";
@@ -361,14 +360,6 @@ export default function PublicProfileAccordion({
           })}
         </div>
 
-        {/* Edit CTA */}
-        <a
-          href="/player/profile"
-          className="flex items-center justify-center gap-2 rounded-xl border border-[#f0b429]/20 bg-[#f0b429]/10 py-2.5 text-xs font-semibold text-[#f0b429] transition-colors hover:bg-[#f0b429]/20"
-        >
-          <Edit className="h-3.5 w-3.5" />
-          Edit your profile
-        </a>
       </Panel>
 
       {/* ── 2. AI Drill Analysis ────────────────────────────────────────── */}
