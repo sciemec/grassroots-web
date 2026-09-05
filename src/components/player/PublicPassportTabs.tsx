@@ -17,12 +17,29 @@ interface PhysicalAxis {
   percentile: number | null;
 }
 
+// Per-skill mechanic average (from /player/shooting, /player/dribbling, etc.)
+interface SkillScore {
+  skill: string;  // "shooting" | "passing" | "dribbling" | "first_touch" | "tackling" | "sprint"
+  score: number;  // 0–10
+}
+
+// Coach skill rating
+interface CoachRating {
+  axis: string;   // "pace" | "dribbling" | "passing" | "shooting" | "defending" | "heading"
+  score: number;  // 0–10
+}
+
+// Position fitness domain from /player/assessment
+interface AssessmentDomain {
+  code: string;   // "explosivePower" | "linearSpeed" | "balance" | "cognitiveSpeed" | "endurance" | "ballMastery"
+  score: number;  // 0–100
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const EMPTY_F = 0.03; // null axes collapse near centre, not at dead-zero
 const CX = 180, CY = 148, R = 100; // radar geometry — fits 343px card width
 
-// Display labels include \n for multi-line SVG tspan rendering
 const PHYSICAL_DEFAULTS = [
   { code: "explosiveness_0_10m", label: "Explosiveness"        },
   { code: "top_end_speed",       label: "Top speed"            },
@@ -44,6 +61,47 @@ const TECHNICAL_AXES = [
   { label: "Juggling",               matchPrefix: "Ball Juggling" },
   { label: "Throw-in",               matchPrefix: "Throw-In"      },
 ];
+
+// Technique tab — one axis per skill page, keyed by drill_type string
+const TECHNIQUE_AXES = [
+  { code: "dribbling",   label: "Dribbling"    },
+  { code: "first_touch", label: "First\ntouch" },
+  { code: "passing",     label: "Passing"      },
+  { code: "tackling",    label: "Tackling"     },
+  { code: "shooting",    label: "Shooting"     },
+  { code: "sprint",      label: "Sprint"       },
+];
+
+// Coached tab — standard football attributes rated by coach
+const COACHED_AXES = [
+  { code: "pace",      label: "Pace"      },
+  { code: "dribbling", label: "Dribbling" },
+  { code: "passing",   label: "Passing"   },
+  { code: "shooting",  label: "Shooting"  },
+  { code: "defending", label: "Defending" },
+  { code: "heading",   label: "Heading"   },
+];
+
+// Position tab — DomainScores from /player/assessment
+const POSITION_AXES = [
+  { code: "explosivePower", label: "Explosive\npower" },
+  { code: "linearSpeed",    label: "Linear\nspeed"    },
+  { code: "balance",        label: "Balance"          },
+  { code: "cognitiveSpeed", label: "Cognitive\nspeed" },
+  { code: "endurance",      label: "Endurance"        },
+  { code: "ballMastery",    label: "Ball\nmastery"    },
+];
+
+// Tab metadata
+type TabId = "physical" | "technical" | "technique" | "coached" | "position";
+
+const TAB_META: Record<TabId, { label: string; activeBg: string; activeText: string; sourceColor: string }> = {
+  physical:  { label: "Physical",  activeBg: "#1a5c2a", activeText: "#c0dd97", sourceColor: "#c8962a" },
+  technical: { label: "Technical", activeBg: "#854f0b", activeText: "#fac775", sourceColor: "#ef9f27" },
+  technique: { label: "Technique", activeBg: "#2d1b5e", activeText: "#a78bfa", sourceColor: "#a78bfa" },
+  coached:   { label: "Coached",   activeBg: "#0a3030", activeText: "#5eead4", sourceColor: "#14b8a6" },
+  position:  { label: "Position",  activeBg: "#2e0a14", activeText: "#f87171", sourceColor: "#f87171" },
+};
 
 const POSITION_ABBR: Record<string, string> = {
   "goalkeeper": "GK", "striker": "ST", "centre forward": "CF",
@@ -143,6 +201,9 @@ export default function PublicPassportTabs({
   xpTotal,
   dailyStreak,
   trainedMinutes,
+  skillScores = [],
+  coachRatings = [],
+  assessmentDomains = [],
 }: {
   drillScores: DrillScore[];
   physicalAxes: PhysicalAxis[];
@@ -151,10 +212,11 @@ export default function PublicPassportTabs({
   xpTotal?: number;
   dailyStreak?: number;
   trainedMinutes?: number;
+  skillScores?: SkillScore[];
+  coachRatings?: CoachRating[];
+  assessmentDomains?: AssessmentDomain[];
 }) {
-  // Technical tab active by default — matches reference render('skills') initial state
-  const [tab, setTab] = useState<"physical" | "technical">("technical");
-  const isPhysical = tab === "physical";
+  const [tab, setTab] = useState<TabId>("technical");
 
   const xp       = xpTotal ?? 0;
   const streak   = dailyStreak ?? 0;
@@ -165,36 +227,71 @@ export default function PublicPassportTabs({
     : "?";
   const posAbbr = position ? getPosAbbr(position) : "–";
 
-  // Physical: always 7 axes; use PHYSICAL_DEFAULTS labels (which include \n);
-  // percentile from API if present, else EMPTY_F*100
+  // Physical — 7 axes, percentile 0–100 or EMPTY_F
   const physAxes: RadarAxis[] = PHYSICAL_DEFAULTS.map(def => {
     const found = physicalAxes.find(a => a.code === def.code);
     const p = found?.percentile;
-    return {
-      label: def.label,
-      value: p != null ? Math.max(0, Math.min(100, p)) : EMPTY_F * 100,
-    };
+    return { label: def.label, value: p != null ? Math.max(0, Math.min(100, p)) : EMPTY_F * 100 };
   });
 
-  // Technical: 9 axes matched by drillName prefix; avgSubScore (0–100) or EMPTY_F*100
+  // Technical — 9 axes, avgSubScore 0–100 or EMPTY_F
   const techAxes: RadarAxis[] = TECHNICAL_AXES.map(ax => {
     const found = drillScores.find(d => d.drillName.startsWith(ax.matchPrefix));
     const v = (found?.avgSubScore != null && found.avgSubScore > 0) ? found.avgSubScore : null;
-    return {
-      label: ax.label,
-      value: v !== null ? Math.max(0, Math.min(100, v)) : EMPTY_F * 100,
-    };
+    return { label: ax.label, value: v !== null ? Math.max(0, Math.min(100, v)) : EMPTY_F * 100 };
   });
 
-  const physCfg: RadarCfg = { axes: physAxes, fill: "#1a5c2a", stroke: "#97c459", dot: "#c0dd97" };
-  const techCfg: RadarCfg = { axes: techAxes, fill: "#854f0b", stroke: "#ef9f27", dot: "#fac775" };
+  // Technique — 6 axes, skill mechanic average 0–10 converted to 0–100
+  const techniqueAxes: RadarAxis[] = TECHNIQUE_AXES.map(ax => {
+    const found = skillScores.find(s => s.skill === ax.code);
+    const v = found != null ? Math.max(0, Math.min(10, found.score)) * 10 : null;
+    return { label: ax.label, value: v !== null ? v : EMPTY_F * 100 };
+  });
 
-  const chartTitle  = isPhysical ? "7 attributes" : "9 categories";
-  const chartSource = isPhysical ? "EUROFIT-based measurement" : "Gemini-assessed from drill footage";
-  const sourceColor = isPhysical ? "#c8962a" : "#ef9f27";
+  // Coached — 6 axes, coach rating 0–10 converted to 0–100
+  const coachedAxes: RadarAxis[] = COACHED_AXES.map(ax => {
+    const found = coachRatings.find(r => r.axis === ax.code);
+    const v = found != null ? Math.max(0, Math.min(10, found.score)) * 10 : null;
+    return { label: ax.label, value: v !== null ? v : EMPTY_F * 100 };
+  });
+
+  // Position — 6 axes, DomainScore 0–100 directly
+  const positionAxes: RadarAxis[] = POSITION_AXES.map(ax => {
+    const found = assessmentDomains.find(d => d.code === ax.code);
+    const v = found != null ? Math.max(0, Math.min(100, found.score)) : null;
+    return { label: ax.label, value: v !== null ? v : EMPTY_F * 100 };
+  });
+
+  const radarCfgs: Record<TabId, RadarCfg> = {
+    physical:  { axes: physAxes,      fill: "#1a5c2a", stroke: "#97c459", dot: "#c0dd97" },
+    technical: { axes: techAxes,      fill: "#854f0b", stroke: "#ef9f27", dot: "#fac775" },
+    technique: { axes: techniqueAxes, fill: "#2d1b5e", stroke: "#a78bfa", dot: "#c4b5fd" },
+    coached:   { axes: coachedAxes,   fill: "#0a3030", stroke: "#14b8a6", dot: "#5eead4" },
+    position:  { axes: positionAxes,  fill: "#2e0a14", stroke: "#f87171", dot: "#fca5a5" },
+  };
+
+  const chartTitles: Record<TabId, string> = {
+    physical:  "7 attributes",
+    technical: "9 categories",
+    technique: "6 skill areas",
+    coached:   "6 attributes",
+    position:  "6 domains",
+  };
+
+  const chartSources: Record<TabId, string> = {
+    physical:  "EUROFIT-based measurement",
+    technical: "Gemini-assessed from drill footage",
+    technique: "AI mechanic breakdown — 6 skill pages",
+    coached:   "Coach-verified ratings",
+    position:  "Position fitness assessment",
+  };
+
+  const meta = TAB_META[tab];
 
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "1rem 0" }}>
+      {/* Hide scrollbar on the tab row across all browsers */}
+      <style>{`.grs-tab-scroll::-webkit-scrollbar { display: none; }`}</style>
       <div style={{ width: 343, background: "#0e0e0e", borderRadius: 28, padding: 14, border: "1px solid #2a2a2a" }}>
 
         {/* Header */}
@@ -252,49 +349,54 @@ export default function PublicPassportTabs({
         {/* Chart section */}
         <div style={{ background: "#151515", borderRadius: 14, padding: "14px 12px 10px", margin: "0 4px" }}>
 
-          {/* Tab buttons */}
-          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-            <button
-              onClick={() => setTab("physical")}
-              style={{
-                flex: 1, border: "none", borderRadius: 8, padding: "6px 0",
-                fontSize: 12, fontWeight: 500, cursor: "pointer",
-                background: isPhysical ? "#1a5c2a" : "#232323",
-                color: isPhysical ? "#c0dd97" : "#999",
-              }}
-            >
-              Physical DNA
-            </button>
-            <button
-              onClick={() => setTab("technical")}
-              style={{
-                flex: 1, border: "none", borderRadius: 8, padding: "6px 0",
-                fontSize: 12, fontWeight: 500, cursor: "pointer",
-                background: !isPhysical ? "#854f0b" : "#232323",
-                color: !isPhysical ? "#fac775" : "#999",
-              }}
-            >
-              Technical
-            </button>
+          {/* Tab pill row — horizontally scrollable, no visible scrollbar */}
+          <div
+            className="grs-tab-scroll"
+            style={{ display: "flex", gap: 6, marginBottom: 10, overflowX: "auto", scrollbarWidth: "none" }}
+          >
+            {(Object.keys(TAB_META) as TabId[]).map(id => {
+              const active = tab === id;
+              const m = TAB_META[id];
+              return (
+                <button
+                  key={id}
+                  onClick={() => setTab(id)}
+                  style={{
+                    flexShrink: 0,
+                    border: "none",
+                    borderRadius: 20,
+                    padding: "5px 13px",
+                    fontSize: 11,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    background: active ? m.activeBg : "#232323",
+                    color: active ? m.activeText : "#888",
+                    transition: "background 0.15s, color 0.15s",
+                  }}
+                >
+                  {m.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Chart title row */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ color: "#fff", fontSize: 13, fontWeight: 500 }}>{chartTitle}</span>
+            <span style={{ color: "#fff", fontSize: 13, fontWeight: 500 }}>{chartTitles[tab]}</span>
             <span style={{ fontSize: 11, color: "#173404", background: "#c0dd97", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
               Level {level}
             </span>
           </div>
 
-          {/* Single radar — toggled by tab state */}
-          <RadarSVG cfg={isPhysical ? physCfg : techCfg} />
+          {/* Radar — driven by active tab */}
+          <RadarSVG cfg={radarCfgs[tab]} />
 
           {/* Source line — fontSize 10 exact */}
           <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "2px 0 6px", fontSize: 10, color: "#666" }}>
-            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={sourceColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={meta.sourceColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 3h6M10 3v5l-4 9h12l-4-9V3" />
             </svg>
-            {chartSource}
+            {chartSources[tab]}
           </div>
         </div>
 
