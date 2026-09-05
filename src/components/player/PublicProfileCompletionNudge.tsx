@@ -170,7 +170,10 @@ export function PublicProfileCompletionNudge({
 
       {/* Progress note */}
       <p className="mt-2.5 text-[10px] text-[#f0b429]/30 text-center">
-        {filled.length} of {FIELDS.length} key fields complete · tap above to finish
+        {nextAction
+          ? `${filled.length} of ${FIELDS.length} key fields complete · tap above to improve`
+          : "Add height, weight & bio to reach 100%"
+        }
       </p>
     </div>
   );
