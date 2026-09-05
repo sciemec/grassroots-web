@@ -31,10 +31,13 @@ const SPORTS = [
 ];
 
 const AGE_GROUPS: Record<string, string> = {
-  under_13:  "Under 13",
-  "13_17":   "13 – 17",
-  "18_25":   "18 – 25",
-  "26_plus": "26+",
+  u12:    "Under 12",
+  u14:    "Under 14",
+  u16:    "Under 16",
+  u18:    "Under 18",
+  u20:    "Under 20",
+  u23:    "Under 23",
+  senior: "Senior (24+)",
 };
 
 const SPORT_EMOJI: Record<string, string> = {
