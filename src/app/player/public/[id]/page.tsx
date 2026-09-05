@@ -45,6 +45,7 @@ interface PublicProfile {
   appearances: number | null;
   grs_test: GrsTest | null;
   drill_scores: DrillScore[];
+  coach_ratings: { axis: string; score: number }[];
   skill_scores: { skill: string; score: number }[];
   physical_axes: PhysicalAxis[];
   xp_total: number;
@@ -256,6 +257,7 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
           <PublicPassportTabs
             drillScores={profile.drill_scores ?? []}
             skillScores={profile.skill_scores ?? []}
+            coachRatings={profile.coach_ratings ?? []}
             physicalAxes={profile.physical_axes ?? []}
             playerName={profile.name}
             position={profile.position}
