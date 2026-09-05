@@ -14,6 +14,7 @@ export function PublicNavbar() {
 
   const links: NavLink[] = [
     { href: "/schools", label: "Schools & Clubs" },
+    { href: "/players", label: "Discover Talent" },
     { href: "/player", label: "Player Hub" },
     { href: "/coach", label: "Coach Hub" },
     { href: "/scout", label: "Scout Hub" },
