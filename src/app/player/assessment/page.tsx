@@ -290,6 +290,10 @@ export default function AssessmentPage() {
   const [drillPlanSaved, setDrillPlanSaved] = useState(false);
   const [videoDomainScores, setVideoDomainScores] = useState<Partial<Record<keyof DomainScores, number>>>({});
 
+  // Profile-derived values (sport for stats endpoint, age for drill tier)
+  const [playerSport, setPlayerSport] = useState("football");
+  const [playerAge,   setPlayerAge]   = useState(15);
+
   // Match stats state
   const [matchStats, setMatchStats]             = useState<MatchStat[]>([]);
   const [matchStatsLoading, setMatchStatsLoading] = useState(false);
@@ -317,23 +321,38 @@ export default function AssessmentPage() {
 
   useEffect(() => { /* auth handled by layout.tsx */ }, [user]);
 
+  // Fetch profile once on mount to get sport + DOB (used for stats endpoint and drill age tier)
+  useEffect(() => {
+    api.get("/profile")
+      .then((res) => {
+        const p = res.data?.data ?? res.data ?? {};
+        if (p.sport) setPlayerSport(p.sport);
+        const dobStr = p.date_of_birth ?? p.dob;
+        if (dobStr) {
+          const age = Math.floor((Date.now() - new Date(dobStr).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+          if (age > 0 && age < 60) setPlayerAge(age);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Load match stats when tab switches to "stats"
   useEffect(() => {
     if (activeTab !== "stats" || matchStats.length > 0) return;
     setMatchStatsLoading(true);
-    api.get("/player/stats")
+    api.get(`/profile/sports/${encodeURIComponent(playerSport)}/stats`)
       .then((res) => {
         setMatchStats(safeArray<MatchStat>(res.data));
       })
       .catch(() => {})
       .finally(() => setMatchStatsLoading(false));
-  }, [activeTab, matchStats.length]);
+  }, [activeTab, matchStats.length, playerSport]);
 
   // Load APK sessions when tab switches to "apk"
   useEffect(() => {
     if (activeTab !== "apk" || sessions.length > 0) return;
     setSessionsLoading(true);
-    api.get("/training/sessions")
+    api.get("/sessions")
       .then((res) => {
         setSessions(safeArray<TrainingSession>(res.data));
       })
@@ -426,7 +445,7 @@ export default function AssessmentPage() {
     if (!activePos) return [];
     if (!allFilled && !hasVideoDomains) return [];
     const pos      = (activePos === "forward" ? "striker" : activePos) as Position;
-    const age      = (user as { age?: number } | null)?.age ?? 15;
+    const age      = playerAge;
     const ageGrp   = resolveAgeGroup(age);
     const domains  = buildDomainScoresFromTests(currentTests, results);
     // Override with video-measured scores where available
@@ -439,7 +458,7 @@ export default function AssessmentPage() {
     return getDrillsForGaps(gaps, pos, ageGrp);
   })();
 
-  const saveDrillPlan = async () => {
+  const saveDrillPlan = () => {
     const plan = {
       savedAt:   new Date().toISOString(),
       position:  positionGroup || videoPosGroup,
@@ -454,14 +473,9 @@ export default function AssessmentPage() {
         coachingPoints: drill.coachingPoints,
       })),
     };
-    try {
-      // Cloud first — persists across devices
-      await api.post("/player/drill-plans", plan);
-    } catch {
-      // Cloud failed — fall back to localStorage so data isn't lost
-      const existing = JSON.parse(localStorage.getItem("gs_saved_drill_plans") ?? "[]");
-      localStorage.setItem("gs_saved_drill_plans", JSON.stringify([plan, ...existing]));
-    }
+    // Backend route not yet built — store locally so data is never lost
+    const existing = JSON.parse(localStorage.getItem("gs_saved_drill_plans") ?? "[]");
+    localStorage.setItem("gs_saved_drill_plans", JSON.stringify([plan, ...existing]));
     setDrillPlanSaved(true);
   };
 
@@ -1409,6 +1423,8 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                       setVideoError("");
                       setVideoPct(0);
                       setVideoPhase("pick");
+                      setVideoPosGroup("");
+                      setVideoTest(null);
                     }}
                     className="flex items-center gap-1.5 rounded-xl border border-[#f0b429]/30 px-4 py-2.5 text-sm font-semibold text-[#f0b429]/60 hover:bg-[#f0b429]/10 transition-colors"
                   >
