@@ -289,8 +289,8 @@ export default function PublicPassportTabs({
   };
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "1rem 0" }}>
-      <div style={{ width: 343, background: "#0e0e0e", borderRadius: 28, padding: 14, border: "1px solid #2a2a2a" }}>
+    <div style={{ padding: "1rem 0" }}>
+      <div style={{ width: "100%", background: "#0e0e0e", borderRadius: 28, padding: 14, border: "1px solid #2a2a2a" }}>
 
         {/* Always-visible passport header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 6px 10px" }}>
