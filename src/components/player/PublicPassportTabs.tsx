@@ -50,17 +50,96 @@ const PHYSICAL_DEFAULTS = [
   { code: "aerobic_endurance",   label: "Stamina"              },
 ];
 
-const TECHNICAL_AXES = [
-  { label: "First touch\n& control", matchPrefix: "First Touch"   },
-  { label: "Rebound\nturn",          matchPrefix: "Rebound"       },
-  { label: "Passing\naccuracy",      matchPrefix: "Passing"       },
-  { label: "Shooting",               matchPrefix: "Shooting"      },
-  { label: "Crossing",               matchPrefix: "Crossing"      },
-  { label: "Free kick",              matchPrefix: "Free Kick"     },
-  { label: "Heading",                matchPrefix: "Heading"       },
-  { label: "Juggling",               matchPrefix: "Ball Juggling" },
-  { label: "Throw-in",               matchPrefix: "Throw-In"      },
-];
+const AXES_BY_SPORT: Record<string, { label: string; matchPrefix: string }[]> = {
+  football: [
+    { label: "First touch\n& control", matchPrefix: "First Touch"   },
+    { label: "Rebound\nturn",          matchPrefix: "Rebound"       },
+    { label: "Passing\naccuracy",      matchPrefix: "Passing"       },
+    { label: "Shooting",               matchPrefix: "Shooting"      },
+    { label: "Crossing",               matchPrefix: "Crossing"      },
+    { label: "Free kick",              matchPrefix: "Free Kick"     },
+    { label: "Heading",                matchPrefix: "Heading"       },
+    { label: "Juggling",               matchPrefix: "Ball Juggling" },
+    { label: "Throw-in",               matchPrefix: "Throw-In"      },
+  ],
+  rugby: [
+    { label: "Tackling",               matchPrefix: "Tackle"        },
+    { label: "Ball\ncarrying",         matchPrefix: "Carry"         },
+    { label: "Passing",                matchPrefix: "Passing"       },
+    { label: "Lineout",                matchPrefix: "Lineout"       },
+    { label: "Scrum",                  matchPrefix: "Scrum"         },
+    { label: "Kicking",                matchPrefix: "Kick"          },
+    { label: "Support\nplay",          matchPrefix: "Support"       },
+  ],
+  athletics: [
+    { label: "Sprinting",              matchPrefix: "Sprint"        },
+    { label: "Start\nreaction",        matchPrefix: "Start"         },
+    { label: "Endurance",              matchPrefix: "Endurance"     },
+    { label: "Jumping",                matchPrefix: "Jump"          },
+    { label: "Throwing",               matchPrefix: "Throw"         },
+    { label: "Hurdles",                matchPrefix: "Hurdle"        },
+    { label: "Relay\ntechnique",       matchPrefix: "Relay"         },
+  ],
+  netball: [
+    { label: "Shooting\naccuracy",     matchPrefix: "Shooting"      },
+    { label: "Passing",                matchPrefix: "Passing"       },
+    { label: "Footwork",               matchPrefix: "Footwork"      },
+    { label: "Defending",              matchPrefix: "Defend"        },
+    { label: "Centre\npass",           matchPrefix: "Centre Pass"   },
+    { label: "Intercept",              matchPrefix: "Intercept"     },
+    { label: "Rebounding",             matchPrefix: "Rebound"       },
+  ],
+  basketball: [
+    { label: "Shooting",               matchPrefix: "Shooting"      },
+    { label: "Dribbling",              matchPrefix: "Dribbling"     },
+    { label: "Passing",                matchPrefix: "Passing"       },
+    { label: "Defense",                matchPrefix: "Defend"        },
+    { label: "Rebounding",             matchPrefix: "Rebound"       },
+    { label: "Free throw",             matchPrefix: "Free Throw"    },
+    { label: "Ball\nhandling",         matchPrefix: "Ball Handling" },
+  ],
+  cricket: [
+    { label: "Batting",                matchPrefix: "Batting"       },
+    { label: "Bowling",                matchPrefix: "Bowling"       },
+    { label: "Fielding",               matchPrefix: "Field"         },
+    { label: "Catching",               matchPrefix: "Catch"         },
+    { label: "Running\nbetween\nwickets", matchPrefix: "Running"   },
+    { label: "Wicket-\nkeeping",       matchPrefix: "Wicket"        },
+  ],
+  swimming: [
+    { label: "Freestyle",              matchPrefix: "Freestyle"     },
+    { label: "Backstroke",             matchPrefix: "Backstroke"    },
+    { label: "Breaststroke",           matchPrefix: "Breaststroke"  },
+    { label: "Butterfly",              matchPrefix: "Butterfly"     },
+    { label: "Turns",                  matchPrefix: "Turn"          },
+    { label: "Starts\n& dives",        matchPrefix: "Start"         },
+    { label: "Endurance",              matchPrefix: "Endurance"     },
+  ],
+  tennis: [
+    { label: "Serve",                  matchPrefix: "Serve"         },
+    { label: "Forehand",               matchPrefix: "Forehand"      },
+    { label: "Backhand",               matchPrefix: "Backhand"      },
+    { label: "Volley",                 matchPrefix: "Volley"        },
+    { label: "Footwork\n& movement",   matchPrefix: "Footwork"      },
+    { label: "Return",                 matchPrefix: "Return"        },
+  ],
+  volleyball: [
+    { label: "Serving",                matchPrefix: "Serve"         },
+    { label: "Spiking",                matchPrefix: "Spike"         },
+    { label: "Blocking",               matchPrefix: "Block"         },
+    { label: "Setting",                matchPrefix: "Set"           },
+    { label: "Digging",                matchPrefix: "Dig"           },
+    { label: "Passing",                matchPrefix: "Pass"          },
+  ],
+  hockey: [
+    { label: "Dribbling",              matchPrefix: "Dribble"       },
+    { label: "Passing",                matchPrefix: "Passing"       },
+    { label: "Shooting",               matchPrefix: "Shooting"      },
+    { label: "Penalty\ncorner",        matchPrefix: "Penalty"       },
+    { label: "Defending",              matchPrefix: "Defend"        },
+    { label: "Aerial\nball",           matchPrefix: "Aerial"        },
+  ],
+};
 
 // Technique tab — one axis per skill page, keyed by drill_type string
 const TECHNIQUE_AXES = [
@@ -204,6 +283,7 @@ export default function PublicPassportTabs({
   skillScores = [],
   coachRatings = [],
   assessmentDomains = [],
+  sport,
 }: {
   drillScores: DrillScore[];
   physicalAxes: PhysicalAxis[];
@@ -215,6 +295,7 @@ export default function PublicPassportTabs({
   skillScores?: SkillScore[];
   coachRatings?: CoachRating[];
   assessmentDomains?: AssessmentDomain[];
+  sport?: string;
 }) {
   const [headerOpen, setHeaderOpen] = useState(false);
   const [topTab, setTopTab]         = useState<"physical" | "technical">("physical");
@@ -236,12 +317,15 @@ export default function PublicPassportTabs({
     return { label: def.label, value: p != null ? Math.max(0, Math.min(100, p)) : EMPTY_F * 100 };
   });
 
-  // Technical — 9 axes, avgSubScore 0–100 or EMPTY_F
-  const techAxes: RadarAxis[] = TECHNICAL_AXES.map(ax => {
+  // Technical — sport-specific axes, avgSubScore 0–100; fallback to score×10 when avgSubScore is null
+  const activeTechAxes = AXES_BY_SPORT[(sport ?? 'football').toLowerCase()] ?? AXES_BY_SPORT.football;
+  const techAxes: RadarAxis[] = activeTechAxes.map(ax => {
     const found = drillScores.find(d => d.drillName.startsWith(ax.matchPrefix));
-    const v = (found?.avgSubScore != null && found.avgSubScore > 0) ? found.avgSubScore : null;
+    const rawSub = found?.avgSubScore ?? null;
+    const v = rawSub != null ? rawSub : (found?.score != null ? found.score * 10 : null);
     return { label: ax.label, value: v !== null ? Math.max(0, Math.min(100, v)) : EMPTY_F * 100 };
   });
+  const techIsEmpty = techAxes.every(a => a.value <= EMPTY_F * 100 + 0.01);
 
   // Technique — 6 axes, skill mechanic average 0–10 converted to 0–100
   const techniqueAxes: RadarAxis[] = TECHNIQUE_AXES.map(ax => {
@@ -274,7 +358,7 @@ export default function PublicPassportTabs({
 
   const chartTitles: Record<TabId, string> = {
     physical:  "7 attributes",
-    technical: "9 categories",
+    technical: `${activeTechAxes.length} categories`,
     technique: "6 skill areas",
     coached:   "6 attributes",
     position:  "6 domains",
@@ -390,6 +474,11 @@ export default function PublicPassportTabs({
             </span>
           </div>
           <RadarSVG cfg={radarCfgs[topTab]} />
+          {topTab === "technical" && techIsEmpty && (
+            <p style={{ textAlign: "center", fontSize: 11, color: "#555", margin: "-8px 0 6px" }}>
+              No {(sport ?? "football").toLowerCase()} drill data recorded yet
+            </p>
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "2px 0 6px", fontSize: 10, color: "#666" }}>
             <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TAB_META[topTab].sourceColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 3h6M10 3v5l-4 9h12l-4-9V3" />

@@ -272,6 +272,7 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
             assessmentDomains={profile.assessment_domains ?? []}
             physicalAxes={profile.physical_axes ?? []}
             playerName={profile.name}
+            sport={profile.sport}
             position={profile.position}
             xpTotal={profile.xp_total ?? 0}
             dailyStreak={profile.daily_streak ?? 0}

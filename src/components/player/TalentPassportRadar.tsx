@@ -23,7 +23,7 @@ interface DrillScore {
 // matchPrefix is used with .startsWith() so "Heading (Rosch Test)" → "Heading" ✅
 const PASSPORT_AXES = [
   { label: "First Touch",  matchPrefix: "First Touch"  },
-  { label: "Turn&Strike",  matchPrefix: "Rebound"      },
+  { label: "Rebound turn", matchPrefix: "Rebound"      },
   { label: "Passing",      matchPrefix: "Passing"      },
   { label: "Shooting",     matchPrefix: "Shooting"     },
   { label: "Crossing",     matchPrefix: "Crossing"     },
@@ -60,9 +60,7 @@ export function TalentPassportRadar({ drillScores }: { drillScores: DrillScore[]
     return {
       label,
       index: i,
-      value: (found?.avgSubScore != null && found.avgSubScore > 0)
-        ? found.avgSubScore
-        : null,                  // null → not yet attempted
+      value: found?.avgSubScore ?? (found?.score != null ? found.score * 10 : null),
     };
   });
 
@@ -207,7 +205,7 @@ export function TalentPassportRadar({ drillScores }: { drillScores: DrillScore[]
         {/* Score value next to each available dot */}
         {available.map(a => {
           const ang  = toAngle(a.index);
-          const f    = Math.max(0.08, Math.min(100, a.value!)) / 100;
+          const f    = Math.max(0.08, Math.min(100, a.value!) / 100);
           // Nudge label slightly inward so it doesn't overlap the dot
           const nudgeF = f > 0.18 ? f - 0.14 : f + 0.16;
           const p    = pt(a.index, Math.max(0.08, nudgeF));
