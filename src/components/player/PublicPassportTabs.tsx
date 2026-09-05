@@ -38,7 +38,7 @@ interface AssessmentDomain {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const EMPTY_F = 0.03; // null axes collapse near centre, not at dead-zero
-const CX = 180, CY = 148, R = 100; // radar geometry — fits 343px card width
+const CX = 180, CY = 148, R = 100; // radar geometry
 
 const PHYSICAL_DEFAULTS = [
   { code: "explosiveness_0_10m", label: "Explosiveness"        },
@@ -218,7 +218,7 @@ export default function PublicPassportTabs({
 }) {
   const [headerOpen, setHeaderOpen] = useState(false);
   const [topTab, setTopTab]         = useState<"physical" | "technical">("physical");
-  const [bottomTab, setBottomTab]   = useState<"technique" | "coached">("technique");
+  const [bottomTab, setBottomTab]   = useState<"technique" | "coached" | "position">("technique");
 
   const xp       = xpTotal ?? 0;
   const streak   = dailyStreak ?? 0;
@@ -401,7 +401,7 @@ export default function PublicPassportTabs({
         {/* Bottom radar: Technique | Coached */}
         <div style={{ background: "#151515", borderRadius: 14, padding: "14px 12px 10px", margin: "0 0 0" }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-            {(["technique", "coached"] as const).map(id => {
+            {(["technique", "coached", "position"] as const).map(id => {
               const active = bottomTab === id;
               const m = TAB_META[id];
               return (
