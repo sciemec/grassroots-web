@@ -46,6 +46,7 @@ interface PublicProfile {
   grs_test: GrsTest | null;
   drill_scores: DrillScore[];
   coach_ratings: { axis: string; score: number }[];
+  assessment_domains: { code: string; score: number }[];
   skill_scores: { skill: string; score: number }[];
   physical_axes: PhysicalAxis[];
   xp_total: number;
@@ -258,6 +259,7 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
             drillScores={profile.drill_scores ?? []}
             skillScores={profile.skill_scores ?? []}
             coachRatings={profile.coach_ratings ?? []}
+            assessmentDomains={profile.assessment_domains ?? []}
             physicalAxes={profile.physical_axes ?? []}
             playerName={profile.name}
             position={profile.position}
