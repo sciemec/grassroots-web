@@ -216,7 +216,9 @@ export default function PublicPassportTabs({
   coachRatings?: CoachRating[];
   assessmentDomains?: AssessmentDomain[];
 }) {
-  const [tab, setTab] = useState<TabId>("technical");
+  const [headerOpen, setHeaderOpen] = useState(false);
+  const [topTab, setTopTab]         = useState<"physical" | "technical">("physical");
+  const [bottomTab, setBottomTab]   = useState<"technique" | "coached">("technique");
 
   const xp       = xpTotal ?? 0;
   const streak   = dailyStreak ?? 0;
@@ -286,16 +288,12 @@ export default function PublicPassportTabs({
     position:  "Position fitness assessment",
   };
 
-  const meta = TAB_META[tab];
-
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "1rem 0" }}>
-      {/* Hide scrollbar on the tab row across all browsers */}
-      <style>{`.grs-tab-scroll::-webkit-scrollbar { display: none; }`}</style>
       <div style={{ width: 343, background: "#0e0e0e", borderRadius: 28, padding: 14, border: "1px solid #2a2a2a" }}>
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 6px 14px" }}>
+        {/* Always-visible passport header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 6px 10px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <svg width={18} height={18} viewBox="0 0 24 24">
               <path d="M4 4h9v4H8v4h5v4H8v8H4z" fill="#c8962a" />
@@ -309,66 +307,72 @@ export default function PublicPassportTabs({
           </svg>
         </div>
 
-        {/* Identity strip */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 6px 14px" }}>
-          <div style={{
-            width: 52, height: 52, borderRadius: "50%",
-            border: "2px solid #1a5c2a", background: "#173404",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#c0dd97", fontSize: 16, fontWeight: 500, flexShrink: 0,
-          }}>
-            {initials}
-          </div>
-          <div>
-            <div style={{ color: "#fff", fontSize: 16, fontWeight: 500 }}>{playerName ?? "Player"}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-              <span style={{ fontSize: 12, color: "#888" }}>Zimbabwe</span>
-              <span style={{ fontSize: 11, color: "#412402", background: "#c8962a", padding: "1px 7px", borderRadius: 10, fontWeight: 500 }}>
+        {/* Collapsible identity strip — tap chevron to expand */}
+        <button
+          onClick={() => setHeaderOpen(o => !o)}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            width: "100%", background: "#181818", border: "none", borderRadius: 12,
+            padding: "8px 12px", cursor: "pointer", marginBottom: 10,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: "50%",
+              border: "2px solid #1a5c2a", background: "#173404",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#c0dd97", fontSize: 12, fontWeight: 600, flexShrink: 0,
+            }}>
+              {initials}
+            </div>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ color: "#fff", fontSize: 13, fontWeight: 500 }}>{playerName ?? "Player"}</div>
+              <span style={{ fontSize: 10, color: "#412402", background: "#c8962a", padding: "1px 6px", borderRadius: 8, fontWeight: 600 }}>
                 {posAbbr}
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Stats row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, padding: "0 6px 16px" }}>
-          <div style={{ background: "#181818", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-            <div style={{ color: "#c0dd97", fontSize: 17, fontWeight: 500 }}>{xp.toLocaleString()}</div>
-            <div style={{ color: "#777", fontSize: 11, marginTop: 2 }}>Points</div>
-          </div>
-          <div style={{ background: "#181818", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-            <div style={{ color: "#c8962a", fontSize: 17, fontWeight: 500 }}>{streak}</div>
-            <div style={{ color: "#777", fontSize: 11, marginTop: 2 }}>Day streak</div>
-          </div>
-          <div style={{ background: "#181818", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-            <div style={{ color: "#fff", fontSize: 17, fontWeight: 500 }}>{formatTrainedTime(trainMin)}</div>
-            <div style={{ color: "#777", fontSize: 11, marginTop: 2 }}>Trained</div>
-          </div>
-        </div>
-
-        {/* Chart section */}
-        <div style={{ background: "#151515", borderRadius: 14, padding: "14px 12px 10px", margin: "0 4px" }}>
-
-          {/* Tab pill row — horizontally scrollable, no visible scrollbar */}
-          <div
-            className="grs-tab-scroll"
-            style={{ display: "flex", gap: 6, marginBottom: 10, overflowX: "auto", scrollbarWidth: "none" }}
+          {/* Chevron rotates when open */}
+          <svg
+            width={16} height={16} viewBox="0 0 24 24" fill="none"
+            stroke="#666" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+            style={{ transition: "transform 0.2s", transform: headerOpen ? "rotate(180deg)" : "none", flexShrink: 0 }}
           >
-            {(Object.keys(TAB_META) as TabId[]).map(id => {
-              const active = tab === id;
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+
+        {/* Expanded: stats row */}
+        {headerOpen && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, padding: "0 0 10px" }}>
+            <div style={{ background: "#181818", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+              <div style={{ color: "#c0dd97", fontSize: 17, fontWeight: 500 }}>{xp.toLocaleString()}</div>
+              <div style={{ color: "#777", fontSize: 11, marginTop: 2 }}>Points</div>
+            </div>
+            <div style={{ background: "#181818", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+              <div style={{ color: "#c8962a", fontSize: 17, fontWeight: 500 }}>{streak}</div>
+              <div style={{ color: "#777", fontSize: 11, marginTop: 2 }}>Day streak</div>
+            </div>
+            <div style={{ background: "#181818", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+              <div style={{ color: "#fff", fontSize: 17, fontWeight: 500 }}>{formatTrainedTime(trainMin)}</div>
+              <div style={{ color: "#777", fontSize: 11, marginTop: 2 }}>Trained</div>
+            </div>
+          </div>
+        )}
+
+        {/* Top radar: Physical | Technical */}
+        <div style={{ background: "#151515", borderRadius: 14, padding: "14px 12px 10px", margin: "0 0 10px" }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+            {(["physical", "technical"] as const).map(id => {
+              const active = topTab === id;
               const m = TAB_META[id];
               return (
                 <button
                   key={id}
-                  onClick={() => setTab(id)}
+                  onClick={() => setTopTab(id)}
                   style={{
-                    flexShrink: 0,
-                    border: "none",
-                    borderRadius: 20,
-                    padding: "5px 13px",
-                    fontSize: 11,
-                    fontWeight: 500,
-                    cursor: "pointer",
+                    border: "none", borderRadius: 20, padding: "5px 13px",
+                    fontSize: 11, fontWeight: 500, cursor: "pointer",
                     background: active ? m.activeBg : "#232323",
                     color: active ? m.activeText : "#888",
                     transition: "background 0.15s, color 0.15s",
@@ -379,46 +383,54 @@ export default function PublicPassportTabs({
               );
             })}
           </div>
-
-          {/* Chart title row */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ color: "#fff", fontSize: 13, fontWeight: 500 }}>{chartTitles[tab]}</span>
+            <span style={{ color: "#fff", fontSize: 13, fontWeight: 500 }}>{chartTitles[topTab]}</span>
             <span style={{ fontSize: 11, color: "#173404", background: "#c0dd97", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
               Level {level}
             </span>
           </div>
-
-          {/* Radar — driven by active tab */}
-          <RadarSVG cfg={radarCfgs[tab]} />
-
-          {/* Source line — fontSize 10 exact */}
+          <RadarSVG cfg={radarCfgs[topTab]} />
           <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "2px 0 6px", fontSize: 10, color: "#666" }}>
-            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={meta.sourceColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TAB_META[topTab].sourceColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 3h6M10 3v5l-4 9h12l-4-9V3" />
             </svg>
-            {chartSources[tab]}
+            {chartSources[topTab]}
           </div>
         </div>
 
-        {/* Bottom nav */}
-        <div style={{ display: "flex", justifyContent: "space-around", padding: "16px 0 4px", marginTop: 10, borderTop: "1px solid #232323" }}>
-          {/* Home */}
-          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
-          </svg>
-          {/* Football */}
-          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-            <circle cx={12} cy={12} r={10} />
-            <path d="M12 2c-1.5 3-2 6-2 10s.5 7 2 10M12 2c1.5 3 2 6 2 10s-.5 7-2 10M2 12h20" />
-          </svg>
-          {/* Calendar */}
-          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <rect x={3} y={4} width={18} height={18} rx={2} /><line x1={16} y1={2} x2={16} y2={6} /><line x1={8} y1={2} x2={8} y2={6} /><line x1={3} y1={10} x2={21} y2={10} />
-          </svg>
-          {/* User — active (green) */}
-          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#c0dd97" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx={12} cy={7} r={4} />
-          </svg>
+        {/* Bottom radar: Technique | Coached */}
+        <div style={{ background: "#151515", borderRadius: 14, padding: "14px 12px 10px", margin: "0 0 0" }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+            {(["technique", "coached"] as const).map(id => {
+              const active = bottomTab === id;
+              const m = TAB_META[id];
+              return (
+                <button
+                  key={id}
+                  onClick={() => setBottomTab(id)}
+                  style={{
+                    border: "none", borderRadius: 20, padding: "5px 13px",
+                    fontSize: 11, fontWeight: 500, cursor: "pointer",
+                    background: active ? m.activeBg : "#232323",
+                    color: active ? m.activeText : "#888",
+                    transition: "background 0.15s, color 0.15s",
+                  }}
+                >
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ marginBottom: 4 }}>
+            <span style={{ color: "#fff", fontSize: 13, fontWeight: 500 }}>{chartTitles[bottomTab]}</span>
+          </div>
+          <RadarSVG cfg={radarCfgs[bottomTab]} />
+          <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "2px 0 6px", fontSize: 10, color: "#666" }}>
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TAB_META[bottomTab].sourceColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 3h6M10 3v5l-4 9h12l-4-9V3" />
+            </svg>
+            {chartSources[bottomTab]}
+          </div>
         </div>
 
       </div>
