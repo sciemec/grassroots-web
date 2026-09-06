@@ -37,32 +37,161 @@ interface FieldTest {
   benchmark: string;
   domain: string;
   desc: string;
+  protocol: { setup: string; run: string; record: string };
 }
 
 const POSITION_FIELD_TESTS: Record<PositionGroup, FieldTest[]> = {
   goalkeeper: [
-    { key: "reaction_save",    label: "Reaction save",          unit: "saves/10",   benchmark: "6",  domain: "cognitiveSpeed",  desc: "Saves from 5m point-blank — 10 attempts" },
-    { key: "distribution_acc", label: "Distribution accuracy",  unit: "accurate/10",benchmark: "7",  domain: "ballMastery",     desc: "Accurate throws/kicks to marked zones" },
-    { key: "dive_reach_left",  label: "Dive reach left",        unit: "metres",     benchmark: "2.3",domain: "explosivePower",  desc: "Max horizontal reach diving left" },
-    { key: "dive_reach_right", label: "Dive reach right",       unit: "metres",     benchmark: "2.3",domain: "explosivePower",  desc: "Max horizontal reach diving right" },
+    {
+      key: "reaction_save", label: "Reaction save", unit: "saves/10", benchmark: "6", domain: "cognitiveSpeed",
+      desc: "Saves from 7m — 10 attempts, no warning of direction",
+      protocol: {
+        setup:  "Keeper on goal-line, central. Partner stands 7 m away with 10 balls.",
+        run:    "Partner shoots low or half-height to alternate sides — one ball every ~8 seconds. No warning of direction.",
+        record: "Count saves made out of 10. Benchmark: 6/10.",
+      },
+    },
+    {
+      key: "distribution_acc", label: "Distribution accuracy", unit: "accurate/10", benchmark: "7", domain: "ballMastery",
+      desc: "Accurate throws/kicks to marked target zones (10 attempts)",
+      protocol: {
+        setup:  "Place 4 cones at 10 m, 20 m, and left/right at 15 m to mark target zones (~2 m diameter).",
+        run:    "Keeper throws or rolls 10 balls trying to hit any cone target. Mix overarm and underarm.",
+        record: "Count accurate deliveries (ball stops within 2 m of a cone) out of 10. Benchmark: 7/10.",
+      },
+    },
+    {
+      key: "dive_reach_left", label: "Dive reach left", unit: "metres", benchmark: "2.3", domain: "explosivePower",
+      desc: "Max horizontal reach diving left from standing position",
+      protocol: {
+        setup:  "Keeper in ready position, mark foot position on ground.",
+        run:    "Keeper dives left from standing, reaching with outstretched hands. 3 attempts.",
+        record: "Measure from start mark to fingertip at landing. Best of 3. Benchmark: 2.3 m.",
+      },
+    },
+    {
+      key: "dive_reach_right", label: "Dive reach right", unit: "metres", benchmark: "2.3", domain: "explosivePower",
+      desc: "Max horizontal reach diving right from standing position",
+      protocol: {
+        setup:  "Same setup as dive reach left.",
+        run:    "3 attempts diving right.",
+        record: "Best of 3 in metres. Benchmark: 2.3 m.",
+      },
+    },
   ],
   defender: [
-    { key: "sprint_40m",       label: "40m sprint",             unit: "seconds",    benchmark: "5.2",domain: "linearSpeed",     desc: "Flat 40m from standing start" },
-    { key: "tackle_success",   label: "1v1 tackle success",     unit: "won/10",     benchmark: "6",  domain: "cognitiveSpeed",  desc: "Won tackles in controlled 1v1 drill" },
-    { key: "clearance_dist",   label: "Clearance distance",     unit: "metres",     benchmark: "30", domain: "explosivePower",  desc: "Average clearance distance under pressure" },
-    { key: "pass_accuracy_d",  label: "Pass accuracy",          unit: "accurate/30",benchmark: "22", domain: "ballMastery",     desc: "Accurate passes in possession drill" },
+    {
+      key: "sprint_40m", label: "40m sprint", unit: "seconds", benchmark: "5.2", domain: "linearSpeed",
+      desc: "Flat 40m from standing start — timed with stopwatch",
+      protocol: {
+        setup:  "Mark start and 40 m finish lines on flat ground. Coach holds stopwatch at finish line.",
+        run:    "Player starts from standing. Coach starts timer on first movement. Two attempts with 3-minute rest between.",
+        record: "Best time in seconds. Benchmark: 5.2 s.",
+      },
+    },
+    {
+      key: "tackle_success", label: "1v1 tackle success", unit: "won/10", benchmark: "6", domain: "cognitiveSpeed",
+      desc: "Won tackles in controlled 1v1 drill — 10 attempts in a 10×6m channel",
+      protocol: {
+        setup:  "10 m × 6 m channel. Attacker starts with ball at one end, defender at the other.",
+        run:    "Attacker tries to dribble past defender to the far end. 10 attempts. Rotate roles between rounds.",
+        record: "Count successful defensive actions (tackle, block, or force ball out of channel) out of 10. Benchmark: 6/10.",
+      },
+    },
+    {
+      key: "clearance_dist", label: "Clearance distance", unit: "metres", benchmark: "30", domain: "explosivePower",
+      desc: "Average clearance distance from inside the penalty area",
+      protocol: {
+        setup:  "Ball placed 2 m inside the penalty area edge. Measure from that point outward.",
+        run:    "Player clears the ball (kick or headed) 5 times. No run-up restriction.",
+        record: "Measure where ball first lands. Average of best 3. Benchmark: 30 m.",
+      },
+    },
+    {
+      key: "pass_accuracy_d", label: "Pass accuracy", unit: "accurate/30", benchmark: "22", domain: "ballMastery",
+      desc: "Accurate passes across three distances (5m, 15m, 30m) — 10 per distance",
+      protocol: {
+        setup:  "Three target zones at 5 m, 15 m, and 30 m — each a 2 m × 2 m square marked with cones.",
+        run:    "10 passes to each zone (30 total). Player can choose which zone each pass goes to, must attempt all three distances.",
+        record: "Count passes landing within target zone. Benchmark: 22/30.",
+      },
+    },
   ],
   midfielder: [
-    { key: "sprint_20m",       label: "20m sprint",             unit: "seconds",    benchmark: "3.0",domain: "linearSpeed",     desc: "Flat 20m from standing start" },
-    { key: "pass_accuracy_m",  label: "Passing accuracy",       unit: "accurate/30",benchmark: "24", domain: "ballMastery",     desc: "Accurate passes in rondo or pattern drill" },
-    { key: "ball_retention",   label: "Ball retention 1v1",     unit: "retained/5", benchmark: "3",  domain: "cognitiveSpeed",  desc: "Retained possession in 1v1 pressure situation" },
-    { key: "yoyo_level",       label: "Yo-Yo endurance",        unit: "level",      benchmark: "14", domain: "endurance",       desc: "Yo-Yo Intermittent Recovery Test level reached" },
+    {
+      key: "sprint_20m", label: "20m sprint", unit: "seconds", benchmark: "3.0", domain: "linearSpeed",
+      desc: "Flat 20m from standing start — tests acceleration",
+      protocol: {
+        setup:  "Mark start and 20 m lines on flat ground.",
+        run:    "Standing start. Two attempts, 2-minute rest between.",
+        record: "Best time in seconds. Benchmark: 3.0 s.",
+      },
+    },
+    {
+      key: "pass_accuracy_m", label: "Passing accuracy", unit: "accurate/30", benchmark: "24", domain: "ballMastery",
+      desc: "Accurate passes to target zones at 5m, 15m, 30m — 10 per distance",
+      protocol: {
+        setup:  "Three target squares at 5 m, 15 m, 30 m (2 m × 2 m each).",
+        run:    "10 passes to each distance (30 total). Player chooses foot and technique.",
+        record: "Total accurate passes landing in target. Benchmark: 24/30.",
+      },
+    },
+    {
+      key: "ball_retention", label: "Ball retention 1v1", unit: "retained/5", benchmark: "3", domain: "cognitiveSpeed",
+      desc: "Retained possession in 1v1 pressure — 5 attempts of 20 seconds",
+      protocol: {
+        setup:  "4 m × 4 m square. Midfielder has the ball; defender tries to win it.",
+        run:    "Midfielder keeps ball for 20 seconds per attempt. 5 attempts total. Reset after each.",
+        record: "Count attempts where midfielder kept ball for full 20 s. Benchmark: 3/5.",
+      },
+    },
+    {
+      key: "yoyo_level", label: "Yo-Yo endurance", unit: "level", benchmark: "14", domain: "endurance",
+      desc: "Yo-Yo Intermittent Recovery Test Level 1 — record level reached",
+      protocol: {
+        setup:  "Two cones 20 m apart. Use standard Yo-Yo Intermittent Recovery Test Level 1 audio track (available free online).",
+        run:    "Player runs 20 m and back in time to each beep. Rest 10 s between shuttles. Continue until player fails to reach the cone twice.",
+        record: "Record the level/stage reached when they stopped. Benchmark: Level 14.",
+      },
+    },
   ],
   forward: [
-    { key: "sprint_10m",       label: "10m sprint",             unit: "seconds",    benchmark: "1.7",domain: "linearSpeed",     desc: "10m explosive start — measures first-step speed" },
-    { key: "shooting_acc",     label: "Shooting accuracy",      unit: "on target/10",benchmark:"5",  domain: "ballMastery",     desc: "Shots on target from edge of box — 10 attempts" },
-    { key: "dribble_finish",   label: "Dribble + finish",       unit: "seconds",    benchmark: "8.5",domain: "cognitiveSpeed",  desc: "Slalom 20m then shoot — time to completion" },
-    { key: "aerial_wins",      label: "Aerial duel wins",       unit: "won/10",     benchmark: "4",  domain: "explosivePower",  desc: "Won aerial challenges in cross-delivery drill" },
+    {
+      key: "sprint_10m", label: "10m sprint", unit: "seconds", benchmark: "1.7", domain: "linearSpeed",
+      desc: "10m explosive start — measures first-step acceleration",
+      protocol: {
+        setup:  "Mark start and 10 m lines on flat ground.",
+        run:    "Standing start. Three attempts, 90-second rest between.",
+        record: "Best time in seconds. Benchmark: 1.7 s.",
+      },
+    },
+    {
+      key: "shooting_acc", label: "Shooting accuracy", unit: "on target/10", benchmark: "5", domain: "ballMastery",
+      desc: "Shots on target from 16m — 10 attempts, no goalkeeper",
+      protocol: {
+        setup:  "Ball placed 16 m from goal. Divide goal into 6 zones with cones or bibs. No goalkeeper.",
+        run:    "10 shots — player may use any technique. At least 3 must be with weaker foot.",
+        record: "Count shots on target (within goal frame). Benchmark: 5/10.",
+      },
+    },
+    {
+      key: "dribble_finish", label: "Dribble + finish", unit: "seconds", benchmark: "8.5", domain: "cognitiveSpeed",
+      desc: "Slalom 15m through cones then shoot — time from first touch to shot",
+      protocol: {
+        setup:  "Ball at start, 6 cones in slalom pattern over 15 m, shooting zone at end 12 m from goal.",
+        run:    "Player dribbles through slalom then shoots. Coach starts timer at first touch, stops when ball crosses goal-line or goes wide. 3 attempts.",
+        record: "Time from first touch to shot contact. Best of 3. Benchmark: 8.5 s.",
+      },
+    },
+    {
+      key: "aerial_wins", label: "Aerial duel wins", unit: "won/10", benchmark: "4", domain: "explosivePower",
+      desc: "Won aerial challenges in cross-delivery drill — 10 attempts",
+      protocol: {
+        setup:  "Coach or partner delivers 10 crossed balls into the box by hand or kick from the flank.",
+        run:    "Forward attacks the ball in the air and heads/chests it toward goal. One defender applies passive pressure from behind.",
+        record: "Count aerial contacts where forward gets clear contact (not deflected). Benchmark: 4/10.",
+      },
+    },
   ],
 };
 
@@ -261,6 +390,7 @@ export default function SkillRaterPage() {
   const [savingTests,      setSavingTests]      = useState(false);
   const [savedTests,       setSavedTests]       = useState(false);
   const [fieldError,       setFieldError]       = useState<string | null>(null);
+  const [expandedProtocol, setExpandedProtocol] = useState<string | null>(null);
 
   // ── Load player + skill ratings ─────────────────────────────────────────
   useEffect(() => {
@@ -837,8 +967,40 @@ export default function SkillRaterPage() {
                         benchmark: {test.benchmark} {test.unit}
                       </span>
                     </div>
-                    <div style={{ color: "#555", fontSize: 11, marginBottom: 8 }}>
+                    <div style={{ color: "#555", fontSize: 11, marginBottom: 6 }}>
                       {test.desc}
+                    </div>
+                    {/* Collapsible "How to run" protocol */}
+                    <div style={{ marginBottom: 10 }}>
+                      <button
+                        onClick={() => setExpandedProtocol(expandedProtocol === test.key ? null : test.key)}
+                        style={{
+                          background: "none", border: "none", cursor: "pointer",
+                          color: "#c8962a", fontSize: 11, fontWeight: 600, padding: 0,
+                          display: "flex", alignItems: "center", gap: 4,
+                        }}
+                      >
+                        {expandedProtocol === test.key ? "▲ Hide protocol" : "▼ How to run this test"}
+                      </button>
+                      {expandedProtocol === test.key && (
+                        <div style={{
+                          marginTop: 8, padding: "10px 12px", background: "#0d1a0f",
+                          borderRadius: 8, border: "1px solid #1a3d1a", fontSize: 11,
+                        }}>
+                          <p style={{ marginBottom: 6 }}>
+                            <span style={{ color: "#888", fontWeight: 600 }}>Setup: </span>
+                            <span style={{ color: "#aaa" }}>{test.protocol.setup}</span>
+                          </p>
+                          <p style={{ marginBottom: 6 }}>
+                            <span style={{ color: "#888", fontWeight: 600 }}>Run: </span>
+                            <span style={{ color: "#aaa" }}>{test.protocol.run}</span>
+                          </p>
+                          <p>
+                            <span style={{ color: "#888", fontWeight: 600 }}>Record: </span>
+                            <span style={{ color: "#aaa" }}>{test.protocol.record}</span>
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                       <input
