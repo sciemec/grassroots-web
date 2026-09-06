@@ -25,7 +25,7 @@ interface SkillScore {
 
 // Coach skill rating
 interface CoachRating {
-  axis: string;   // "pace" | "dribbling" | "passing" | "shooting" | "defending" | "heading"
+  axis: string;   // "dribbling" | "first_touch" | "passing" | "shooting" | "sprint" | "tackling"
   score: number;  // 0–10
 }
 
@@ -151,14 +151,14 @@ const TECHNIQUE_AXES = [
   { code: "sprint",      label: "Sprint"       },
 ];
 
-// Coached tab — standard football attributes rated by coach
+// Coached tab — matches skill codes stored in coach_player_skill_ratings
 const COACHED_AXES = [
-  { code: "pace",      label: "Pace"      },
-  { code: "dribbling", label: "Dribbling" },
-  { code: "passing",   label: "Passing"   },
-  { code: "shooting",  label: "Shooting"  },
-  { code: "defending", label: "Defending" },
-  { code: "heading",   label: "Heading"   },
+  { code: "dribbling",   label: "Dribbling"    },
+  { code: "first_touch", label: "First\ntouch" },
+  { code: "passing",     label: "Passing"      },
+  { code: "shooting",    label: "Shooting"     },
+  { code: "sprint",      label: "Sprint"       },
+  { code: "tackling",    label: "Tackling"     },
 ];
 
 // Position tab — DomainScores from /player/assessment
