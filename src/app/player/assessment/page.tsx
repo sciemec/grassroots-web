@@ -145,6 +145,26 @@ const RESULT_LABEL: Record<string, string> = {
   L: "Loss",
 };
 
+// ── Coach field test type ─────────────────────────────────────────────────────
+
+interface CoachFieldTest {
+  id: string;
+  position: string;
+  test_name: string;
+  raw_value: string;
+  unit: string;
+  benchmark: string;
+  domain: string;
+  recorded_at: string;
+}
+
+const POSITION_GROUP_LABELS: Record<string, string> = {
+  goalkeeper: "Goalkeeper",
+  defender:   "Defender",
+  midfielder: "Midfielder",
+  forward:    "Forward",
+};
+
 // ── Drill recommendation bridge ───────────────────────────────────────────────
 // Maps each field test name → the GRS domain it exercises.
 
@@ -290,6 +310,11 @@ export default function AssessmentPage() {
   const [drillPlanSaved, setDrillPlanSaved] = useState(false);
   const [videoDomainScores, setVideoDomainScores] = useState<Partial<Record<keyof DomainScores, number>>>({});
 
+  // Coach field tests (read-only — submitted by coach on player's behalf)
+  const [coachFieldTests, setCoachFieldTests]         = useState<CoachFieldTest[]>([]);
+  const [coachFieldTestsLoading, setCoachFieldTestsLoading] = useState(false);
+  const [coachFieldTestsLoaded, setCoachFieldTestsLoaded]   = useState(false);
+
   // Profile-derived values (sport for stats endpoint, age for drill tier)
   const [playerSport, setPlayerSport] = useState("football");
   const [playerAge,   setPlayerAge]   = useState(15);
@@ -347,6 +372,21 @@ export default function AssessmentPage() {
       .catch(() => {})
       .finally(() => setMatchStatsLoading(false));
   }, [activeTab, matchStats.length, playerSport]);
+
+  // Load coach-submitted field tests when tab switches to "field"
+  useEffect(() => {
+    if (activeTab !== "field" || coachFieldTestsLoaded) return;
+    setCoachFieldTestsLoading(true);
+    api.get("/player/field-tests")
+      .then((res) => {
+        setCoachFieldTests(safeArray<CoachFieldTest>(res.data?.data ?? res.data));
+      })
+      .catch(() => {})
+      .finally(() => {
+        setCoachFieldTestsLoading(false);
+        setCoachFieldTestsLoaded(true);
+      });
+  }, [activeTab, coachFieldTestsLoaded]);
 
   // Load APK sessions when tab switches to "apk"
   useEffect(() => {
@@ -479,6 +519,26 @@ export default function AssessmentPage() {
     setDrillPlanSaved(true);
   };
 
+  const saveCoachDrillPlan = (drills: DrillRecommendation[], pos: string) => {
+    const plan = {
+      savedAt:  new Date().toISOString(),
+      position: pos,
+      drills:   drills.map(({ gap, drill, targetPhase }) => ({
+        domain:         gap.domain,
+        percentile:     gap.percentile,
+        targetPhase,
+        name:           drill.name,
+        description:    drill.description,
+        duration:       drill.duration,
+        equipment:      drill.requiresEquipment ?? [],
+        coachingPoints: drill.coachingPoints,
+      })),
+    };
+    const existing = JSON.parse(localStorage.getItem("gs_saved_drill_plans") ?? "[]");
+    localStorage.setItem("gs_saved_drill_plans", JSON.stringify([plan, ...existing]));
+    setDrillPlanSaved(true);
+  };
+
   const getReport = async () => {
     setLoadingReport(true);
     const summary = currentTests
@@ -570,152 +630,164 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
           </button>
         </div>
 
-        {/* ── FIELD TESTS TAB ── */}
-        {activeTab === "field" && (
-          !started ? (
-            <div className="mx-auto max-w-lg">
-              <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-8 text-center backdrop-blur-sm">
-                <Target className="mx-auto mb-4 h-12 w-12 text-[#f0b429]" />
-                <h2 className="mb-2 text-xl font-bold" style={{ color: "#f0b429" }}>Position Assessment Hub</h2>
-                <p className="mb-6 text-sm font-bold text-white">
-                  Run field tests with a partner and enter your results. AI will generate a performance report and skill radar.
+        {/* ── FIELD TESTS TAB — read-only coach results ── */}
+        {activeTab === "field" && (() => {
+          if (coachFieldTestsLoading) {
+            return (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-7 w-7 animate-spin text-[#f0b429]" />
+              </div>
+            );
+          }
+
+          if (coachFieldTests.length === 0) {
+            return (
+              <div className="mx-auto max-w-lg rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-10 text-center">
+                <Target className="mx-auto mb-4 h-12 w-12 text-[#f0b429]/40" />
+                <h2 className="mb-2 text-lg font-bold" style={{ color: "#f0b429" }}>No Coach Field Tests Yet</h2>
+                <p className="text-sm font-bold text-white">
+                  Your coach hasn&apos;t submitted position field test results for you yet.
                 </p>
-                <div className="mb-6">
-                  <label className="mb-3 block text-left text-sm font-semibold" style={{ color: "#f0b429" }}>Select your position group</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {Object.entries(POSITIONS_TESTS).map(([id, { label }]) => (
-                      <button
-                        key={id}
-                        onClick={() => setPositionGroup(id)}
-                        className={`rounded-xl border p-4 text-sm font-medium transition-all ${
-                          positionGroup === id
-                            ? "border-[#f0b429] bg-[#f0b429]/10 text-[#f0b429]"
-                            : "border-[#f0b429]/15 bg-[#f0b429]/5 text-[#f0b429]/70 hover:border-[#f0b429]/20"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <button
-                  onClick={() => setStarted(true)}
-                  disabled={!positionGroup}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f0b429] px-4 py-3 text-sm font-bold text-[#1a3a1a] hover:bg-[#f5c542] disabled:opacity-50 transition-colors"
-                >
-                  <Play className="h-4 w-4" /> Start Assessment
-                </button>
+                <p className="mt-2 text-xs text-white/60">
+                  Ask your coach to run the GrassRoots position assessment — results will appear here automatically.
+                </p>
               </div>
-            </div>
-          ) : (
+            );
+          }
+
+          // Group tests by position (preserving insertion order = most recent first)
+          const byPosition: Record<string, CoachFieldTest[]> = {};
+          for (const t of coachFieldTests) {
+            (byPosition[t.position] ??= []).push(t);
+          }
+
+          // Build drill recommendations from the most-recent position's data
+          const latestPos    = coachFieldTests[0]?.position ?? "";
+          const latestTests  = byPosition[latestPos] ?? [];
+          const testsArg     = latestTests.map((t) => ({ name: t.test_name, benchmark: t.benchmark, unit: t.unit }));
+          const resultsArg   = Object.fromEntries(latestTests.map((t) => [t.test_name, t.raw_value]));
+          const domains      = buildDomainScoresFromTests(testsArg, resultsArg);
+          const ageGrp       = resolveAgeGroup(playerAge);
+          const posLabel     = (latestPos === "forward" ? "striker" : latestPos) as Position;
+          const gaps         = selectFocusGaps(domains, posLabel, ageGrp, 4);
+          const coachDrillRecs = getDrillsForGaps(gaps, posLabel, ageGrp);
+
+          return (
             <div className="mx-auto max-w-2xl">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-bold capitalize" style={{ color: "#f0b429" }}>{positionGroup} Tests</h2>
-                <button
-                  onClick={() => { setStarted(false); setResults({}); setAiReport(""); setVideoDomainScores({}); }}
-                  className="text-xs text-muted-foreground hover:text-[#f0b429]"
-                >
-                  ← Change position
-                </button>
+              <div className="mb-4 rounded-xl border border-[#f0b429]/20 bg-[#f0b429]/5 px-4 py-3">
+                <p className="text-xs font-bold text-white">
+                  ✅ Coach-verified results — submitted by your coach after running position field tests with you.
+                </p>
               </div>
 
-              <p className="mb-5 rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 px-4 py-3 text-sm font-bold text-white">
-                Run each test on the field with a partner. Enter your result — green means you met the Zimbabwe benchmark.
-              </p>
+              {/* One card per position group */}
+              {Object.entries(byPosition).map(([pos, tests]) => {
+                const posRadar = tests.map((t) => {
+                  const pct   = calcBenchmarkScore(t.benchmark, t.raw_value, t.unit);
+                  const label = t.test_name.length > 12 ? t.test_name.slice(0, 12) + "…" : t.test_name;
+                  return { subject: label, score: pct, fullMark: 100 };
+                });
+                const posOverall = posRadar.length
+                  ? Math.round(posRadar.reduce((s, d) => s + d.score, 0) / posRadar.length)
+                  : 0;
+                const recordedAt = tests[0]?.recorded_at;
 
-              <div className="mb-6 space-y-4">
-                {currentTests.map((test) => {
-                  const val    = results[test.name] ?? "";
-                  const passed = val ? compareToChampionship(test, val) : null;
-                  const pct    = val ? calcBenchmarkScore(test.benchmark, val, test.unit) : null;
-                  return (
-                    <div
-                      key={test.name}
-                      className={`rounded-xl border p-5 transition-all ${
-                        passed === true  ? "border-green-500/40 bg-green-500/5" :
-                        passed === false ? "border-red-500/30 bg-red-500/5"    : "border-[#f0b429]/15 bg-card/60"
-                      }`}
-                    >
-                      <div className="mb-2 flex items-start justify-between">
-                        <h3 className="font-semibold text-[#f0b429]">{test.name}</h3>
-                        <span className="rounded-full bg-[#f0b429]/10 px-2.5 py-0.5 text-xs font-bold text-white">
-                          Benchmark: {test.benchmark}
-                        </span>
-                      </div>
-                      <p className="mb-3 text-sm font-bold text-white">{test.desc}</p>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="number"
-                          step="0.1"
-                          placeholder={`Enter result (${test.unit})`}
-                          value={val}
-                          onChange={(e) => { setResults((r) => ({ ...r, [test.name]: e.target.value })); setDrillPlanSaved(false); }}
-                          className="flex-1 rounded-lg border border-[#f0b429]/15 bg-black/20 px-3 py-2 text-sm text-[#f0b429] outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-[#f0b429]"
-                        />
-                        <span className="text-xs text-muted-foreground">{test.unit}</span>
-                        {pct !== null && (
-                          <span className={`text-sm font-bold ${scoreColor(pct)}`}>{pct}%</span>
+                return (
+                  <div key={pos} className="mb-6 rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <h2 className="font-bold" style={{ color: "#f0b429" }}>
+                          {POSITION_GROUP_LABELS[pos] ?? pos} Tests
+                        </h2>
+                        {recordedAt && (
+                          <p className="text-xs text-white/50">
+                            Recorded {new Date(recordedAt).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
+                          </p>
                         )}
-                        {passed === true && <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-green-400" />}
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-3xl font-black ${scoreColor(posOverall)}`}>{posOverall}</p>
+                        <p className={`text-xs font-medium ${scoreColor(posOverall)}`}>{scoreLabel(posOverall)}</p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
 
-              {radarData.some((d) => d.score > 0) && (
-                <div className="mb-6 rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-[#f0b429]" />
-                      <h3 className="font-semibold" style={{ color: "#f0b429" }}>Skill Radar</h3>
+                    {/* Test result rows */}
+                    <div className="mb-5 space-y-3">
+                      {tests.map((t) => {
+                        const pct    = calcBenchmarkScore(t.benchmark, t.raw_value, t.unit);
+                        const passed = t.unit === "seconds"
+                          ? parseFloat(t.raw_value) <= parseFloat(t.benchmark)
+                          : parseFloat(t.raw_value) >= parseFloat(t.benchmark);
+                        return (
+                          <div
+                            key={t.id}
+                            className={`rounded-xl border p-4 ${
+                              passed ? "border-green-500/40 bg-green-500/5" : "border-[#f0b429]/15 bg-[#f0b429]/5"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm font-semibold text-[#f0b429]">{t.test_name}</p>
+                                <p className="mt-0.5 text-sm text-white">
+                                  {t.raw_value}{" "}
+                                  <span className="text-xs text-white/50">{t.unit}</span>
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-lg font-black ${scoreColor(pct)}`}>{pct}%</span>
+                                {passed && <CheckCircle2 className="h-4 w-4 text-green-400" />}
+                              </div>
+                            </div>
+                            <div className="mt-2 h-1.5 rounded-full bg-white/10">
+                              <div
+                                className={`h-1.5 rounded-full transition-all ${
+                                  pct >= 90 ? "bg-green-400" :
+                                  pct >= 70 ? "bg-[#f0b429]" :
+                                  pct >= 50 ? "bg-blue-400"  : "bg-red-400"
+                                }`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <p className="mt-1 text-xs text-white/40">Benchmark: {t.benchmark} {t.unit}</p>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="text-right">
-                      <p className={`text-3xl font-black ${scoreColor(overallScore)}`}>
-                        {overallScore}
-                      </p>
-                      <p className={`text-xs font-medium ${scoreColor(overallScore)}`}>
-                        {scoreLabel(overallScore)}
-                      </p>
-                    </div>
+
+                    {/* Radar chart (only when ≥2 tests) */}
+                    {posRadar.length >= 2 && (
+                      <div>
+                        <div className="mb-2 flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-[#f0b429]" />
+                          <h3 className="text-sm font-semibold" style={{ color: "#f0b429" }}>Skill Radar</h3>
+                        </div>
+                        <ResponsiveContainer width="100%" height={220}>
+                          <RadarChart data={posRadar}>
+                            <PolarGrid stroke="rgba(240,180,41,0.15)" />
+                            <PolarAngleAxis dataKey="subject" tick={{ fill: "#c8edd0", fontSize: 11 }} />
+                            <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
+                            <Radar name="Score" dataKey="score" stroke="#f0b429" fill="#f0b429" fillOpacity={0.25} strokeWidth={2} />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                        <p className="text-center text-xs font-bold text-white">% of benchmark achieved per test</p>
+                      </div>
+                    )}
                   </div>
-                  <ResponsiveContainer width="100%" height={260}>
-                    <RadarChart data={radarData}>
-                      <PolarGrid stroke="rgba(240,180,41,0.15)" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fill: "#c8edd0", fontSize: 11 }} />
-                      <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
-                      <Radar
-                        name="Score"
-                        dataKey="score"
-                        stroke="#f0b429"
-                        fill="#f0b429"
-                        fillOpacity={0.25}
-                        strokeWidth={2}
-                      />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                  <p className="mt-2 text-center text-xs font-bold text-white">
-                    % of Zimbabwe benchmark achieved per test
-                  </p>
-                </div>
-              )}
+                );
+              })}
 
-              {drillRecs.length > 0 && (
+              {/* Drill recommendations from most-recent position */}
+              {coachDrillRecs.length > 0 && (
                 <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/5 p-5">
                   <div className="mb-4 flex items-center gap-2">
                     <Zap className="h-4 w-4 text-green-400" />
                     <h3 className="font-semibold text-green-400">Recommended Drills</h3>
-                    {hasVideoDomains && (
-                      <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-xs font-bold text-blue-300">
-                        📹 Video data
-                      </span>
-                    )}
                     <span className="ml-auto rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-bold text-green-300">
                       Based on your gaps
                     </span>
                   </div>
                   <div className="space-y-4">
-                    {drillRecs.map(({ gap, drill, targetPhase }, i) => (
+                    {coachDrillRecs.map(({ gap, drill, targetPhase }, i) => (
                       <div key={i} className="rounded-lg border border-green-500/20 bg-black/20 p-4">
                         <div className="mb-2 flex flex-wrap items-center gap-2">
                           <span className="rounded-full bg-[#f0b429]/15 px-2 py-0.5 text-xs font-bold text-[#f0b429] capitalize">
@@ -724,46 +796,31 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                           <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-medium text-green-300 capitalize">
                             {targetPhase} phase
                           </span>
-                          <span className="ml-auto text-xs text-muted-foreground">
-                            {gap.percentile}% vs benchmark
-                          </span>
+                          <span className="ml-auto text-xs text-muted-foreground">{gap.percentile}% vs benchmark</span>
                         </div>
                         <h4 className="mb-1 font-semibold text-white">{drill.name}</h4>
                         <p className="mb-2 text-sm text-muted-foreground">{drill.description}</p>
                         <div className="mb-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
                           <span>⏱ {drill.duration}</span>
-                          {drill.requiresEquipment && drill.requiresEquipment.length > 0 && (
-                            <span>🎽 {drill.requiresEquipment.join(", ")}</span>
-                          )}
-                          {(!drill.requiresEquipment || drill.requiresEquipment.length === 0) && (
-                            <span>🎽 No equipment needed</span>
-                          )}
+                          {(!drill.requiresEquipment || drill.requiresEquipment.length === 0)
+                            ? <span>🎽 No equipment needed</span>
+                            : <span>🎽 {drill.requiresEquipment.join(", ")}</span>
+                          }
                         </div>
                         {drill.coachingPoints.length > 0 && (
-                          <ul className="mb-2 space-y-0.5">
+                          <ul className="space-y-0.5">
                             {drill.coachingPoints.map((pt, j) => (
                               <li key={j} className="flex items-start gap-1.5 text-xs text-white/70">
-                                <span className="mt-0.5 text-green-400 shrink-0">›</span>
-                                {pt}
+                                <span className="mt-0.5 shrink-0 text-green-400">›</span>{pt}
                               </li>
                             ))}
                           </ul>
                         )}
-                        <div className="flex flex-wrap gap-1.5">
-                          {drill.focusCategories.slice(0, 3).map((cat) => (
-                            <span key={cat} className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-white/60 capitalize">
-                              {cat.replace(/_/g, " ")}
-                            </span>
-                          ))}
-                        </div>
                       </div>
                     ))}
                   </div>
-                  <p className="mt-3 text-xs text-green-300/60">
-                    Drills selected for your weakest position-weighted gaps — calibrated to your current level.
-                  </p>
                   <button
-                    onClick={saveDrillPlan}
+                    onClick={() => saveCoachDrillPlan(coachDrillRecs, latestPos)}
                     disabled={drillPlanSaved}
                     className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors ${
                       drillPlanSaved
@@ -778,35 +835,10 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   </button>
                 </div>
               )}
-
-              {allFilled && !aiReport && (
-                <button
-                  onClick={getReport}
-                  disabled={loadingReport}
-                  className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#6c3483] px-4 py-3 text-sm font-bold text-white hover:bg-[#6c3483]/80 disabled:opacity-50 transition-colors"
-                >
-                  {loadingReport ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Generating AI report…</>
-                  ) : (
-                    <><Brain className="h-4 w-4" /> Get AI performance report</>
-                  )}
-                </button>
-              )}
-
-              {aiReport && (
-                <div className="rounded-xl border border-[#6c3483]/40 bg-[#6c3483]/10 p-5">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Brain className="h-4 w-4 text-[#a855f7]" />
-                    <h3 className="font-semibold text-[#a855f7]">AI Performance Report</h3>
-                  </div>
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed text-[#f0b429]/85">
-                    {aiReport}
-                  </div>
-                </div>
-              )}
             </div>
-          )
-        )}
+          );
+        })()}
+
 
         {/* ── APK SESSIONS TAB ── */}
         {activeTab === "apk" && (
