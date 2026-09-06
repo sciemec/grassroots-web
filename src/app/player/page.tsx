@@ -21,6 +21,7 @@ import {
   IconShield,
   IconActivity,
   IconHandFinger,
+  IconWorld,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -105,6 +106,72 @@ function HubCard({
   );
 }
 
+// ─── Drill group card (6 skills in one card) ──────────────────────────────────
+
+const DRILLS = [
+  { href: "/player/dribbling",   label: "Dribbling",   Icon: IconBallFootball },
+  { href: "/player/first-touch", label: "First Touch",  Icon: IconHandFinger   },
+  { href: "/player/passing",     label: "Passing",      Icon: IconArrowRight   },
+  { href: "/player/tackling",    label: "Tackling",     Icon: IconShield       },
+  { href: "/player/shooting",    label: "Shooting",     Icon: IconTarget       },
+  { href: "/player/sprint",      label: "Sprint",       Icon: IconRun          },
+];
+
+function DrillGroupCard() {
+  return (
+    <div
+      style={{
+        background: "#151515",
+        borderRadius: 14,
+        padding: "14px 14px 12px",
+        marginBottom: 8,
+      }}
+    >
+      <div
+        style={{
+          color: "#c8962a",
+          fontSize: 10.5,
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.6px",
+          marginBottom: 12,
+        }}
+      >
+        Skill Drills
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 8,
+        }}
+      >
+        {DRILLS.map(({ href, label, Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 6,
+              background: "#1e1e1e",
+              borderRadius: 10,
+              padding: "12px 6px",
+              textDecoration: "none",
+            }}
+          >
+            <Icon size={22} color="#fac775" />
+            <span style={{ color: "#fff", fontSize: 10.5, fontWeight: 500, textAlign: "center" }}>
+              {label}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PlayerHubPage() {
@@ -184,54 +251,7 @@ export default function PlayerHubPage() {
 
         {/* Section 2 — Train & get assessed */}
         <SectionLabel label="Train & get assessed" />
-        <HubCard
-          href="/player/dribbling"
-          icon={IconBallFootball}
-          iconBg={O}
-          iconColor={OL}
-          title="Dribbling"
-          subtitle="Ball control, direction changes, awareness"
-        />
-        <HubCard
-          href="/player/first-touch"
-          icon={IconHandFinger}
-          iconBg={O}
-          iconColor={OL}
-          title="First Touch"
-          subtitle="Cushioning, direction, speed of play"
-        />
-        <HubCard
-          href="/player/passing"
-          icon={IconArrowRight}
-          iconBg={O}
-          iconColor={OL}
-          title="Passing"
-          subtitle="Weight, accuracy, decision-making"
-        />
-        <HubCard
-          href="/player/tackling"
-          icon={IconShield}
-          iconBg={O}
-          iconColor={OL}
-          title="Tackling"
-          subtitle="Approach, timing, recovery"
-        />
-        <HubCard
-          href="/player/shooting"
-          icon={IconTarget}
-          iconBg={O}
-          iconColor={OL}
-          title="Shooting"
-          subtitle="Striking technique, follow-through"
-        />
-        <HubCard
-          href="/player/sprint"
-          icon={IconRun}
-          iconBg={O}
-          iconColor={OL}
-          title="Sprint"
-          subtitle="Arm drive, knee drive, stride rhythm"
-        />
+        <DrillGroupCard />
         <HubCard
           href="/player/biomechanics"
           icon={IconActivity}
@@ -303,7 +323,47 @@ export default function PlayerHubPage() {
           subtitle="Balance school & sport"
         />
 
-        {/* Section 5 — Safety & family */}
+        {/* Section 5 — Network */}
+        <SectionLabel label="Network" />
+        <Link
+          href="/arena"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            background: "linear-gradient(135deg, #1a3d4a 0%, #0d2233 100%)",
+            borderRadius: 12,
+            padding: "14px",
+            textDecoration: "none",
+            marginBottom: 8,
+            border: "1px solid #1e5472",
+          }}
+        >
+          <div
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              background: "#0e3347",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              border: "1px solid #1e6090",
+            }}
+          >
+            <IconWorld size={20} color="#5bc4f5" />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>The Arena</div>
+            <div style={{ color: "#7bbdd4", fontSize: 10.5, marginTop: 2 }}>
+              Sports network · connect with coaches &amp; scouts
+            </div>
+          </div>
+          <IconChevronRight size={16} color="#5bc4f5" />
+        </Link>
+
+        {/* Section 6 — Safety & family */}
         <SectionLabel label="Safety & family" />
         <HubCard
           href="/player/consent"
