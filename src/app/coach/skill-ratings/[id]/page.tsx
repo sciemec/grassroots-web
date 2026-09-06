@@ -364,6 +364,31 @@ function SkillRow({
   );
 }
 
+// ─── Field-test input helpers ───────────────────────────────────────────────
+
+type InputShape = "decimal" | "fraction" | "level";
+
+function getInputShape(unit: string): InputShape {
+  if (unit === "level") return "level";
+  if (unit.includes("/")) return "fraction";
+  return "decimal";
+}
+
+function getDenominator(unit: string): number {
+  const match = unit.match(/\/(\d+)/);
+  return match ? parseInt(match[1]) : 10;
+}
+
+function getUnitSuffix(unit: string): string {
+  if (unit === "metres") return "m";
+  if (unit === "seconds") return "s";
+  return "";
+}
+
+function bestIsMin(unit: string): boolean {
+  return unit === "seconds"; // seconds: lower is better; metres: higher is better
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function SkillRaterPage() {
@@ -391,6 +416,8 @@ export default function SkillRaterPage() {
   const [savedTests,       setSavedTests]       = useState(false);
   const [fieldError,       setFieldError]       = useState<string | null>(null);
   const [expandedProtocol, setExpandedProtocol] = useState<string | null>(null);
+  const [fieldAttempts,    setFieldAttempts]    = useState<Record<string, [string, string, string]>>({});
+  const [expandedAttempts, setExpandedAttempts] = useState<string | null>(null);
 
   // ── Load player + skill ratings ─────────────────────────────────────────
   useEffect(() => {
@@ -1002,42 +1029,144 @@ export default function SkillRaterPage() {
                         </div>
                       )}
                     </div>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <input
-                        type="number"
-                        step="any"
-                        min="0"
-                        value={fieldValues[valKey] ?? ""}
-                        onChange={(e) =>
-                          setFieldValues((prev) => ({
-                            ...prev,
-                            [valKey]: e.target.value,
-                          }))
-                        }
-                        placeholder="—"
-                        style={{
-                          flex: 1,
-                          background: "#111",
-                          border: "1px solid #2a2a2a",
-                          borderRadius: 8,
-                          color: "#fff",
-                          fontSize: 15,
-                          fontWeight: 700,
-                          padding: "10px 12px",
-                          outline: "none",
-                        }}
-                      />
-                      <span
-                        style={{
-                          color: "#666",
-                          fontSize: 11,
-                          minWidth: 70,
-                          textAlign: "right",
-                        }}
-                      >
-                        {test.unit}
-                      </span>
-                    </div>
+                    {/* Shape-aware input */}
+                    {(() => {
+                      const shape   = getInputShape(test.unit);
+                      const suffix  = getUnitSuffix(test.unit);
+                      const denom   = getDenominator(test.unit);
+                      const attempts: [string, string, string] = fieldAttempts[valKey] ?? ["", "", ""];
+                      const isExpanded = expandedAttempts === valKey;
+
+                      const baseInput: React.CSSProperties = {
+                        background: "#111",
+                        border: "1px solid #2a2a2a",
+                        borderRadius: 8,
+                        color: "#fff",
+                        fontSize: 15,
+                        fontWeight: 700,
+                        padding: "10px 12px",
+                        outline: "none",
+                      };
+
+                      const computeBest = (atts: [string, string, string]): string => {
+                        const nums = atts.map(a => parseFloat(a)).filter(n => !isNaN(n) && n > 0);
+                        if (nums.length === 0) return "";
+                        return bestIsMin(test.unit)
+                          ? String(Math.min(...nums))
+                          : String(Math.max(...nums));
+                      };
+
+                      const updateAttempt = (idx: number, val: string) => {
+                        const next: [string, string, string] = [...attempts] as [string, string, string];
+                        next[idx] = val;
+                        setFieldAttempts(prev => ({ ...prev, [valKey]: next }));
+                        const best = computeBest(next);
+                        if (best) setFieldValues(prev => ({ ...prev, [valKey]: best }));
+                      };
+
+                      if (shape === "fraction") {
+                        return (
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <input
+                              type="number"
+                              step="1"
+                              min="0"
+                              max={denom}
+                              value={fieldValues[valKey] ?? ""}
+                              onChange={e => setFieldValues(prev => ({ ...prev, [valKey]: e.target.value }))}
+                              placeholder="—"
+                              style={{ ...baseInput, width: 70 }}
+                            />
+                            <span style={{ color: "#666", fontSize: 16, fontWeight: 700 }}>/ {denom}</span>
+                            <span style={{ color: "#444", fontSize: 11, marginLeft: 6 }}>
+                              Benchmark: {test.benchmark}&thinsp;/&thinsp;{denom}
+                            </span>
+                          </div>
+                        );
+                      }
+
+                      if (shape === "level") {
+                        return (
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ color: "#888", fontSize: 13, fontWeight: 600 }}>Level</span>
+                            <input
+                              type="number"
+                              step="1"
+                              min="0"
+                              value={fieldValues[valKey] ?? ""}
+                              onChange={e => setFieldValues(prev => ({ ...prev, [valKey]: e.target.value }))}
+                              placeholder="—"
+                              style={{ ...baseInput, width: 70 }}
+                            />
+                            <span style={{ color: "#444", fontSize: 11, marginLeft: 6 }}>
+                              Benchmark: Level {test.benchmark}
+                            </span>
+                          </div>
+                        );
+                      }
+
+                      // decimal (seconds or metres)
+                      return (
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={fieldValues[valKey] ?? ""}
+                              onChange={e => setFieldValues(prev => ({ ...prev, [valKey]: e.target.value }))}
+                              placeholder="—"
+                              style={{ ...baseInput, width: 90 }}
+                            />
+                            <span style={{ color: "#888", fontSize: 14, fontWeight: 700 }}>{suffix}</span>
+                            <span style={{ color: "#444", fontSize: 11, marginLeft: 4 }}>
+                              Benchmark: {test.benchmark}&thinsp;{suffix}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => setExpandedAttempts(isExpanded ? null : valKey)}
+                            style={{
+                              background: "none", border: "none", cursor: "pointer",
+                              color: "#555", fontSize: 10, fontWeight: 600, padding: 0,
+                              display: "flex", alignItems: "center", gap: 3,
+                            }}
+                          >
+                            {isExpanded ? "▲ Hide attempts" : "▸ Log all 3 attempts (auto-fills best)"}
+                          </button>
+                          {isExpanded && (
+                            <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                              {([0, 1, 2] as const).map(i => (
+                                <div key={i} style={{ flex: 1 }}>
+                                  <div style={{
+                                    color: "#555", fontSize: 9, fontWeight: 700,
+                                    textTransform: "uppercase", marginBottom: 3, letterSpacing: "0.4px",
+                                  }}>
+                                    Attempt {i + 1}
+                                  </div>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={attempts[i]}
+                                      onChange={e => updateAttempt(i, e.target.value)}
+                                      placeholder="—"
+                                      style={{
+                                        ...baseInput,
+                                        width: "100%",
+                                        fontSize: 13,
+                                        padding: "8px 8px",
+                                      }}
+                                    />
+                                    <span style={{ color: "#555", fontSize: 10 }}>{suffix}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
