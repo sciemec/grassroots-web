@@ -377,8 +377,9 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
       <main className="gs-watermark flex-1 overflow-auto p-6">
 
         <div className="mb-6 flex items-center gap-3">
-          <Link href="/player" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
-            <ArrowLeft className="h-4 w-4" style={{ color: "#f0b429" }} />
+          <Link href="/player" className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 hover:bg-muted transition-colors text-sm font-semibold" style={{ color: "#f0b429" }}>
+            <ArrowLeft className="h-4 w-4" />
+            Player Hub
           </Link>
           <div>
             <h1 className="text-2xl font-bold" style={{ color: "#f0b429" }}>Assessment</h1>
