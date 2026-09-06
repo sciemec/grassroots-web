@@ -173,8 +173,8 @@ const TEST_DOMAIN_MAP: Record<string, keyof DomainScores> = {
   // Goalkeeper
   "Reaction save":         "cognitiveSpeed",
   "Distribution accuracy": "ballMastery",
-  "Dive reach (left)":     "explosivePower",
-  "Dive reach (right)":    "explosivePower",
+  "Dive reach left":        "explosivePower",
+  "Dive reach right":       "explosivePower",
   // Defender
   "40m sprint":            "linearSpeed",
   "1v1 tackle success":    "cognitiveSpeed",
@@ -183,7 +183,7 @@ const TEST_DOMAIN_MAP: Record<string, keyof DomainScores> = {
   // Midfielder
   "20m sprint":            "linearSpeed",
   "Passing accuracy":      "ballMastery",
-  "Ball retention (1v1)":  "cognitiveSpeed",
+  "Ball retention 1v1":    "cognitiveSpeed",
   "Yo-Yo endurance":       "endurance",
   // Forward
   "10m sprint":            "linearSpeed",
@@ -334,6 +334,7 @@ export default function AssessmentPage() {
   const [reqNote,              setReqNote]              = useState("");
   const [reqSubmitting,        setReqSubmitting]        = useState(false);
   const [reqSuccess,           setReqSuccess]           = useState(false);
+  const [reqError,             setReqError]             = useState("");
   const [expandedProtocol,     setExpandedProtocol]     = useState<string | null>(null);
 
   // Match stats state
@@ -430,6 +431,7 @@ export default function AssessmentPage() {
 
   const submitFieldTestRequest = async () => {
     setReqSubmitting(true);
+    setReqError("");
     try {
       const res = await api.post("/player/field-test-request", {
         position:       reqPosition || undefined,
@@ -439,8 +441,9 @@ export default function AssessmentPage() {
       });
       setExistingRequest(res.data?.data ?? null);
       setReqSuccess(true);
-    } catch {
-      // silent — user can retry
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setReqError(msg ?? "Could not submit request. Please try again.");
     } finally {
       setReqSubmitting(false);
     }
@@ -926,6 +929,12 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                       className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 resize-none"
                     />
                   </div>
+
+                  {reqError && (
+                    <p className="rounded-lg bg-red-900/40 border border-red-500/30 px-3 py-2 text-xs text-red-400">
+                      {reqError}
+                    </p>
+                  )}
 
                   <button
                     onClick={submitFieldTestRequest}
