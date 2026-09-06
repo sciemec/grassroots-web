@@ -13,14 +13,10 @@ export function PublicNavbar() {
   type NavLink = { href: string; label: string; gold?: boolean };
 
   const links: NavLink[] = [
-    { href: "/schools", label: "Schools & Clubs" },
-    { href: "/players", label: "Discover Talent" },
-    { href: "/player", label: "Player Hub" },
-    { href: "/coach", label: "Coach Hub" },
-    { href: "/scout", label: "Scout Hub" },
+    { href: "/schools",    label: "Schools & Clubs" },
+    { href: "/players",    label: "Discover Talent" },
     { href: "/school-hub", label: "School Hub" },
-    { href: "/arena", label: "The Arena" },
-    { href: "/analyst", label: "Analyst Hub" },
+    { href: "/arena",      label: "The Arena" },
   ];
 
   return (
