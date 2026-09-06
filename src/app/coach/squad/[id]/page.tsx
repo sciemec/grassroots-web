@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Activity, Target, Trophy, TrendingUp, AlertTriangle,
-  Brain, Loader2, Calendar, Shield, Dumbbell, Users, Phone,
+  Brain, Loader2, Calendar, Shield, Dumbbell, Users, Phone, Star,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -18,6 +18,23 @@ const STATUS_BADGE: Record<string, string> = {
   injured: "bg-red-500/15 text-red-700",
   caution: "bg-amber-500/15 text-amber-700",
 };
+
+const SKILLS = [
+  { code: "dribbling",   label: "Dribbling",   emoji: "🏃" },
+  { code: "first_touch", label: "First Touch",  emoji: "🎯" },
+  { code: "shooting",    label: "Shooting",     emoji: "⚽" },
+  { code: "sprint",      label: "Sprint",       emoji: "💨" },
+  { code: "passing",     label: "Passing",      emoji: "🔄" },
+  { code: "tackling",    label: "Tackling",     emoji: "🛡️" },
+] as const;
+
+function segColor(v: number): string {
+  if (v <= 3) return "#ef4444";
+  if (v <= 5) return "#f59e0b";
+  if (v <= 7) return "#4ade80";
+  if (v <= 9) return "#c0dd97";
+  return "#c8962a";
+}
 
 interface PlayerStats {
   overall_score: number;
@@ -54,6 +71,7 @@ export default function CoachPlayerDetailPage() {
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [guardiansPayload, setGuardiansPayload] = useState<GuardiansPayload | null>(null);
+  const [skillRatings, setSkillRatings] = useState<{ skill_code: string; rating: number; notes: string | null }[]>([]);
   const [aiReport, setAiReport] = useState("");
   const [loadingAi, setLoadingAi] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -65,13 +83,15 @@ export default function CoachPlayerDetailPage() {
       api.get(`/coach/squad/${memberId}/sessions`).catch(() => ({ data: [] })),
       api.get(`/coach/squad/${memberId}/stats`).catch(() => ({ data: null })),
       api.get(`/coach/squad/${memberId}/guardians`).catch(() => ({ data: null })),
-    ]).then(([memberRes, sessionsRes, statsRes, guardiansRes]) => {
+      api.get(`/coach/squad/${memberId}/skill-ratings`).catch(() => ({ data: { data: [] } })),
+    ]).then(([memberRes, sessionsRes, statsRes, guardiansRes, ratingsRes]) => {
       setMember(memberRes.data?.data ?? memberRes.data);
       setSessions(sessionsRes.data?.data ?? sessionsRes.data ?? []);
       setStats(statsRes.data?.data ?? statsRes.data);
       if (guardiansRes.data) {
         setGuardiansPayload(guardiansRes.data);
       }
+      setSkillRatings(Array.isArray(ratingsRes.data?.data) ? ratingsRes.data.data : []);
     }).catch(() => {}).finally(() => setLoading(false));
   }, [user, router, memberId]);
 
@@ -244,6 +264,78 @@ export default function CoachPlayerDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Skill Ratings */}
+            <div className="rounded-xl border bg-card p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-semibold flex items-center gap-2">
+                  <Star className="h-4 w-4 text-amber-500" /> Coach Skill Ratings
+                </h2>
+                <Link
+                  href="/coach/skill-ratings"
+                  className="text-xs text-primary hover:underline"
+                >
+                  Rate / Edit →
+                </Link>
+              </div>
+              {skillRatings.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No ratings yet.{" "}
+                  <Link href="/coach/skill-ratings" className="text-primary hover:underline">
+                    Rate this player →
+                  </Link>
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {SKILLS.map((skill) => {
+                    const r = skillRatings.find((x) => x.skill_code === skill.code);
+                    const v = r?.rating ?? 0;
+                    return (
+                      <div key={skill.code}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm">
+                            {skill.emoji} {skill.label}
+                          </span>
+                          <span
+                            className="text-sm font-bold"
+                            style={{ color: v ? segColor(v) : "var(--muted-foreground)" }}
+                          >
+                            {v ? `${v}/10` : "—"}
+                          </span>
+                        </div>
+                        <div className="flex gap-0.5">
+                          {Array.from({ length: 10 }, (_, i) => (
+                            <div
+                              key={i}
+                              className="flex-1 h-1.5 rounded-full"
+                              style={{ background: i < v ? segColor(i + 1) : "var(--muted)" }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {(() => {
+                    const rated = skillRatings.filter((r) => r.rating > 0);
+                    if (rated.length === 0) return null;
+                    const avg = rated.reduce((s, r) => s + r.rating, 0) / rated.length;
+                    return (
+                      <div className="mt-3 pt-3 border-t flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          Overall ({rated.length}/{SKILLS.length} skills rated)
+                        </span>
+                        <span
+                          className="text-lg font-bold"
+                          style={{ color: segColor(Math.round(avg)) }}
+                        >
+                          {avg.toFixed(1)}/10
+                        </span>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
 
             {/* Recent sessions */}
             <div className="rounded-xl border bg-card p-5">
