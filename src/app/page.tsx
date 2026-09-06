@@ -84,7 +84,9 @@ export default function GrassrootsSportsLanding() {
       </header>
 
       {/* Public athlete video grid */}
-      <PublicVideoGrid />
+      <div id="features">
+        <PublicVideoGrid />
+      </div>
 
       {/* Footer */}
       <footer className="border-t border-gray-200 bg-white py-8 text-center px-4">
