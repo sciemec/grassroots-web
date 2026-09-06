@@ -46,6 +46,21 @@ const SKILL_LABELS: Record<string, string> = {
   passing:     "Passing",
   tackling:    "Tackling",
 };
+const SKILL_EMOJIS: Record<string, string> = {
+  dribbling:   "🏃",
+  first_touch: "🎯",
+  shooting:    "⚽",
+  sprint:      "💨",
+  passing:     "🔄",
+  tackling:    "🛡️",
+};
+function segColor(v: number): string {
+  if (v <= 3) return "#ef4444";
+  if (v <= 5) return "#f59e0b";
+  if (v <= 7) return "#4ade80";
+  if (v <= 9) return "#c0dd97";
+  return "#c8962a";
+}
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -588,9 +603,6 @@ function RegistrationCard({
   const [showRatings, setShowRatings]         = useState(false);
   const [ratings, setRatings]                 = useState<Record<string, number>>({});
   const [ratingsLoaded, setRatingsLoaded]     = useState(false);
-  const [savingRatings, setSavingRatings]     = useState(false);
-  const [ratingsSaved, setRatingsSaved]       = useState(false);
-  const [ratingsError, setRatingsError]       = useState<string | null>(null);
   const token = useAuthStore((s) => s.token);
 
   async function loadRatings() {
@@ -606,44 +618,15 @@ function RegistrationCard({
         setRatings(map);
       }
     } catch {
-      // silently ignore — inputs start empty
+      // silently ignore
     } finally {
       setRatingsLoaded(true);
-    }
-  }
-
-  async function saveRatings() {
-    const payload = SKILL_CODES
-      .filter((c) => ratings[c] !== undefined && ratings[c] >= 1)
-      .map((c) => ({ code: c, rating: ratings[c] }));
-
-    if (payload.length === 0) {
-      setRatingsError("Enter at least one rating (1–10) before saving.");
-      return;
-    }
-    setSavingRatings(true);
-    setRatingsError(null);
-    setRatingsSaved(false);
-    try {
-      const res = await fetch(`${API_BASE}/coach/registered-players/${reg.id}/skill-ratings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ratings: payload }),
-      });
-      if (!res.ok) throw new Error("Save failed");
-      setRatingsSaved(true);
-      setTimeout(() => setRatingsSaved(false), 3000);
-    } catch {
-      setRatingsError("Failed to save ratings. Please try again.");
-    } finally {
-      setSavingRatings(false);
     }
   }
 
   function handleToggleRatings() {
     if (!showRatings) loadRatings();
     setShowRatings((v) => !v);
-    setRatingsError(null);
   }
 
   return (
@@ -803,95 +786,64 @@ function RegistrationCard({
               <p className="text-xs text-gray-400 flex items-center gap-1.5">
                 <Loader2 size={11} className="animate-spin" /> Loading…
               </p>
-            ) : (
-              <>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, 1fr)",
-                    gap: "8px 16px",
-                  }}
-                >
-                  {SKILL_CODES.map((code) => (
-                    <div key={code}>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: 10,
-                          fontWeight: 600,
-                          color: "#374151",
-                          marginBottom: 2,
-                        }}
-                      >
-                        {SKILL_LABELS[code]}
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={10}
-                        step={0.5}
-                        placeholder="—"
-                        value={ratings[code] ?? ""}
-                        onChange={(e) => {
-                          const v = parseFloat(e.target.value);
-                          setRatings((prev) => ({
-                            ...prev,
-                            [code]: isNaN(v) ? 0 : Math.min(10, Math.max(1, v)),
-                          }));
-                          setRatingsSaved(false);
-                        }}
-                        style={{
-                          width: "100%",
-                          padding: "4px 8px",
-                          fontSize: 12,
-                          border: "1px solid #e5e7eb",
-                          borderRadius: 6,
-                          outline: "none",
-                          color: ratings[code] ? "#111827" : "#9ca3af",
-                          backgroundColor: ratings[code] ? "#f0fdf4" : "#fafafa",
-                        }}
-                      />
+            ) : (() => {
+              const ratedSkills = SKILL_CODES.filter((c) => (ratings[c] ?? 0) >= 1);
+              const overall = ratedSkills.length
+                ? ratedSkills.reduce((s, c) => s + ratings[c], 0) / ratedSkills.length
+                : null;
+              return (
+                <>
+                  {SKILL_CODES.map((code) => {
+                    const v = ratings[code] ?? 0;
+                    return (
+                      <div key={code} style={{ marginBottom: 8 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+                          <span style={{ fontSize: 11, color: "#374151", fontWeight: 600 }}>
+                            {SKILL_EMOJIS[code]} {SKILL_LABELS[code]}
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 900, color: v ? segColor(v) : "#9ca3af", lineHeight: 1 }}>
+                            {v || "—"}<span style={{ fontSize: 9, color: "#9ca3af" }}>/10</span>
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", gap: 2 }}>
+                          {Array.from({ length: 10 }, (_, i) => {
+                            const seg = i + 1;
+                            return (
+                              <div
+                                key={seg}
+                                style={{
+                                  flex: 1, height: 6, borderRadius: 3,
+                                  background: seg <= v ? segColor(seg) : "#f3f4f6",
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {overall !== null && (
+                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 10, color: "#6b7280", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px" }}>Overall</span>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: segColor(Math.round(overall)) }}>{overall.toFixed(1)}</span>
                     </div>
-                  ))}
-                </div>
+                  )}
 
-                {ratingsError && (
-                  <p style={{ marginTop: 8, fontSize: 11, color: "#dc2626" }}>{ratingsError}</p>
-                )}
-
-                <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    onClick={saveRatings}
-                    disabled={savingRatings}
+                  <Link
+                    href={`/coach/skill-ratings/${reg.id}`}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "5px 14px",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: "#fff",
-                      backgroundColor: savingRatings ? "#6b7280" : "#1a5c2a",
-                      border: "none",
-                      borderRadius: 7,
-                      cursor: savingRatings ? "not-allowed" : "pointer",
+                      display: "inline-flex", alignItems: "center", gap: 4,
+                      marginTop: 10, fontSize: 11, fontWeight: 700,
+                      color: "#1a5c2a", textDecoration: "none",
                     }}
                   >
-                    {savingRatings ? (
-                      <><Loader2 size={11} className="animate-spin" /> Saving…</>
-                    ) : (
-                      <><Star size={11} /> Save Ratings</>
-                    )}
-                  </button>
-
-                  {ratingsSaved && (
-                    <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 600 }}>
-                      ✓ Ratings saved
-                    </span>
-                  )}
-                </div>
-              </>
-            )}
+                    <Star size={10} />
+                    {ratedSkills.length > 0 ? "Edit ratings →" : "Rate this player →"}
+                  </Link>
+                </>
+              );
+            })()}
           </div>
         )}
       </div>
