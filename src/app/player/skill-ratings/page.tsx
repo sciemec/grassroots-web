@@ -3,10 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { IconChevronLeft, IconStar } from "@tabler/icons-react";
-import {
-  RadarChart, Radar, PolarGrid, PolarAngleAxis,
-  PolarRadiusAxis, ResponsiveContainer,
-} from "recharts";
 import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -260,45 +256,6 @@ export default function PlayerSkillRatingsPage() {
             }} />
           </div>
         </div>
-
-        {/* ── Radar chart ─────────────────────────────────────────────────── */}
-        {ratedSkills.length >= 3 && (
-          <div style={{
-            background: "#151515", borderRadius: 16,
-            padding: "16px 16px 8px", marginBottom: 16,
-          }}>
-            <div style={{
-              color: "#555", fontSize: 10, fontWeight: 700,
-              textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 4,
-            }}>
-              Skill Shape
-            </div>
-            <ResponsiveContainer width="100%" height={220}>
-              <RadarChart
-                data={SKILLS.map((s) => ({
-                  skill: s.label,
-                  value: ratingMap[s.code]?.rating ?? 0,
-                }))}
-                margin={{ top: 10, right: 20, bottom: 10, left: 20 }}
-              >
-                <PolarGrid stroke="#252525" />
-                <PolarAngleAxis
-                  dataKey="skill"
-                  tick={{ fill: "#888", fontSize: 10.5, fontWeight: 600 }}
-                />
-                <PolarRadiusAxis domain={[0, 10]} tick={false} axisLine={false} />
-                <Radar
-                  name="Skills"
-                  dataKey="value"
-                  stroke="#c8962a"
-                  fill="#c8962a"
-                  fillOpacity={0.22}
-                  strokeWidth={2}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
 
         {/* No ratings empty state */}
         {ratings.length === 0 ? (

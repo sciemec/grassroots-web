@@ -40,19 +40,6 @@ import { queryAI } from "@/lib/ai-query";
 import { useSearchParams } from "next/navigation";
 
 import { getPositionConfig, POSITION_ICON_REGISTRY } from "@/config/positions";
-import {
-  RadarChart, Radar, PolarGrid, PolarAngleAxis,
-  PolarRadiusAxis, ResponsiveContainer,
-} from "recharts";
-
-const COACH_SKILLS = [
-  { code: "dribbling",   label: "Dribbling"  },
-  { code: "first_touch", label: "First Touch" },
-  { code: "shooting",    label: "Shooting"   },
-  { code: "sprint",      label: "Sprint"     },
-  { code: "passing",     label: "Passing"    },
-  { code: "tackling",    label: "Tackling"   },
-] as const;
 
 // ── Player similarity lookup ──────────────────────────────────────────────────
 const PLAYER_SIMILARITIES: Record<string, Record<string, string[]>> = {
@@ -182,7 +169,7 @@ export default function PlayerProfilePage() {
   const [showPotentialPanel, setShowPotentialPanel] = useState(false);
   const [showNarrativePanel, setShowNarrativePanel] = useState(false);
   const [showPlaysLikePanel, setShowPlaysLikePanel] = useState(false);
-  const [coachSkillRatings, setCoachSkillRatings] = useState<Record<string, number>>({});
+  const [skillScores, setSkillScores] = useState<{ skill: string; score: number }[]>([]);
 
   const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -232,9 +219,11 @@ export default function PlayerProfilePage() {
         const rows: { skill_code: string; rating: number }[] = Array.isArray(res.data?.data)
           ? res.data.data
           : [];
-        const map: Record<string, number> = {};
-        rows.forEach((r) => { if (r.rating > 0) map[r.skill_code] = r.rating; });
-        setCoachSkillRatings(map);
+        setSkillScores(
+          rows
+            .filter((r) => r.rating > 0)
+            .map((r) => ({ skill: r.skill_code, score: r.rating }))
+        );
       })
       .catch(() => {});
   }, [user]);
@@ -786,6 +775,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
               topStrength:  null,
               avgSubScore:  t.avgSubScore,
             }))}
+            skillScores={skillScores}
             playerName={user?.name ?? undefined}
             position={watchedValues.position ?? undefined}
             xpTotal={passportData?.xp_total ?? 0}
@@ -826,44 +816,6 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
 
           {/* Scout View Badge */}
           {profile?.id && <ScoutViewBadge playerId={profile.id} />}
-
-          {/* ── COACH SKILL RATINGS RADAR ─────────────────────────────────── */}
-          {Object.keys(coachSkillRatings).length >= 3 && (
-            <div className="rounded-2xl border border-white/10 bg-card p-4">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Coach Skill Ratings
-                </p>
-                <Link href="/player/skill-ratings" className="text-[10px] font-semibold text-[#f0b429] hover:underline">
-                  View detail →
-                </Link>
-              </div>
-              <ResponsiveContainer width="100%" height={210}>
-                <RadarChart
-                  data={COACH_SKILLS.map((s) => ({
-                    skill: s.label,
-                    value: coachSkillRatings[s.code] ?? 0,
-                  }))}
-                  margin={{ top: 10, right: 20, bottom: 10, left: 20 }}
-                >
-                  <PolarGrid stroke="rgba(255,255,255,0.08)" />
-                  <PolarAngleAxis
-                    dataKey="skill"
-                    tick={{ fill: "#888", fontSize: 10, fontWeight: 600 }}
-                  />
-                  <PolarRadiusAxis domain={[0, 10]} tick={false} axisLine={false} />
-                  <Radar
-                    name="Skills"
-                    dataKey="value"
-                    stroke="#f0b429"
-                    fill="#f0b429"
-                    fillOpacity={0.18}
-                    strokeWidth={2}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
 
           {/* ── EDIT PROFILE COLLAPSIBLE ──────────────────────────────────── */}
           <div className="rounded-2xl border border-white/10 bg-card overflow-hidden">
