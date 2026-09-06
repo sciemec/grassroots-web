@@ -283,6 +283,7 @@ export default function PublicPassportTabs({
   skillScores = [],
   coachRatings = [],
   assessmentDomains = [],
+  positionCoachVerified = false,
   sport,
 }: {
   drillScores: DrillScore[];
@@ -295,6 +296,7 @@ export default function PublicPassportTabs({
   skillScores?: SkillScore[];
   coachRatings?: CoachRating[];
   assessmentDomains?: AssessmentDomain[];
+  positionCoachVerified?: boolean;
   sport?: string;
 }) {
   const [headerOpen, setHeaderOpen] = useState(false);
@@ -514,11 +516,24 @@ export default function PublicPassportTabs({
             <span style={{ color: "#fff", fontSize: 13, fontWeight: 500 }}>{chartTitles[bottomTab]}</span>
           </div>
           <RadarSVG cfg={radarCfgs[bottomTab]} />
-          <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "2px 0 6px", fontSize: 10, color: "#666" }}>
-            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TAB_META[bottomTab].sourceColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 3h6M10 3v5l-4 9h12l-4-9V3" />
-            </svg>
-            {chartSources[bottomTab]}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "2px 0 6px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#666" }}>
+              <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TAB_META[bottomTab].sourceColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 3h6M10 3v5l-4 9h12l-4-9V3" />
+              </svg>
+              {chartSources[bottomTab]}
+            </div>
+            {bottomTab === "position" && assessmentDomains.length > 0 && (
+              positionCoachVerified ? (
+                <span style={{ fontSize: 10, fontWeight: 600, color: "#0d9488", background: "#042f2e", padding: "2px 7px", borderRadius: 8 }}>
+                  Verified coach
+                </span>
+              ) : (
+                <span style={{ fontSize: 10, fontWeight: 600, color: "#b45309", background: "#451a03", padding: "2px 7px", borderRadius: 8 }}>
+                  Unverified
+                </span>
+              )
+            )}
           </div>
         </div>
 
