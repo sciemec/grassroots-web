@@ -11,7 +11,6 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
 } from "recharts";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import { queryAI } from "@/lib/ai-query";
 import { calcBenchmarkScore } from "@/lib/skill-scoring";
 import api from "@/lib/api";
@@ -372,9 +371,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
   if (!user) return null;
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="gs-watermark flex-1 overflow-auto p-6">
+    <div className="p-4 md:p-6">
 
         <div className="mb-6 flex items-center gap-3">
           <Link href="/player" className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 hover:bg-muted transition-colors text-sm font-semibold" style={{ color: "#f0b429" }}>
@@ -875,7 +872,6 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
           );
         })()}
 
-      </main>
     </div>
   );
 }
