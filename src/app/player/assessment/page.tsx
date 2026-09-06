@@ -371,7 +371,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
   if (!user) return null;
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="min-h-screen bg-background gs-watermark p-4 md:p-6">
 
         <div className="mb-6 flex items-center gap-3">
           <Link href="/player" className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 hover:bg-muted transition-colors text-sm font-semibold" style={{ color: "#f0b429" }}>
