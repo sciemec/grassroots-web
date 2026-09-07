@@ -95,6 +95,20 @@ export function LandingSidebar() {
     return pathname?.startsWith(href) ?? false;
   };
 
+  // Build role-aware hub label/href for the "Player Hub" entry
+  const myHubItem = (() => {
+    if (!user) return { href: "/player", label: "Player Hub", description: "Training, drills, talent passport" };
+    const roleMap: Record<string, { href: string; label: string; description: string }> = {
+      player:  { href: "/player",  label: "Player Hub",  description: "Training, drills, talent passport" },
+      coach:   { href: "/coach",   label: "Coach Hub",   description: "Squad management, drills" },
+      scout:   { href: "/scout",   label: "Scout Hub",   description: "Discover talent, reports" },
+      admin:   { href: "/admin",   label: "Admin Hub",   description: "Platform management" },
+      fan:     { href: "/fan",     label: "Fan Hub",     description: "Follow talent, community" },
+      analyst: { href: "/analyst", label: "Analyst Hub", description: "Match analytics, xG, heatmaps" },
+    };
+    return roleMap[user.role] ?? { href: "/arena", label: "My Hub", description: "Your dashboard" };
+  })();
+
   // Get badge color based on badge text
   const getBadgeColor = (badge?: string) => {
     if (badge === "LIVE") return "bg-red-500 text-white animate-pulse";
@@ -192,36 +206,40 @@ export function LandingSidebar() {
                 
                 {!isCollapsed && (
                   <div className="space-y-1 px-3">
-                    {section.items.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setIsOpen(false)}
-                        className={`
-                          group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-                          transition-all duration-200
-                          ${isActive(item.href) 
-                            ? "bg-[#f0b429] text-[#1a5c2a]" 
-                            : "text-white/80 hover:bg-white/10 hover:text-white"
-                          }
-                        `}
-                      >
-                        {item.icon}
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <span>{item.label}</span>
-                            {item.badge && (
-                              <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${getBadgeColor(item.badge)}`}>
-                                {item.badge}
-                              </span>
-                            )}
+                    {section.items.map((item) => {
+                      // Replace the generic "Player Hub" entry with the role-correct hub
+                      const resolved = item.href === "/player" ? { ...item, ...myHubItem } : item;
+                      return (
+                        <Link
+                          key={resolved.href}
+                          href={resolved.href}
+                          onClick={() => setIsOpen(false)}
+                          className={`
+                            group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                            transition-all duration-200
+                            ${isActive(resolved.href)
+                              ? "bg-[#f0b429] text-[#1a5c2a]"
+                              : "text-white/80 hover:bg-white/10 hover:text-white"
+                            }
+                          `}
+                        >
+                          {item.icon}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span>{resolved.label}</span>
+                              {item.badge && (
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${getBadgeColor(item.badge)}`}>
+                                  {item.badge}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[9px] opacity-60 group-hover:opacity-100 transition-opacity">
+                              {resolved.description}
+                            </p>
                           </div>
-                          <p className="text-[9px] opacity-60 group-hover:opacity-100 transition-opacity">
-                            {item.description}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
               </div>

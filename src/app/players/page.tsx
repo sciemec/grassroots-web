@@ -9,6 +9,7 @@ import { PublicNavbar } from "@/components/layout/public-navbar";
 
 interface PlayerCard {
   user_id: string;
+  name: string | null;
   initials: string;
   photo_url: string | null;
   position: string | null;
@@ -91,7 +92,7 @@ function PlayerTile({ player }: { player: PlayerCard }) {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 truncate">{player.initials}</p>
+          <p className="font-semibold text-gray-900 truncate">{player.name ?? player.initials}</p>
           <p className="text-xs text-gray-500 truncate">
             {[player.position, sportLabel].filter(Boolean).join(" · ")}
           </p>
