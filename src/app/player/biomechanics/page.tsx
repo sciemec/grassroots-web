@@ -19,6 +19,7 @@ interface Drill {
   tagline: string;
   cameraAngle: string;         // plain English
   howToDo: string[];           // numbered steps, simple words
+  commonMistakes: string[];    // what players get wrong
   noEquipment: string;         // what to use if no gear
   whatWeCheck: {
     label: string;             // simplified metric name
@@ -41,16 +42,23 @@ const DRILLS: Drill[] = [
     id: 'sprint_10m',
     name: 'Short Sprint',
     emoji: '⚡',
-    tagline: 'Run as fast as you can for 10 steps',
-    cameraAngle: 'Side view — phone level with your hips, 4–5 metres away',
+    tagline: 'Run as fast as you can for 10 metres',
+    cameraAngle: 'Side view — phone at hip height, 4–5 metres from your run line. Lean it against a water bottle, brick, or school bag — or ask someone to hold it. The lens must face sideways along your run, not toward you.',
     howToDo: [
-      'Put your phone on a water bottle, brick, or ask someone to hold it at hip height.',
-      'Stand side-on to the camera (your shoulder faces the lens).',
-      'Mark two points about 10 big steps apart.',
-      'Hit record, wait 2 seconds, then sprint as hard as you can from point A to point B.',
-      'Stop the recording. Upload the clip here.',
+      'Set up two markers about 10 big walking steps apart. Use stones, sticks, or chalk — anything visible on the ground.',
+      'Place your phone sideways-on at hip height, 4–5 metres from your run line. The lens must face along the run, not toward you. Lean it against a water bottle or brick.',
+      'Stand at the start marker — feet shoulder-width apart, knees slightly bent, body leaning slightly forward.',
+      'Hit record, wait 2 seconds, then explode off the line and sprint flat-out to the far marker.',
+      'Run THROUGH the far marker — do not slow down before you reach it.',
+      'Stop the recording and upload the clip. One full-pace sprint is enough.',
     ],
-    noEquipment: 'You just need space — a road, field, or compound. No cones needed, use stones or sticks as markers.',
+    commonMistakes: [
+      'Slowing down before the finish marker — sprint through it, not to it.',
+      'Standing upright at the start — you need a slight forward lean, not a straight back.',
+      'Running at 70% effort — the AI needs to see your real top speed to score you fairly.',
+      'Camera facing toward you from in front — it must be on the SIDE, facing along your run.',
+    ],
+    noEquipment: 'You just need open space — a road, field, or compound. No cones needed: use stones, sticks, or chalk lines as markers.',
     whatWeCheck: [
       { label: 'Body lean', simple: 'Are you leaning forward at the right angle? Leaning too far back makes you slow.' },
       { label: 'Knee lift', simple: 'How high does your knee come up? Higher knees = longer strides = more speed.' },
@@ -62,14 +70,21 @@ const DRILLS: Drill[] = [
     name: 'Quick Turn',
     emoji: '↩️',
     tagline: 'Sprint, plant your foot, and change direction fast',
-    cameraAngle: 'Front view — phone facing you straight on, 4 metres away at knee height',
+    cameraAngle: 'Front view — phone facing you directly, 4 metres away at knee height. Your knees and feet must be clearly visible in frame when you plant and turn.',
     howToDo: [
-      'Set up two points about 5 big steps apart.',
-      'Phone on the ground or a low surface, pointing at you.',
-      'Hit record, sprint to the far point, plant hard, turn, sprint back.',
-      'Do this 2–3 times in the same clip.',
+      'Mark two points about 5 big walking steps apart in a straight line.',
+      'Put your phone on the ground or on something low 4 metres directly in front of you, facing you, at about knee height.',
+      'Hit record, sprint flat-out to the far marker, plant your foot hard, turn, and sprint back to the start.',
+      'Plant and turn using your dominant foot first, then repeat using the other foot — aim for 2–3 turns in the clip.',
+      'Stay in a straight line so the camera catches your whole body on every plant and turn.',
     ],
-    noEquipment: 'Use chalk lines, stones, or clothing as markers. Any firm surface works.',
+    commonMistakes: [
+      'Not sprinting at full pace — the AI needs to see real acceleration to score your turn speed properly.',
+      'Turning with your body instead of driving hard off a planted foot — use the ground to explode off.',
+      'Drifting sideways out of frame — keep your run line centred in front of the camera.',
+      'Only turning one direction — do both left and right turns in the same clip.',
+    ],
+    noEquipment: 'Use chalk lines, stones, or clothes as markers. Any firm, flat surface works — indoor floor, road, or field.',
     whatWeCheck: [
       { label: 'Knee cave risk', simple: 'Does your knee fall inward when you plant? That\'s a big injury warning sign.' },
       { label: 'Body lean', simple: 'Are you low and leaning into the turn, or upright and losing speed?' },
@@ -81,14 +96,21 @@ const DRILLS: Drill[] = [
     name: 'Step-Off Jump',
     emoji: '🦘',
     tagline: 'Step off a raised surface and jump straight up',
-    cameraAngle: 'Front view — phone facing you, 3–4 metres away at knee height',
+    cameraAngle: 'Front view — phone on a low surface or the ground, 3–4 metres away, facing you. Knees and feet must be clearly visible in frame.',
     howToDo: [
-      'Find a step, kerb, or low wall (about 20–30 cm high).',
-      'Set up the phone facing you straight on.',
-      'Step off — do NOT jump off. Just step, land with both feet, then immediately jump as high as you can.',
-      'Do this 3 times in the same clip.',
+      'Find a solid raised surface — a school step, low wall, kerb, or brick stack — about 20–30 cm high.',
+      'Place your phone 3–4 metres away, facing you straight on, at knee height or on the ground.',
+      'Stand on the raised surface. Step off — do NOT jump. Let gravity bring you down naturally.',
+      'The instant your feet touch the ground, bend and spring up as high as you can — no pause between landing and jumping.',
+      'Do 3 step-off jumps in the same continuous clip.',
     ],
-    noEquipment: 'No box? Use a dirt mound, low school step, or thick book stack. If you have nothing raised, do a normal standing jump from flat ground instead.',
+    commonMistakes: [
+      'Jumping off the step instead of stepping — you must step off, not push yourself upward first.',
+      'Pausing after landing before jumping — the upward jump must happen immediately after landing.',
+      'Landing only on your toes — land on your whole foot first, then drive up through your legs.',
+      'Looking down at the ground on landing — keep your eyes up and chest tall.',
+    ],
+    noEquipment: 'No step? Use a firm dirt mound, a stack of thick books, or a low kerb. If you have nothing raised, do a standing jump from flat ground instead — the AI will still score your landing quality and jump power.',
     whatWeCheck: [
       { label: 'Knee cave risk', simple: 'Do your knees stay over your toes when you land? Caving inward = ACL risk.' },
       { label: 'Landing softness', simple: 'Do you bend your knees to absorb the landing, or do you land stiff-legged? Stiff landings damage joints.' },
@@ -101,17 +123,24 @@ const DRILLS: Drill[] = [
     name: 'Jump and Head',
     emoji: '🏃',
     tagline: 'Run two steps, jump, and head the ball',
-    cameraAngle: 'Front view — phone facing you, 4 metres away at chest height',
+    cameraAngle: 'Front view — phone at chest height, 4 metres away, facing you directly. Your full body from feet to head must be visible so the AI can measure your jump height.',
     howToDo: [
-      'Ask a friend to hold the ball up, or tie a ball in a net/bag at head height.',
-      'Take two running steps, jump, and head the ball.',
-      'The camera should capture your whole body from feet to head.',
-      'Do this 3 times in the same clip.',
+      'Set up the ball at head height — hang it in a net or bag from a tree branch, or ask a friend to hold it up at the right height.',
+      'Place your phone 4 metres away, facing you directly at chest height. Check the whole body from feet to head is in frame.',
+      'Take exactly two running steps, jump off both feet together, and head the ball firmly.',
+      'Land with both feet and keep your knees bent to absorb the impact — do not land with straight legs.',
+      'Repeat 3 times in the same clip. Your friend can re-position the ball each time.',
     ],
-    noEquipment: 'No ball? Use a mango, balled-up cloth, or plastic bag stuffed with rags. Hang it from a tree branch or have someone hold it up.',
+    commonMistakes: [
+      'Jumping off one foot only — this drill needs a two-footed takeoff to measure your bilateral power correctly.',
+      'Only tapping the ball gently — jump and head it with real effort so the AI can measure your flight time.',
+      'Landing stiff-legged — bend your knees on every landing or you risk a knee injury.',
+      'Ball too high or too low — it should be at the height you would head it in a real match.',
+    ],
+    noEquipment: 'No ball? Use a mango, balled-up cloth, or a plastic bag stuffed with rags. Hang it from a tree branch or have a friend hold it at head height.',
     whatWeCheck: [
       { label: 'Knee cave risk', simple: 'Do your knees stay in line when you land after heading?' },
-      { label: 'Landing softness', simple: 'Do you land softly, or do you crash down hard?' },
+      { label: 'Landing softness', simple: 'Do you land softly with bent knees, or crash down hard?' },
       { label: 'Body lean', simple: 'Is your trunk upright as you jump, giving you good jump height?' },
     ],
   },
@@ -120,14 +149,22 @@ const DRILLS: Drill[] = [
     name: 'Side-Step Speed',
     emoji: '↔️',
     tagline: 'Shuffle sideways as fast as possible',
-    cameraAngle: 'Front view — phone facing you, 4 metres away at hip height',
+    cameraAngle: 'Front view — phone at hip height, 4 metres directly in front of you. Your whole body from head to feet must be visible as you shuffle left and right across the frame.',
     howToDo: [
-      'Mark two points about 4 big steps apart (sideways).',
-      'Phone in front of you, pointing at your face/chest.',
-      'Shuffle side to side between the two points as fast as you can.',
-      'Do NOT cross your feet. Stay low. Keep going for about 10 seconds.',
+      'Mark two points about 4 big walking steps apart in a sideways line — not forward and back, but left and right.',
+      'Place your phone 4 metres directly in front of you at hip height, facing you.',
+      'Start at the left marker. Shuffle sideways to the right marker, then back — without crossing your feet.',
+      'Stay low and bent at the knees the whole time — do NOT stand up straight between shuffles.',
+      'Keep your chest facing the camera at all times — do not turn your body sideways to run.',
+      'Keep shuffling continuously for 10 full seconds. The camera runs the whole time.',
     ],
-    noEquipment: 'Any flat surface works. Mark with stones, sticks, or chalk.',
+    commonMistakes: [
+      'Crossing your feet — your feet must never cross each other. Shuffle, don\'t run sideways.',
+      'Standing upright between shuffles — stay low the whole time, like you\'re sitting in a low chair.',
+      'Turning your body sideways — your chest must always face the camera directly.',
+      'Stopping completely at each marker — touch it and immediately go the other way without pausing.',
+    ],
+    noEquipment: 'Any flat surface works. Mark the two points with stones, sticks, chalk, or items of clothing. Inside or outside — just needs to be firm.',
     whatWeCheck: [
       { label: 'Body lean', simple: 'Are you staying low and leaning slightly? Standing tall loses speed.' },
       { label: 'Knee cave risk', simple: 'Are your knees staying strong and over your toes as you push sideways?' },
@@ -138,15 +175,22 @@ const DRILLS: Drill[] = [
     id: 'dribble_sprint',
     name: 'Sprint Dribble',
     emoji: '⚽',
-    tagline: 'Dribble at full speed for 10 metres',
-    cameraAngle: 'Side view — phone level with your hips, 4–5 metres away',
+    tagline: 'Dribble at full speed for 15 metres',
+    cameraAngle: 'Side view — phone at hip height, 4–5 metres from your run line. Lean it against a water bottle, brick, or school bag. The lens must face sideways along your run.',
     howToDo: [
-      'Place the phone to your side at hip height.',
-      'Dribble at full speed in a straight line past the camera.',
-      'Push the ball out ahead, sprint to it, touch again. Full pace!',
-      'Do this 2 times in the same clip.',
+      'Place the phone sideways-on at hip height, 4–5 metres from your run line — the lens must face along the direction you\'ll run, not toward you.',
+      'Start 2–3 metres before the camera\'s field of view, with the ball at your feet.',
+      'Push the ball 3–4 big steps ahead, accelerate hard after it, touch it again, and sprint through the frame at full pace.',
+      'The whole sprint should cover about 15 metres. Use the full width of the shot.',
+      'Repeat 2 times in the same clip. Walk or jog back between runs.',
     ],
-    noEquipment: 'No football? Use a tennis ball, plastic bottle, or anything round you can push. Any firm ground works.',
+    commonMistakes: [
+      'Dribbling at half-pace — this drill needs full speed. A slow dribble won\'t give you an accurate score.',
+      'Too many small touches — push the ball 3–4 big steps ahead, sprint after it, one touch, repeat. Don\'t bounce it every step.',
+      'Camera facing toward you from in front — it must be to the SIDE, along your run line.',
+      'Jogging back and immediately going again — walk back properly and reset before the next run.',
+    ],
+    noEquipment: 'No football? Use a tennis ball, plastic bottle, or anything round you can push along the ground. Any firm surface works — road, court, or field.',
     whatWeCheck: [
       { label: 'Body lean', simple: 'Are you leaning forward into the sprint, or sitting upright and slow?' },
       { label: 'Knee lift', simple: 'Are your knees driving up, giving you a long powerful stride?' },
@@ -542,6 +586,18 @@ export default function BiometricsPage() {
                   <li key={i} style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{step}</li>
                 ))}
               </ol>
+
+              {/* Common mistakes */}
+              {drill.commonMistakes.length > 0 && (
+                <div style={{ marginTop: '1rem' }}>
+                  <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>⚠️ Common mistakes</p>
+                  <ul style={{ margin: 0, paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {drill.commonMistakes.map((m, i) => (
+                      <li key={i} style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>{m}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* No equipment */}
               <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: '0.75rem', marginTop: '1rem' }}>
