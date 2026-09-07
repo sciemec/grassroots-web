@@ -285,12 +285,12 @@ export default function PlayerHubPage() {
           subtitle="Upload a clip, get AI feedback"
         />
         <HubCard
-          href="/player/analyse"
+          href="/player/gemini-drills"
           icon={IconTarget}
           iconBg={O}
           iconColor={OL}
-          title="Football Skill Analysis"
-          subtitle="Deep technique breakdown"
+          title="Football Drill Analysis"
+          subtitle="AI video analysis — populate your Technical radar"
         />
         <HubCard
           href="/player/skill-ratings"
