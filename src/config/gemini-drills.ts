@@ -2000,8 +2000,13 @@ export const CRICKET_SCHOLARSHIP_DRILLS: UniversalDrill[] = [
 
 // ── SPORT DRILLS MAP ──────────────────────────────────────────────────────────
 
-export const SPORT_DRILLS_MAP: Record<string, UniversalDrill[]> = {
-  football:   [...FOOTBALL_SCHOLARSHIP_DRILLS,   ...UNIVERSAL_ATHLETIC_DRILLS],
+const FOOTBALL_RADAR_IDS = [
+  'fb_first_touch', 'fb_shooting', 'fb_passing', 'fb_heading',
+  'fb_juggling', 'fb_crossing', 'fb_free_kick', 'fb_throw_in', 'fb_rebound_turn_strike',
+];
+
+export const SPORT_DRILLS_MAP: Record<string, GeminiDrill[]> = {
+  football:   FOOTBALL_DRILLS.filter(d => FOOTBALL_RADAR_IDS.includes(d.id)),
   rugby:      [...RUGBY_SCHOLARSHIP_DRILLS,      ...UNIVERSAL_ATHLETIC_DRILLS],
   athletics:  [...ATHLETICS_SCHOLARSHIP_DRILLS,  ...UNIVERSAL_ATHLETIC_DRILLS],
   netball:    [...NETBALL_SCHOLARSHIP_DRILLS,    ...UNIVERSAL_ATHLETIC_DRILLS],
@@ -2013,7 +2018,7 @@ export const SPORT_DRILLS_MAP: Record<string, UniversalDrill[]> = {
   hockey:     UNIVERSAL_ATHLETIC_DRILLS,
 };
 
-export function getDrillsForSport(sport: string): UniversalDrill[] {
+export function getDrillsForSport(sport: string): GeminiDrill[] {
   return SPORT_DRILLS_MAP[sport.toLowerCase()] ?? UNIVERSAL_ATHLETIC_DRILLS;
 }
 
