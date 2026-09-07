@@ -2073,5 +2073,5 @@ export interface DrillResult {
   data_confidence: string;
   scores: Record<string, { score: number; observation: string; measurable?: boolean }>;
   analysedAt: string; // ISO date
-  engine?: 'gemini' | 'mediapipe';  // which AI analysed this result
+  engine?: 'gemini' | 'mediapipe' | 'combined';  // which AI analysed this result
 }
