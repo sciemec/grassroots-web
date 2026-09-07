@@ -138,7 +138,7 @@ function DrillGroupCard() {
           marginBottom: 12,
         }}
       >
-        Skill Drills
+        Coach Assisted Skills Drill Test
       </div>
       <div
         style={{
@@ -266,7 +266,7 @@ export default function PlayerHubPage() {
           icon={IconRun}
           iconBg={O}
           iconColor={OL}
-          title="Position Test"
+          title="Coach Assisted Football Position Test"
           subtitle="Sprint, jump, agility + Yo-Yo test"
         />
         <HubCard
