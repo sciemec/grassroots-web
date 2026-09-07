@@ -495,10 +495,13 @@ export default function GeminiDrillsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiToken}` },
         body: JSON.stringify({
-          overall_score:   result.overall_score,
-          top_strength:    result.top_strength,
-          key_improvement: result.key_improvement,
-          sport:           result.sport,
+          drill_name:    result.drillName,
+          sport:         result.sport,
+          scores:        Object.fromEntries(
+            Object.entries(result.scores).map(([k, v]) => [k, Math.round(v.score * 10)])
+          ),
+          feedback:      [result.top_strength, result.key_improvement, result.coach_note].filter(Boolean).join('. '),
+          overall_score: result.overall_score,
         }),
       }).catch(() => {});
 
@@ -1191,10 +1194,13 @@ export default function GeminiDrillsPage() {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiToken}` },
                               body: JSON.stringify({
-                                overall_score:   upload.result.overall_score,
-                                top_strength:    upload.result.top_strength,
-                                key_improvement: upload.result.key_improvement,
-                                sport:           upload.result.sport,
+                                drill_name:    upload.result.drillName,
+                                sport:         upload.result.sport,
+                                scores:        Object.fromEntries(
+                                  Object.entries(upload.result.scores).map(([k, v]) => [k, Math.round(v.score * 10)])
+                                ),
+                                feedback:      [upload.result.top_strength, upload.result.key_improvement, upload.result.coach_note].filter(Boolean).join('. '),
+                                overall_score: upload.result.overall_score,
                               }),
                             }).catch(() => {});
                           }
