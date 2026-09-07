@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Film, Upload, Trash2, Play, X, Plus, Copy, Check,
-  HardDrive, Tag, Clock, AlertCircle, ChevronRight, Loader2, WifiOff, Share2,
+  HardDrive, Tag, Clock, AlertCircle, ChevronRight, Loader2, WifiOff, Share2, Camera,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -141,6 +141,7 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
   });
   const [gateProbing, setGateProbing]   = useState(false);
   const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
+  const [showRecorder, setShowRecorder] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const set = (patch: Partial<UploadState>) =>
@@ -320,6 +321,26 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
         )}
       </div>
 
+      {/* Record short clip */}
+      <div className="my-3 flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="h-px flex-1 bg-[#f0b429]/10" />
+        <span>or</span>
+        <div className="h-px flex-1 bg-[#f0b429]/10" />
+      </div>
+      <button
+        onClick={() => setShowRecorder(true)}
+        className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg border border-[#f0b429]/20 px-4 py-2.5 text-sm font-semibold text-[#f0b429] transition-colors hover:bg-[#f0b429]/5"
+      >
+        <Camera className="h-4 w-4" /> Record Short Clip (max 60s)
+      </button>
+
+      {showRecorder && (
+        <RecordClipModal
+          onRecorded={(file) => { acceptFile(file); setShowRecorder(false); }}
+          onClose={() => setShowRecorder(false)}
+        />
+      )}
+
       {state.error && (
         <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -399,6 +420,201 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
           )}
         </button>
       )}
+    </div>
+  );
+}
+
+// ─── Record Clip Modal ────────────────────────────────────────────────────────
+
+const MAX_RECORD_SECONDS = 60;
+
+function RecordClipModal({
+  onRecorded,
+  onClose,
+}: {
+  onRecorded: (file: File) => void;
+  onClose: () => void;
+}) {
+  const [phase, setPhase]         = useState<"idle" | "recording" | "done">("idle");
+  const [secondsLeft, setSeconds] = useState(MAX_RECORD_SECONDS);
+  const [error, setError]         = useState("");
+
+  const streamRef   = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef   = useRef<Blob[]>([]);
+  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stopTimerRef= useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previewRef  = useRef<HTMLVideoElement>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      timerRef.current && clearInterval(timerRef.current);
+      stopTimerRef.current && clearTimeout(stopTimerRef.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  async function startRecording() {
+    setError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      streamRef.current = stream;
+      if (previewRef.current) {
+        previewRef.current.srcObject = stream;
+        previewRef.current.play().catch(() => {});
+      }
+
+      chunksRef.current = [];
+      const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+        ? "video/webm;codecs=vp9"
+        : "video/webm";
+      const recorder = new MediaRecorder(stream, { mimeType });
+      recorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: "video/webm" });
+        const file = new File([blob], `clip-${Date.now()}.webm`, { type: "video/webm" });
+        onRecorded(file);
+      };
+
+      recorder.start(100); // collect chunks every 100ms
+      setPhase("recording");
+      setSeconds(MAX_RECORD_SECONDS);
+
+      // Countdown tick
+      timerRef.current = setInterval(() => {
+        setSeconds((s) => {
+          if (s <= 1) {
+            timerRef.current && clearInterval(timerRef.current);
+            return 0;
+          }
+          return s - 1;
+        });
+      }, 1000);
+
+      // Auto-stop at 60s
+      stopTimerRef.current = setTimeout(() => {
+        stopRecording();
+      }, MAX_RECORD_SECONDS * 1000);
+
+    } catch {
+      setError("Camera access denied. Please allow camera and microphone permissions.");
+    }
+  }
+
+  function stopRecording() {
+    timerRef.current && clearInterval(timerRef.current);
+    stopTimerRef.current && clearTimeout(stopTimerRef.current);
+    if (recorderRef.current && recorderRef.current.state !== "inactive") {
+      recorderRef.current.stop();
+    }
+    setPhase("done");
+  }
+
+  // SVG ring progress
+  const radius = 28;
+  const circumference = 2 * Math.PI * radius;
+  const progress = phase === "recording" ? secondsLeft / MAX_RECORD_SECONDS : 1;
+  const dashOffset = circumference * (1 - progress);
+
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 9000,
+        background: "rgba(0,0,0,0.85)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: "#111", borderRadius: 16, padding: 24,
+          width: "min(380px, 95vw)", display: "flex", flexDirection: "column", gap: 16,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ color: "#f0b429", fontWeight: 700, fontSize: 14 }}>
+            Record Clip
+          </span>
+          <button
+            onClick={onClose}
+            style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%",
+              width: 28, height: 28, color: "#fff", cursor: "pointer", fontSize: 16,
+              display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Live preview */}
+        <video
+          ref={previewRef}
+          muted
+          playsInline
+          style={{ width: "100%", borderRadius: 10, background: "#000",
+            aspectRatio: "16/9", objectFit: "cover" }}
+        />
+
+        {/* Countdown ring */}
+        {phase === "recording" && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+            <svg width={70} height={70}>
+              <circle cx={35} cy={35} r={radius}
+                fill="none" stroke="#333" strokeWidth={4} />
+              <circle cx={35} cy={35} r={radius}
+                fill="none" stroke="#f0b429" strokeWidth={4}
+                strokeDasharray={circumference}
+                strokeDashoffset={dashOffset}
+                strokeLinecap="round"
+                transform="rotate(-90 35 35)" />
+              <text x={35} y={40} textAnchor="middle"
+                fill="#fff" fontSize={14} fontWeight={700}>
+                {secondsLeft}s
+              </text>
+            </svg>
+            <span style={{ color: "#f0b429", fontSize: 12, fontWeight: 600 }}>
+              Recording… tap Stop when done
+            </span>
+          </div>
+        )}
+
+        {error && (
+          <p style={{ color: "#f87171", fontSize: 12, textAlign: "center" }}>{error}</p>
+        )}
+
+        {/* Controls */}
+        {phase === "idle" && (
+          <button
+            onClick={startRecording}
+            style={{ background: "#1a5c2a", color: "#f0b429", border: "none", borderRadius: 10,
+              padding: "12px", fontWeight: 700, fontSize: 14, cursor: "pointer", display: "flex",
+              alignItems: "center", justifyContent: "center", gap: 8 }}
+          >
+            <Camera size={16} /> Start Recording
+          </button>
+        )}
+        {phase === "recording" && (
+          <button
+            onClick={stopRecording}
+            style={{ background: "#dc2626", color: "#fff", border: "none", borderRadius: 10,
+              padding: "12px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
+          >
+            Stop &amp; Use Clip
+          </button>
+        )}
+        {phase === "done" && (
+          <p style={{ color: "#4ade80", fontSize: 13, textAlign: "center", fontWeight: 600 }}>
+            Clip ready — add a title and upload below.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

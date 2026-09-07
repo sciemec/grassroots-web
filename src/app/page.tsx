@@ -8,6 +8,7 @@ import { PublicNavbar } from "@/components/layout/public-navbar";
 
 const ThutoChatVisitor = dynamic(() => import("@/components/thuto/ThutoChatVisitor"), { ssr: false });
 const PublicVideoGrid  = dynamic(() => import("@/components/home/PublicVideoGrid"),   { ssr: false });
+const PlayerStories    = dynamic(() => import("@/components/home/PlayerStories"),     { ssr: false });
 
 export default function GrassrootsSportsLanding() {
   const [activityWire, setActivityWire] = useState<string[]>([]);
@@ -33,6 +34,9 @@ export default function GrassrootsSportsLanding() {
 
       {/* Navigation */}
       <PublicNavbar />
+
+      {/* Player Moments — 24-hour stories strip */}
+      <PlayerStories />
 
       {/* Live activity wire */}
       {activityWire.length > 0 && (
