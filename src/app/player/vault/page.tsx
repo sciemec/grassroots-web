@@ -1155,7 +1155,7 @@ export default function PlayerVaultPage() {
               <p className="text-xs text-muted-foreground">Upload skill clips for scouts</p>
             </div>
           </a>
-          <a href="/player/capture" className="flex items-center gap-3 rounded-xl border border-[#f0b429]/15 bg-card/60 px-4 py-3 transition-colors hover:bg-[#f0b429]/5">
+          <a href="/player/match-eye" className="flex items-center gap-3 rounded-xl border border-[#f0b429]/15 bg-card/60 px-4 py-3 transition-colors hover:bg-[#f0b429]/5">
             <span className="text-xl">📷</span>
             <div>
               <p className="text-sm font-semibold text-[#f0b429]">Moment Capture</p>
@@ -1171,8 +1171,7 @@ export default function PlayerVaultPage() {
             <div>
               <p className="text-sm font-semibold text-amber-300">Local mode — cloud storage not connected</p>
               <p className="mt-0.5 text-xs text-amber-400/80">
-                Videos are saved on this device only. Scouts cannot view them yet.
-                Ask Nigel to run <code className="rounded bg-black/30 px-1">php artisan migrate --force</code> on Render to enable cloud storage.
+                Videos are saved on this device only. Scouts cannot view them yet. Cloud storage is temporarily unavailable — your clips are safe and will sync automatically when the connection is restored.
               </p>
             </div>
           </div>
