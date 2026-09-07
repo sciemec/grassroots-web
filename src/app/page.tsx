@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Award, Zap, ChevronRight, Radio, Users } from "lucide-react";
+import { Award, Zap, ChevronRight, Radio, Users, Brain, Video, QrCode, Shield, CheckCircle } from "lucide-react";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 
 const ThutoChatVisitor = dynamic(() => import("@/components/thuto/ThutoChatVisitor"), { ssr: false });
@@ -87,6 +87,209 @@ export default function GrassrootsSportsLanding() {
       <div id="features">
         <PublicVideoGrid />
       </div>
+
+      {/* ── HOW IT WORKS ─────────────────────────────────────────── */}
+      <section className="py-16 px-6 bg-white border-y border-gray-100">
+        <div className="max-w-4xl mx-auto text-center mb-10">
+          <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: "#f0b429" }}>
+            Simple as 1 – 2 – 3
+          </p>
+          <h2 className="text-2xl sm:text-3xl font-black text-gray-900">How it works</h2>
+        </div>
+        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {[
+            {
+              step: "01",
+              title: "Register free",
+              body: "Sign up in two minutes with just your phone. Choose your sport, position, and province. No credit card.",
+            },
+            {
+              step: "02",
+              title: "Log training & matches",
+              body: "Record sessions, upload skill clips, and run GRS fitness tests. THUTO AI scores your performance after every session.",
+            },
+            {
+              step: "03",
+              title: "Get discovered",
+              body: "Your AI-generated Talent Passport is public. Scouts and coaches find you by sport, province, and position — anywhere in the world.",
+            },
+          ].map(({ step, title, body }) => (
+            <div key={step} className="flex flex-col items-center text-center gap-3">
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black"
+                style={{ background: "#1c3d22", color: "#f0b429" }}
+              >
+                {step}
+              </div>
+              <h3 className="font-black text-gray-900 text-base">{title}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed max-w-xs">{body}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-10 text-center">
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-xs font-black uppercase tracking-wider transition-colors"
+            style={{ background: "#1c3d22", color: "#f0b429" }}
+          >
+            Create your free profile <ChevronRight size={14} />
+          </Link>
+        </div>
+      </section>
+
+      {/* ── KEY FEATURES ─────────────────────────────────────────── */}
+      <section className="py-16 px-6" style={{ background: "#f4f2ee" }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: "#f0b429" }}>
+              Built for Zimbabwe
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
+              Everything a grassroots athlete needs
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              {
+                Icon: Brain,
+                title: "THUTO AI Coach",
+                body: "Your personal AI sports coach — answers training questions, builds weekly plans, and analyses your stats in plain language.",
+              },
+              {
+                Icon: QrCode,
+                title: "Talent Passport",
+                body: "A shareable, QR-linked profile with your stats, fitness scores, and highlight clips. Hand it to any scout — no paper CV needed.",
+              },
+              {
+                Icon: Video,
+                title: "Video Analysis",
+                body: "Upload a drill or match clip. AI breaks down your technique and gives drill recommendations in seconds.",
+              },
+              {
+                Icon: Shield,
+                title: "Verified Performance",
+                body: "Coach-verified EUROFIT tests and GRS fitness scores. Scouts know your numbers are real, not self-reported.",
+              },
+              {
+                Icon: Users,
+                title: "Multi-sport",
+                body: "Football, rugby, athletics, netball, basketball, cricket and more. One platform, all sports — with sport-specific stats for each.",
+              },
+              {
+                Icon: Zap,
+                title: "Works on 2G",
+                body: "Designed for Zimbabwe's network conditions. Fast, lightweight, and fully functional on low-bandwidth mobile data.",
+              },
+            ].map(({ Icon, title, body }) => (
+              <div
+                key={title}
+                className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-sm transition-shadow"
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+                  style={{ background: "#e8f5e9" }}
+                >
+                  <Icon size={20} style={{ color: "#1c3d22" }} />
+                </div>
+                <h3 className="font-bold text-gray-900 mb-1">{title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING ──────────────────────────────────────────────── */}
+      <section id="pricing" className="py-16 px-6 bg-white border-t border-gray-100">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: "#f0b429" }}>
+              Affordable for every Zimbabwean
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900">Simple pricing</h2>
+            <p className="text-sm text-gray-500 mt-2">Start free. Upgrade when you&apos;re ready.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {[
+              {
+                name: "Free",
+                price: "$0",
+                period: "forever",
+                color: "#1c3d22",
+                features: ["Player profile & Talent Passport", "Training log", "THUTO AI chat", "1 sport", "Public discovery listing"],
+                cta: "Get started free",
+                href: "/register",
+                highlight: false,
+              },
+              {
+                name: "School",
+                price: "$10",
+                period: "per month",
+                color: "#f0b429",
+                features: ["Everything in Free", "Up to 3 sports", "20 video uploads/month", "Team roster management", "Coach dashboard"],
+                cta: "Start free trial",
+                href: "/register",
+                highlight: true,
+              },
+              {
+                name: "Pro Club",
+                price: "$25",
+                period: "per month",
+                color: "#1c3d22",
+                features: ["Everything in School", "All 10 sports", "Unlimited video", "Live match dashboard", "Scout recruitment tools"],
+                cta: "Start free trial",
+                href: "/register",
+                highlight: false,
+              },
+            ].map(({ name, price, period, color, features, cta, href, highlight }) => (
+              <div
+                key={name}
+                className={`rounded-2xl border p-6 flex flex-col ${highlight ? "shadow-lg" : ""}`}
+                style={{
+                  borderColor:  highlight ? "#f0b429" : "#e5e7eb",
+                  background:   highlight ? "#fffbeb" : "white",
+                }}
+              >
+                {highlight && (
+                  <span
+                    className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full self-start mb-3"
+                    style={{ background: "#f0b429", color: "#1c3d22" }}
+                  >
+                    Most popular
+                  </span>
+                )}
+                <p className="font-black text-gray-900 text-base">{name}</p>
+                <div className="mt-2 mb-4">
+                  <span className="text-3xl font-black" style={{ color }}>{price}</span>
+                  <span className="text-xs text-gray-400 ml-1">/{period}</span>
+                </div>
+                <ul className="space-y-2 mb-6 flex-1">
+                  {features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-gray-600">
+                      <CheckCircle size={14} className="mt-0.5 shrink-0" style={{ color }} />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={href}
+                  className="block text-center rounded-xl py-2.5 text-sm font-bold transition-colors"
+                  style={
+                    highlight
+                      ? { background: "#f0b429", color: "#1c3d22" }
+                      : { background: "#1c3d22", color: "#f0b429" }
+                  }
+                >
+                  {cta}
+                </Link>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs text-gray-400 mt-6">
+            Prices in USD · EcoCash &amp; Stripe accepted · Cancel any time
+          </p>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="border-t border-gray-200 bg-white py-8 text-center px-4">
