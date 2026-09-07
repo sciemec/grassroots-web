@@ -22,6 +22,7 @@ import {
   IconHandFinger,
   IconWorld,
   IconBrain,
+  IconFlag,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -299,6 +300,15 @@ export default function PlayerHubPage() {
           iconColor={OL}
           title="Tactical Academy"
           subtitle="Learn positioning, shape &amp; decision-making"
+        />
+
+        <HubCard
+          href="/player/goal"
+          icon={IconFlag}
+          iconBg={O}
+          iconColor={OL}
+          title="Goal Engine"
+          subtitle="Set your target, get your AI plan"
         />
 
         {/* Section 3 — Showcase */}
