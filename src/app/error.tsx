@@ -15,43 +15,64 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-        <AlertTriangle className="h-8 w-8 text-destructive" />
+    <div
+      className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
+      style={{ background: "#0e0e0e" }}
+    >
+      {/* Icon */}
+      <div
+        className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl"
+        style={{ background: "#1a1a1a", border: "1px solid #2a2a2a" }}
+      >
+        <AlertTriangle size={36} color="#f0b429" />
       </div>
 
-      <h1 className="text-2xl font-bold">Something went wrong</h1>
-      <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-        An unexpected error occurred. If this keeps happening, please contact support.
+      {/* Label */}
+      <p
+        className="mb-1 text-xs font-bold uppercase tracking-widest"
+        style={{ color: "#c8962a", letterSpacing: "1px" }}
+      >
+        Grassroots Sports
       </p>
 
-      {/* Show real error message so it can be reported and fixed */}
-      {error.message && (
-        <p className="mt-3 max-w-md rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 font-mono text-xs text-destructive">
+      <h1 className="mb-3 text-2xl font-black text-white">Something went wrong</h1>
+      <p className="mb-8 max-w-sm text-sm" style={{ color: "#777" }}>
+        An unexpected error occurred. Your data is safe. Try again or return to the home page.
+      </p>
+
+      {/* Error detail — dev only */}
+      {process.env.NODE_ENV === "development" && error.message && (
+        <p
+          className="mb-6 max-w-md rounded-xl px-4 py-2 font-mono text-xs"
+          style={{ background: "#1a1a1a", color: "#e57373", border: "1px solid #3a1a1a" }}
+        >
           {error.message}
         </p>
       )}
 
-      {error.digest && (
-        <p className="mt-2 font-mono text-xs text-muted-foreground">
+      {process.env.NODE_ENV === "development" && error.digest && (
+        <p className="mb-4 font-mono text-[10px]" style={{ color: "#555" }}>
           Error ID: {error.digest}
         </p>
       )}
 
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+      {/* Actions */}
+      <div className="flex flex-col gap-3 sm:flex-row">
         <button
           onClick={reset}
-          className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-80"
+          style={{ background: "#1a5c2a" }}
         >
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw size={15} />
           Try again
         </button>
         <a
           href="/"
-          className="flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-muted"
+          className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-opacity hover:opacity-80"
+          style={{ background: "#1e1e1e", color: "#f0b429", border: "1px solid #2a2a2a" }}
         >
-          <Home className="h-4 w-4" />
-          Go home
+          <Home size={15} />
+          Go to Home
         </a>
       </div>
     </div>

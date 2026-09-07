@@ -11,7 +11,8 @@ import {
   BarChart3, Medal, Globe, Trophy, Briefcase,
   Crosshair, GraduationCap, CreditCard, Zap, Move, Flag, Shuffle, Send, Shield, Brain,
   Bell, User, Calendar, Star, DollarSign, CheckSquare, ClipboardList, MessageCircle,
-  Flame, ListChecks, Swords, Mic, Library, Clapperboard, ShoppingBag
+  Flame, ListChecks, Swords, Mic, Library, Clapperboard, ShoppingBag,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useStreakStore } from "@/lib/streak-store";
@@ -147,6 +148,8 @@ const NAV_ITEMS: NavItem[] = [
 const isFeatureEnabled = (feature?: keyof typeof FEATURES) =>
   !feature || FEATURES[feature] === true;
 
+const LS_COLLAPSED_KEY = "gs_sidebar_collapsed";
+
 export function Sidebar() {
   const pathname    = usePathname();
   const router      = useRouter();
@@ -154,9 +157,24 @@ export function Sidebar() {
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const logout      = useAuthStore((s) => s.logout);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed]   = useState(false);
   const streakActive  = useStreakStore((s) => s.activeToday);
   const streakCount   = useStreakStore((s) => s.dailyStreak);
   const fetchStreak   = useStreakStore((s) => s.fetch);
+
+  // Restore collapsed state from localStorage on mount
+  useEffect(() => {
+    try {
+      setIsCollapsed(localStorage.getItem(LS_COLLAPSED_KEY) === "true");
+    } catch { /* ignore */ }
+  }, []);
+
+  const toggleCollapsed = () => {
+    setIsCollapsed((prev) => {
+      try { localStorage.setItem(LS_COLLAPSED_KEY, String(!prev)); } catch { /* ignore */ }
+      return !prev;
+    });
+  };
 
   useEffect(() => { setIsMobileOpen(false); }, [pathname]);
 
@@ -174,7 +192,7 @@ export function Sidebar() {
     item.roles.includes(userRole) && isFeatureEnabled(item.feature)
   );
 
-  // Deduplicate by href (some hubs have Home listed for both "/" and hub root)
+  // Deduplicate by href
   const seen = new Set<string>();
   const dedupedItems = visibleItems.filter(item => {
     if (seen.has(item.href)) return false;
@@ -187,11 +205,13 @@ export function Sidebar() {
 
   const handleLogout = () => { logout(); router.push("/login"); };
 
+  // Width classes
+  const sidebarW = isCollapsed ? "w-14" : "w-64";
+  const spacerW  = isCollapsed ? "w-14" : "w-64";
+
   return (
     <>
-      {/* ── Mobile hamburger button ─────────────────────────────────────────
-           Sits at top-left. On mobile the bottom nav handles quick links,
-           but the sidebar drawer is still accessible for the full menu.    */}
+      {/* ── Mobile hamburger ──────────────────────────────────────────────── */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
         className="md:hidden fixed top-4 left-4 z-50 p-2.5 bg-[#1a5c2a] text-white rounded-xl shadow-lg"
@@ -200,63 +220,86 @@ export function Sidebar() {
         {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
-      {/* ── Sidebar panel ───────────────────────────────────────────────── */}
+      {/* ── Desktop spacer — pushes page content right of the sidebar ─────── */}
+      <div className={`hidden md:block shrink-0 transition-all duration-300 ${spacerW}`} />
+
+      {/* ── Sidebar panel ────────────────────────────────────────────────── */}
       <aside
         className={`
-          fixed top-0 left-0 z-40
-          w-64 h-screen bg-[#1a5c2a] text-white
-          flex flex-col transition-transform duration-300 ease-in-out shadow-xl
+          fixed top-0 left-0 z-40 h-screen bg-[#1a5c2a] text-white
+          flex flex-col transition-all duration-300 ease-in-out shadow-xl overflow-hidden
+          ${sidebarW}
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
       >
         {/* Brand */}
-        <div className="p-5 border-b border-white/10">
-          <Link href="/" onClick={() => setIsMobileOpen(false)}>
-            <h1 className="text-xl font-black tracking-tight">
-              Grass<span className="text-[#f0b429]">Roots</span> Sports
-            </h1>
-            <p className="text-[9px] text-white/40 mt-0.5 tracking-wider">
-              Identify · Nurture · Market
-            </p>
-          </Link>
+        <div className={`border-b border-white/10 flex items-center ${isCollapsed ? "justify-center p-3.5" : "p-5"}`}>
+          {isCollapsed ? (
+            <Link href="/" onClick={() => setIsMobileOpen(false)} title="GrassRoots Sports">
+              <span className="text-[#f0b429] font-black text-lg">G</span>
+            </Link>
+          ) : (
+            <Link href="/" onClick={() => setIsMobileOpen(false)}>
+              <h1 className="text-xl font-black tracking-tight">
+                Grass<span className="text-[#f0b429]">Roots</span> Sports
+              </h1>
+              <p className="text-[9px] text-white/40 mt-0.5 tracking-wider">
+                Identify · Nurture · Market
+              </p>
+            </Link>
+          )}
         </div>
 
-        {/* User info — all screen sizes, with inline Sign Out */}
+        {/* User info */}
         {user && (
-          <div className="p-4 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-[#f0b429]/20 flex items-center justify-center shrink-0">
+          <div className={`border-b border-white/10 ${isCollapsed ? "p-2 flex justify-center" : "p-4"}`}>
+            {isCollapsed ? (
+              <div
+                title={`${user.name} (${user.role}) — click to sign out`}
+                onClick={handleLogout}
+                className="w-9 h-9 rounded-full bg-[#f0b429]/20 flex items-center justify-center cursor-pointer hover:bg-[#f0b429]/40 transition-colors"
+              >
                 <span className="text-sm font-bold text-[#f0b429]">
                   {user.name?.charAt(0) ?? "U"}
                 </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold truncate">{user.name}</p>
-                <p className="text-[10px] text-white/50 capitalize">{user.role}</p>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-[#f0b429]/20 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-[#f0b429]">
+                    {user.name?.charAt(0) ?? "U"}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold truncate">{user.name}</p>
+                  <p className="text-[10px] text-white/50 capitalize">{user.role}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  title="Sign out"
+                  aria-label="Sign out"
+                  className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-all shrink-0"
+                >
+                  <LogOut size={15} />
+                </button>
               </div>
-              <button
-                onClick={handleLogout}
-                title="Sign out"
-                aria-label="Sign out"
-                className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-all shrink-0"
-              >
-                <LogOut size={15} />
-              </button>
-            </div>
+            )}
           </div>
         )}
 
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto py-4">
-          <div className="space-y-0.5 px-3">
+          <div className={`space-y-0.5 ${isCollapsed ? "px-1.5" : "px-3"}`}>
             {dedupedItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsMobileOpen(false)}
+                title={isCollapsed ? item.label : undefined}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                  flex items-center rounded-xl text-sm font-medium
                   transition-all duration-150
+                  ${isCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"}
                   ${isActive(item.href)
                     ? "bg-[#f0b429] text-[#1a5c2a] font-black"
                     : "text-white/80 hover:bg-white/10 hover:text-white"
@@ -264,10 +307,17 @@ export function Sidebar() {
                 `}
               >
                 {item.icon}
-                {item.label}
-                {/* Streak reminder dot — shown on Player Hub when player hasn't trained today */}
-                {item.href === "/player" && streakCount > 0 && !streakActive && (
-                  <span className="ml-auto w-2 h-2 rounded-full animate-pulse shrink-0"
+                {!isCollapsed && (
+                  <>
+                    <span>{item.label}</span>
+                    {item.href === "/player" && streakCount > 0 && !streakActive && (
+                      <span className="ml-auto w-2 h-2 rounded-full animate-pulse shrink-0"
+                        style={{ backgroundColor: "#f97316" }} />
+                    )}
+                  </>
+                )}
+                {isCollapsed && item.href === "/player" && streakCount > 0 && !streakActive && (
+                  <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full"
                     style={{ backgroundColor: "#f97316" }} />
                 )}
               </Link>
@@ -275,13 +325,23 @@ export function Sidebar() {
           </div>
         </nav>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-white/10">
-          <p className="text-center text-[8px] text-white/25">© 2026 GrassRoots Sports</p>
+        {/* Footer — collapse toggle + copyright */}
+        <div className={`border-t border-white/10 ${isCollapsed ? "p-2 flex justify-center" : "p-4 flex items-center justify-between"}`}>
+          {!isCollapsed && (
+            <p className="text-[8px] text-white/25">© 2026 GrassRoots Sports</p>
+          )}
+          <button
+            onClick={toggleCollapsed}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
+          >
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
         </div>
       </aside>
 
-      {/* Overlay — closes sidebar when tapping outside on mobile */}
+      {/* Overlay — closes sidebar on mobile tap-outside */}
       {isMobileOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 md:hidden"
