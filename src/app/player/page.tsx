@@ -15,13 +15,13 @@ import {
   IconBook,
   IconLock,
   IconUsers,
-  IconStar,
   IconChevronRight,
   IconArrowRight,
   IconShield,
   IconActivity,
   IconHandFinger,
   IconWorld,
+  IconBrain,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -293,12 +293,12 @@ export default function PlayerHubPage() {
           subtitle="AI video analysis — populate your Technical radar"
         />
         <HubCard
-          href="/player/skill-ratings"
-          icon={IconStar}
+          href="/player/tactical-academy"
+          icon={IconBrain}
           iconBg={O}
           iconColor={OL}
-          title="Coach Ratings"
-          subtitle="Your technical skills rated by your coach"
+          title="Tactical Academy"
+          subtitle="Learn positioning, shape &amp; decision-making"
         />
 
         {/* Section 3 — Showcase */}

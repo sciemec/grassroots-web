@@ -178,6 +178,9 @@ export default function AssessmentPage() {
   const [coachFieldTestsLoading, setCoachFieldTestsLoading] = useState(false);
   const [coachFieldTestsLoaded, setCoachFieldTestsLoaded]   = useState(false);
 
+  // Coach skill ratings (1–10 per skill_code)
+  const [coachRatings, setCoachRatings] = useState<{ skill_code: string; rating: number }[]>([]);
+
   // Profile-derived values (sport for stats endpoint, age for drill tier)
   const [playerSport,    setPlayerSport]    = useState("football");
   const [playerAge,      setPlayerAge]      = useState(15);
@@ -241,9 +244,16 @@ export default function AssessmentPage() {
     Promise.allSettled([
       api.get("/player/field-tests"),
       api.get("/player/field-test-requests"),
-    ]).then(([testsResult, reqResult]) => {
+      api.get("/player/skill-ratings"),
+    ]).then(([testsResult, reqResult, ratingsResult]) => {
       if (testsResult.status === "fulfilled") {
         setCoachFieldTests(safeArray<CoachFieldTest>(testsResult.value.data?.data ?? testsResult.value.data));
+      }
+      if (ratingsResult.status === "fulfilled") {
+        const rows = safeArray<{ skill_code: string; rating: number }>(
+          ratingsResult.value.data?.data ?? ratingsResult.value.data,
+        );
+        setCoachRatings(rows);
       }
       if (reqResult.status === "fulfilled") {
         const rows = safeArray<{ id: string; status: string; position: string | null; province: string | null; preferred_time: string | null; created_at: string }>(reqResult.value.data?.data ?? reqResult.value.data);
@@ -810,6 +820,88 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
               })}
 
               {/* Drill recommendations from most-recent position */}
+              {/* Coach Technical Skill Ratings radar */}
+              {coachRatings.length > 0 && (() => {
+                const SKILL_LABELS: Record<string, string> = {
+                  dribbling:   "Dribbling",
+                  passing:     "Passing",
+                  shooting:    "Shooting",
+                  tackling:    "Tackling",
+                  first_touch: "First Touch",
+                  sprint:      "Sprint",
+                  heading:     "Heading",
+                  positioning: "Positioning",
+                  vision:      "Vision",
+                  stamina:     "Stamina",
+                };
+                const ratingRadar = coachRatings.map((r) => ({
+                  subject:  (SKILL_LABELS[r.skill_code] ?? r.skill_code).slice(0, 10),
+                  score:    Math.round(r.rating * 10), // 1–10 → 10–100 for same scale
+                  fullMark: 100,
+                }));
+                const avgRating = Math.round(
+                  coachRatings.reduce((s, r) => s + r.rating, 0) / coachRatings.length * 10,
+                );
+                return (
+                  <div className="mb-6 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5">
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <h2 className="font-bold text-blue-300">Coach Technical Ratings</h2>
+                        <p className="text-xs text-white/50">Rated by your coach — shown as % (10 = 100%)</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-3xl font-black ${scoreColor(avgRating)}`}>{avgRating}</p>
+                        <p className={`text-xs font-medium ${scoreColor(avgRating)}`}>{scoreLabel(avgRating)}</p>
+                      </div>
+                    </div>
+
+                    {/* Rating rows */}
+                    <div className="mb-5 space-y-2">
+                      {coachRatings.map((r) => {
+                        const pct = Math.round(r.rating * 10);
+                        return (
+                          <div key={r.skill_code} className="flex items-center gap-3">
+                            <span className="w-24 shrink-0 text-xs font-medium capitalize text-white/70">
+                              {SKILL_LABELS[r.skill_code] ?? r.skill_code}
+                            </span>
+                            <div className="flex-1 h-1.5 rounded-full bg-white/10">
+                              <div
+                                className={`h-1.5 rounded-full ${
+                                  pct >= 80 ? "bg-green-400" : pct >= 60 ? "bg-[#f0b429]" : "bg-blue-400"
+                                }`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className={`text-xs font-bold w-8 text-right ${scoreColor(pct)}`}>
+                              {r.rating}/10
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Radar */}
+                    {ratingRadar.length >= 3 && (
+                      <div>
+                        <div className="mb-2 flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-blue-300" />
+                          <h3 className="text-sm font-semibold text-blue-300">Technical Radar</h3>
+                        </div>
+                        <ResponsiveContainer width="100%" height={220}>
+                          <RadarChart data={ratingRadar}>
+                            <PolarGrid stroke="rgba(96,165,250,0.15)" />
+                            <PolarAngleAxis dataKey="subject" tick={{ fill: "#c8edd0", fontSize: 11 }} />
+                            <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
+                            <Radar name="Coach Rating" dataKey="score" stroke="#60a5fa" fill="#60a5fa" fillOpacity={0.25} strokeWidth={2} />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                        <p className="text-center text-xs font-bold text-blue-300/70">Coach technical ratings (1–10 scale)</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {coachDrillRecs.length > 0 && (
                 <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/5 p-5">
                   <div className="mb-4 flex items-center gap-2">
