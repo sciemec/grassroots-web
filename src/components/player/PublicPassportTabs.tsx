@@ -161,15 +161,69 @@ const COACHED_AXES = [
   { code: "tackling",    label: "Tackling"     },
 ];
 
-// Position tab — DomainScores from /player/assessment
-const POSITION_AXES = [
-  { code: "explosivePower", label: "Explosive\npower" },
-  { code: "linearSpeed",    label: "Linear\nspeed"    },
-  { code: "balance",        label: "Balance"          },
-  { code: "cognitiveSpeed", label: "Cognitive\nspeed" },
-  { code: "endurance",      label: "Endurance"        },
-  { code: "ballMastery",    label: "Ball\nmastery"    },
-];
+// Position tab — position-specific assessment configs (domain → exercise label + what is tested)
+type PositionAxisCfg = { domain: string; label: string; tests: string };
+
+const POSITION_TEST_CONFIG: Record<string, PositionAxisCfg[]> = {
+  goalkeeper: [
+    { domain: "explosivePower", label: "Reaction\nsaves",      tests: "Dive speed, shot-stop" },
+    { domain: "linearSpeed",    label: "Kick\ndistance",       tests: "Goal kick, distribution" },
+    { domain: "balance",        label: "Aerial\nclaim",        tests: "Cross catch, punch" },
+    { domain: "cognitiveSpeed", label: "Decision\nspeed",      tests: "1v1, angle-reading" },
+    { domain: "endurance",      label: "Yo-Yo\ntest",          tests: "Yo-yo, shuttle" },
+    { domain: "ballMastery",    label: "Distribution",         tests: "Feet, throw-outs" },
+  ],
+  defender: [
+    { domain: "linearSpeed",    label: "40m Sprint",           tests: "Sprint timing" },
+    { domain: "explosivePower", label: "Aerial\nduel",         tests: "Jump, heading" },
+    { domain: "ballMastery",    label: "Tackling",             tests: "1v1 defend, win ball" },
+    { domain: "cognitiveSpeed", label: "1v1\ndefending",       tests: "Press, track runner" },
+    { domain: "endurance",      label: "Yo-Yo\ntest",          tests: "Stamina, shuttle" },
+    { domain: "balance",        label: "Change of\ndirection", tests: "Agility, COD" },
+  ],
+  midfielder: [
+    { domain: "ballMastery",    label: "Passing &\ndribbling", tests: "Pass accuracy, dribble" },
+    { domain: "linearSpeed",    label: "40m Sprint",           tests: "Sprint timing" },
+    { domain: "endurance",      label: "Yo-Yo\ntest",          tests: "Shuttle, yo-yo" },
+    { domain: "cognitiveSpeed", label: "Vision &\ndecision",   tests: "Press trigger, 1-touch" },
+    { domain: "explosivePower", label: "Press &\nwin",         tests: "Pressing, tackle" },
+    { domain: "balance",        label: "Ball\ncontrol",        tests: "First touch, turn" },
+  ],
+  forward: [
+    { domain: "ballMastery",    label: "Finishing",            tests: "Shooting, 1v1 vs GK" },
+    { domain: "linearSpeed",    label: "40m Sprint",           tests: "Sprint timing" },
+    { domain: "explosivePower", label: "Heading",              tests: "Aerial, power header" },
+    { domain: "cognitiveSpeed", label: "Movement &\ntiming",   tests: "Run timing, 1v1 attack" },
+    { domain: "endurance",      label: "Yo-Yo\ntest",          tests: "Stamina, shuttle" },
+    { domain: "balance",        label: "Dribbling",            tests: "1v1, ball mastery" },
+  ],
+  winger: [
+    { domain: "ballMastery",    label: "1v1\ndribbling",       tests: "Take-on, beat defender" },
+    { domain: "linearSpeed",    label: "40m Sprint",           tests: "Sprint timing" },
+    { domain: "cognitiveSpeed", label: "Crossing &\ndecision", tests: "Cross accuracy, cut-in" },
+    { domain: "endurance",      label: "Yo-Yo\ntest",          tests: "Stamina, shuttle" },
+    { domain: "explosivePower", label: "Explosive\nstart",     tests: "0–10m, acceleration" },
+    { domain: "balance",        label: "Ball\ncontrol",        tests: "First touch, turn" },
+  ],
+  default: [
+    { domain: "explosivePower", label: "Explosive\npower",     tests: "Jump, sprint start" },
+    { domain: "linearSpeed",    label: "Linear\nspeed",        tests: "40m sprint" },
+    { domain: "balance",        label: "Balance",              tests: "Agility, stability" },
+    { domain: "cognitiveSpeed", label: "Cognitive\nspeed",     tests: "Reaction, decision" },
+    { domain: "endurance",      label: "Endurance",            tests: "Yo-yo, shuttle" },
+    { domain: "ballMastery",    label: "Ball\nmastery",        tests: "Skill drills" },
+  ],
+};
+
+function normalizePosition(pos: string): string {
+  const lower = pos.toLowerCase().trim();
+  if (lower.includes("goalkeeper") || lower === "gk") return "goalkeeper";
+  if (lower.includes("winger") || lower === "rw" || lower === "lw") return "winger";
+  if (lower.includes("striker") || lower.includes("forward") || lower === "st" || lower === "cf" || lower === "fw") return "forward";
+  if (lower.includes("midfielder") || lower === "cm" || lower === "am" || lower === "dm" || lower === "mf") return "midfielder";
+  if (lower.includes("defender") || lower.includes("back") || lower === "cb" || lower === "rb" || lower === "lb" || lower === "df") return "defender";
+  return "default";
+}
 
 // Tab metadata
 type TabId = "physical" | "technical" | "technique" | "coached" | "position";
@@ -343,11 +397,13 @@ export default function PublicPassportTabs({
     return { label: ax.label, value: v !== null ? v : EMPTY_F * 100 };
   });
 
-  // Position — 6 axes, DomainScore 0–100 directly
-  const positionAxes: RadarAxis[] = POSITION_AXES.map(ax => {
-    const found = assessmentDomains.find(d => d.code === ax.code);
+  // Position — position-specific axes, DomainScore 0–100 directly
+  const positionKey = position ? normalizePosition(position) : "default";
+  const positionConfig = POSITION_TEST_CONFIG[positionKey] ?? POSITION_TEST_CONFIG.default;
+  const positionAxes: RadarAxis[] = positionConfig.map(cfg => {
+    const found = assessmentDomains.find(d => d.code === cfg.domain);
     const v = found != null ? Math.max(0, Math.min(100, found.score)) : null;
-    return { label: ax.label, value: v !== null ? v : EMPTY_F * 100 };
+    return { label: cfg.label, value: v !== null ? v : EMPTY_F * 100 };
   });
 
   const radarCfgs: Record<TabId, RadarCfg> = {
@@ -358,12 +414,21 @@ export default function PublicPassportTabs({
     position:  { axes: positionAxes,  fill: "#2e0a14", stroke: "#f87171", dot: "#fca5a5" },
   };
 
+  const positionChartTitle: Record<string, string> = {
+    goalkeeper: "Goalkeeper assessment",
+    defender:   "Defender assessment",
+    midfielder: "Midfielder assessment",
+    forward:    "Forward / striker assessment",
+    winger:     "Winger assessment",
+    default:    "Position assessment",
+  };
+
   const chartTitles: Record<TabId, string> = {
     physical:  "7 attributes",
     technical: `${activeTechAxes.length} categories`,
     technique: "6 skill areas",
     coached:   "6 attributes",
-    position:  "6 domains",
+    position:  positionChartTitle[positionKey] ?? "Position assessment",
   };
 
   const chartSources: Record<TabId, string> = {
@@ -516,6 +581,30 @@ export default function PublicPassportTabs({
             <span style={{ color: "#fff", fontSize: 13, fontWeight: 500 }}>{chartTitles[bottomTab]}</span>
           </div>
           <RadarSVG cfg={radarCfgs[bottomTab]} />
+
+          {/* Position legend — shows what each axis measures */}
+          {bottomTab === "position" && (
+            <div style={{ marginTop: 4, marginBottom: 6 }}>
+              <div style={{ fontSize: 9, color: "#555", marginBottom: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                What is measured
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px 8px" }}>
+                {positionConfig.map((cfg, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                    <span style={{
+                      flexShrink: 0, width: 6, height: 6, borderRadius: "50%",
+                      background: "#f87171", marginTop: 1, display: "inline-block",
+                    }} />
+                    <span style={{ fontSize: 9, color: "#888", lineHeight: 1.4 }}>
+                      <span style={{ color: "#bbb", fontWeight: 600 }}>{cfg.label.replace("\n", " ")}</span>
+                      {" — "}{cfg.tests}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "2px 0 6px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#666" }}>
               <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TAB_META[bottomTab].sourceColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
