@@ -155,6 +155,17 @@ const DRILLS: Drill[] = [
   },
 ];
 
+// ── Drill → Physical radar axis mapping ──────────────────────────────────────
+
+const DRILL_TO_ATTRIBUTE: Record<string, string> = {
+  sprint_10m:      'explosiveness_0_10m',
+  cut_505:         'change_of_direction',
+  drop_jump:       'vertical_leap',
+  dynamic_header:  'vertical_leap',
+  lateral_shuffle: 'change_of_direction',
+  dribble_sprint:  'top_end_speed',
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function scoreColor(s: number) {
@@ -332,6 +343,7 @@ export default function BiometricsPage() {
       setStage('results');
       fetchThutoNote([player]);
       saveToPassport([player]);
+      saveToPhysicalRadar([player]);
     } catch {
       setErrorMsg('Analysis failed. Please try again with a shorter, clearer clip.');
       setStage('error');
@@ -356,6 +368,25 @@ export default function BiometricsPage() {
       const data = await res.json();
       setThutoNote(data.response ?? data.answer ?? null);
     } catch { /* silent */ }
+  };
+
+  // ── Physical radar write-back ─────────────────────────────────────────────
+
+  const saveToPhysicalRadar = (players: PlayerResult[]) => {
+    const p = players[0];
+    if (!p || !token || token === 'dev-token' || !drill) return;
+    const attributeCode = DRILL_TO_ATTRIBUTE[drill.id];
+    if (!attributeCode) return;
+
+    fetch(`${API_URL}/measurements/by-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        attribute_code: attributeCode,
+        raw_value:      p.performance_index,
+        unit:           'ai_score',
+      }),
+    }).catch(() => { /* silent — non-blocking */ });
   };
 
   // ── Passport write-back ───────────────────────────────────────────────────
