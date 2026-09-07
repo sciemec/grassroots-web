@@ -257,7 +257,7 @@ export default function PlayerHubPage() {
           icon={IconActivity}
           iconBg={O}
           iconColor={OL}
-          title="Movement Check"
+          title="AI Physical Test"
           subtitle="Full-body movement scan"
         />
         <HubCard
@@ -265,7 +265,7 @@ export default function PlayerHubPage() {
           icon={IconRun}
           iconBg={O}
           iconColor={OL}
-          title="Fitness Tests"
+          title="Position Test"
           subtitle="Sprint, jump, agility + Yo-Yo test"
         />
         <HubCard
@@ -289,7 +289,7 @@ export default function PlayerHubPage() {
           icon={IconTarget}
           iconBg={O}
           iconColor={OL}
-          title="Football Drill Analysis"
+          title="AI Football Drill Analysis"
           subtitle="AI video analysis — populate your Technical radar"
         />
         <HubCard
