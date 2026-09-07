@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Users, Filter, MapPin, ChevronRight, User } from "lucide-react";
+import { MapPin, ChevronRight, Search, Filter, User, ChevronDown } from "lucide-react";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -19,6 +19,10 @@ interface PlayerCard {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
+const GRS_GREEN = "#1a5c2a";
+const GOLD      = "#c8962a";
+const BG        = "#f4f2ee";
+
 const PROVINCES = [
   "Harare", "Bulawayo", "Manicaland", "Mashonaland Central",
   "Mashonaland East", "Mashonaland West", "Masvingo",
@@ -26,24 +30,9 @@ const PROVINCES = [
 ];
 
 const SPORTS = [
-  "football", "rugby", "athletics", "netball", "basketball",
-  "cricket", "swimming", "tennis", "volleyball", "hockey",
+  "Football", "Rugby", "Athletics", "Netball", "Basketball",
+  "Cricket", "Swimming", "Tennis", "Volleyball", "Hockey",
 ];
-
-const AGE_GROUPS: Record<string, string> = {
-  u12:    "Under 12",
-  u13:    "Under 13",
-  u14:    "Under 14",
-  u15:    "Under 15",
-  u16:    "Under 16",
-  u17:    "Under 17",
-  u18:    "Under 18",
-  u19:    "Under 19",
-  u20:    "Under 20",
-  u21:    "Under 21",
-  u23:    "Under 23",
-  senior: "Senior (24+)",
-};
 
 const SPORT_EMOJI: Record<string, string> = {
   football: "⚽", rugby: "🏉", athletics: "🏃", netball: "⛹️",
@@ -55,10 +44,18 @@ const SPORT_EMOJI: Record<string, string> = {
 
 function CardSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4 flex flex-col items-center gap-3">
-      <div className="h-16 w-16 rounded-full bg-white/10" />
-      <div className="h-3 w-20 rounded bg-white/10" />
-      <div className="h-2 w-14 rounded bg-white/10" />
+    <div className="animate-pulse bg-white rounded-2xl border border-gray-200 p-4">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-12 h-12 rounded-full bg-gray-200 shrink-0" />
+        <div className="flex-1">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+          <div className="h-3 bg-gray-100 rounded w-1/2" />
+        </div>
+      </div>
+      <div className="flex gap-1">
+        <div className="h-5 w-16 bg-gray-100 rounded-full" />
+        <div className="h-5 w-14 bg-gray-100 rounded-full" />
+      </div>
     </div>
   );
 }
@@ -66,62 +63,53 @@ function CardSkeleton() {
 // ── Player Card ───────────────────────────────────────────────────────────────
 
 function PlayerTile({ player }: { player: PlayerCard }) {
+  const sportKey  = player.sport?.toLowerCase() ?? "";
+  const sportLabel = player.sport
+    ? player.sport.charAt(0).toUpperCase() + player.sport.slice(1)
+    : null;
+  const emoji = SPORT_EMOJI[sportKey] ?? "🏅";
+
   return (
     <Link
       href={`/player/public/${player.user_id}`}
-      className="group rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4 flex flex-col items-center gap-2.5 hover:bg-white/10 hover:border-[#f0b429]/30 transition-all"
+      className="group bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow block"
     >
-      {/* Avatar */}
-      <div className="relative h-16 w-16 rounded-full overflow-hidden border-2 border-[#f0b429]/30 bg-white/10 flex items-center justify-center flex-shrink-0">
-        {player.photo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={player.photo_url}
-            alt={player.initials}
-            className="h-full w-full object-cover object-top"
-          />
-        ) : (
-          <span className="text-lg font-black text-white/60">{player.initials}</span>
-        )}
+      <div className="flex items-center gap-3 mb-3">
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden"
+          style={{ background: GRS_GREEN }}
+        >
+          {player.photo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={player.photo_url}
+              alt={player.initials}
+              className="w-12 h-12 object-cover object-top"
+            />
+          ) : (
+            player.initials
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-gray-900 truncate">{player.initials}</p>
+          <p className="text-xs text-gray-500 truncate">
+            {[player.position, sportLabel].filter(Boolean).join(" · ")}
+          </p>
+        </div>
+        <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors shrink-0" />
       </div>
 
-      {/* Name / initials */}
-      <span className="text-sm font-bold text-white text-center leading-snug">
-        {player.initials}
-      </span>
-
-      {/* Sport + position */}
-      {(player.sport || player.position) && (
-        <div className="flex items-center gap-1 flex-wrap justify-center">
-          {player.sport && (
-            <span className="text-[10px] font-semibold text-[#f0b429] bg-[#f0b429]/10 px-2 py-0.5 rounded-full capitalize">
-              {SPORT_EMOJI[player.sport] ?? ""} {player.sport}
-            </span>
-          )}
-          {player.position && (
-            <span className="text-[10px] font-semibold text-white/50 bg-white/5 px-2 py-0.5 rounded-full">
-              {player.position}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Province */}
-      {player.province && (
-        <div className="flex items-center gap-1 text-[10px] text-white/40">
-          <MapPin className="h-3 w-3" />
-          {player.province}
-        </div>
-      )}
-
-      {/* Age group */}
-      {player.age_group && AGE_GROUPS[player.age_group] && (
-        <span className="text-[10px] text-white/30">{AGE_GROUPS[player.age_group]}</span>
-      )}
-
-      {/* Hover CTA */}
-      <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-[#f0b429]/60 group-hover:text-[#f0b429] transition-colors">
-        View profile <ChevronRight className="h-3 w-3" />
+      <div className="flex flex-wrap gap-1">
+        {sportLabel && (
+          <span className="px-2 py-0.5 rounded-full text-xs bg-green-50 font-medium" style={{ color: GRS_GREEN }}>
+            {emoji} {sportLabel}
+          </span>
+        )}
+        {player.province && (
+          <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600 flex items-center gap-0.5">
+            <MapPin className="h-2.5 w-2.5" />{player.province}
+          </span>
+        )}
       </div>
     </Link>
   );
@@ -130,184 +118,182 @@ function PlayerTile({ player }: { player: PlayerCard }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function PlayersPage() {
-  const [players, setPlayers]     = useState<PlayerCard[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState<string | null>(null);
-  const [page, setPage]           = useState(1);
-  const [lastPage, setLastPage]   = useState(1);
-  const [total, setTotal]         = useState(0);
+  const [players, setPlayers]         = useState<PlayerCard[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(false);
+  const [page, setPage]               = useState(1);
+  const [lastPage, setLastPage]       = useState(1);
+  const [total, setTotal]             = useState(0);
   const [showFilters, setShowFilters] = useState(false);
 
-  const [province, setProvince]   = useState("");
-  const [sport, setSport]         = useState("");
-  const [ageGroup, setAgeGroup]   = useState("");
+  const [sport, setSport]       = useState("");
+  const [province, setProvince] = useState("");
+  const [position, setPosition] = useState("");
 
   const fetchPlayers = useCallback(async (pageNum: number) => {
     setLoading(true);
-    setError(null);
+    setError(false);
     try {
       const params = new URLSearchParams({ page: String(pageNum) });
+      if (sport)    params.set("sport",    sport);
       if (province) params.set("province", province);
-      if (sport)    params.set("sport", sport);
-      if (ageGroup) params.set("age_group", ageGroup);
+      if (position) params.set("position", position);
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/players/browse?${params.toString()}`,
-        { next: { revalidate: 60 } }
+        `${process.env.NEXT_PUBLIC_API_URL}/players/browse?${params}`
       );
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      if (!res.ok) throw new Error("failed");
       const json = await res.json();
       setPlayers(Array.isArray(json.data) ? json.data : []);
       setLastPage(json.last_page ?? 1);
       setTotal(json.total ?? 0);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load players");
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
-  }, [province, sport, ageGroup]);
+  }, [sport, province, position]);
 
-  // Reset to page 1 and fetch immediately when filters change.
-  // Keeping filter change and page change in separate effects caused a
-  // double-fetch when the user was on page > 1 (fetchPlayers reference changed
-  // AND setPage(1) both fired the second effect).
+  // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
     fetchPlayers(1);
-  }, [province, sport, ageGroup]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sport, province, position]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (page === 1) return; // already fetched by the filter effect above
+    if (page === 1) return;
     fetchPlayers(page);
   }, [page, fetchPlayers]);
 
-  const activeFilters = [province, sport, ageGroup].filter(Boolean).length;
+  const activeFilters = [sport, province, position].filter(Boolean).length;
 
   const clearFilters = () => {
-    setProvince("");
     setSport("");
-    setAgeGroup("");
+    setProvince("");
+    setPosition("");
   };
 
   return (
-    <div className="min-h-screen bg-[#1a5c2a]">
+    <div style={{ minHeight: "100vh", backgroundColor: BG }}>
       <PublicNavbar />
 
-      <div className="mx-auto max-w-4xl px-4 pt-24 pb-10">
+      <div className="max-w-5xl mx-auto px-4 pt-20 pb-12">
 
         {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="mb-3 flex justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f0b429]/20 border border-[#f0b429]/30">
-              <Users className="h-7 w-7 text-[#f0b429]" />
-            </div>
+        <div className="flex items-center justify-between mb-4 mt-4">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Discover Athletes</h1>
+            <p className="text-sm text-gray-500">
+              {loading ? "Loading…" : `${total.toLocaleString()} registered athletes across Zimbabwe`}
+            </p>
           </div>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#f0b429]/70">
-            GrassRoots Sports
-          </p>
-          <h1 className="mt-1 text-2xl font-extrabold text-white">
-            Discover Talent
-          </h1>
-          <p className="mt-1 text-sm text-white/50">
-            {total > 0 ? `${total.toLocaleString()} registered athletes across Zimbabwe` : "All registered athletes across Zimbabwe"}
-          </p>
-        </div>
-
-        {/* Filter Bar */}
-        <div className="mb-5 flex items-center gap-3 flex-wrap">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
-              showFilters
-                ? "bg-[#f0b429] text-[#1a3a1a]"
-                : "bg-white/10 text-white hover:bg-white/15"
-            }`}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-colors"
+            style={{
+              borderColor: activeFilters ? GOLD : "#d1d5db",
+              color:       activeFilters ? GOLD : "#6b7280",
+              background:  activeFilters ? "#fffbeb" : "white",
+            }}
           >
-            <Filter className="h-3.5 w-3.5" />
-            Filter
+            <Filter size={15} />
+            Filters
             {activeFilters > 0 && (
-              <span className="ml-1 rounded-full bg-[#1a5c2a] px-1.5 py-0.5 text-[10px] font-bold text-[#f0b429]">
+              <span
+                className="w-5 h-5 rounded-full text-white text-xs flex items-center justify-center"
+                style={{ background: GOLD }}
+              >
                 {activeFilters}
               </span>
             )}
           </button>
-
-          {activeFilters > 0 && (
-            <button
-              onClick={clearFilters}
-              className="text-xs text-white/40 hover:text-white/70 underline"
-            >
-              Clear all
-            </button>
-          )}
-
-          <span className="ml-auto text-xs text-white/30">
-            {!loading && `${players.length} shown · page ${page} of ${lastPage}`}
-          </span>
         </div>
 
-        {/* Filters Panel */}
+        {/* Filters panel */}
         {showFilters && (
-          <div className="mb-6 rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-white/50">Province</label>
-                <select
-                  value={province}
-                  onChange={(e) => setProvince(e.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-[#f0b429]/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f0b429]/50"
-                >
-                  <option value="">All provinces</option>
-                  {PROVINCES.map((p) => (
-                    <option key={p} value={p} className="bg-[#1a3d26]">{p}</option>
-                  ))}
-                </select>
-              </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-4 space-y-4">
 
-              <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-white/50">Sport</label>
-                <select
-                  value={sport}
-                  onChange={(e) => setSport(e.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-[#f0b429]/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f0b429]/50"
-                >
-                  <option value="">All sports</option>
-                  {SPORTS.map((s) => (
-                    <option key={s} value={s} className="bg-[#1a3d26] capitalize">{s}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-white/50">Age Group</label>
-                <select
-                  value={ageGroup}
-                  onChange={(e) => setAgeGroup(e.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-[#f0b429]/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f0b429]/50"
-                >
-                  <option value="">All ages</option>
-                  {Object.entries(AGE_GROUPS).map(([val, label]) => (
-                    <option key={val} value={val} className="bg-[#1a3d26]">{label}</option>
-                  ))}
-                </select>
+            {/* Sport pills */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Sport</p>
+              <div className="flex flex-wrap gap-2">
+                {SPORTS.map((s) => {
+                  const active = sport.toLowerCase() === s.toLowerCase();
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => setSport(active ? "" : s)}
+                      className="px-3 py-1 rounded-full text-xs font-medium border transition-colors"
+                      style={{
+                        background:  active ? GRS_GREEN : "white",
+                        color:       active ? "white" : "#374151",
+                        borderColor: active ? GRS_GREEN : "#d1d5db",
+                      }}
+                    >
+                      {SPORT_EMOJI[s.toLowerCase()] ?? ""} {s}
+                    </button>
+                  );
+                })}
               </div>
             </div>
+
+            {/* Province + position */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Province</p>
+                <div className="relative">
+                  <select
+                    value={province}
+                    onChange={(e) => setProvince(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white appearance-none pr-8"
+                  >
+                    <option value="">All provinces</option>
+                    {PROVINCES.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Position</p>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    value={position}
+                    onChange={(e) => setPosition(e.target.value)}
+                    placeholder="e.g. Striker, Goalkeeper…"
+                    className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {activeFilters > 0 && (
+              <button
+                onClick={clearFilters}
+                className="text-sm text-red-500 hover:underline"
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         )}
 
         {/* Grid */}
         {loading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 12 }).map((_, i) => <CardSkeleton key={i} />)}
           </div>
         )}
 
         {!loading && error && (
-          <div className="rounded-2xl bg-white/5 border border-[#f0b429]/10 p-10 text-center">
-            <p className="text-sm text-white/50 mb-4">Could not load players.</p>
+          <div className="text-center py-16">
+            <p className="text-gray-400 text-sm mb-3">Could not load athletes right now.</p>
             <button
               onClick={() => fetchPlayers(page)}
-              className="rounded-xl bg-[#f0b429] px-5 py-2 text-sm font-bold text-[#1a3a1a]"
+              className="rounded-full px-5 py-2 text-sm font-semibold text-white"
+              style={{ background: GRS_GREEN }}
             >
               Retry
             </button>
@@ -315,17 +301,17 @@ export default function PlayersPage() {
         )}
 
         {!loading && !error && players.length === 0 && (
-          <div className="rounded-2xl bg-white/5 border border-[#f0b429]/10 p-12 text-center">
-            <User className="h-10 w-10 text-white/20 mx-auto mb-3" />
-            <h3 className="font-semibold text-white mb-1">No players found</h3>
-            <p className="text-sm text-white/40">
-              {activeFilters > 0 ? "Try removing some filters." : "No players have registered yet."}
+          <div className="text-center py-16">
+            <User className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 text-sm font-medium">No athletes found</p>
+            <p className="text-gray-400 text-xs mt-1">
+              {activeFilters > 0 ? "Try adjusting your filters." : "No players have registered yet."}
             </p>
           </div>
         )}
 
         {!loading && !error && players.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {players.map((p) => (
               <PlayerTile key={p.user_id} player={p} />
             ))}
@@ -338,36 +324,36 @@ export default function PlayersPage() {
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white disabled:opacity-30 hover:bg-white/15 transition-colors"
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-40 hover:bg-gray-50 transition-colors"
             >
               ← Previous
             </button>
-            <span className="text-sm text-white/40">
-              {page} / {lastPage}
-            </span>
+            <span className="text-sm text-gray-400">{page} / {lastPage}</span>
             <button
               disabled={page >= lastPage}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white disabled:opacity-30 hover:bg-white/15 transition-colors"
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-40 hover:bg-gray-50 transition-colors"
             >
               Next →
             </button>
           </div>
         )}
 
-        {/* Footer CTA */}
-        <div className="mt-12 text-center space-y-3">
-          <p className="text-xs text-white/30">
-            All athletes registered on GrassRoots Sports · Zimbabwe&apos;s #1 talent discovery platform
-          </p>
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#f0b429] px-5 py-2.5 text-sm font-bold text-[#1a3a1a] hover:bg-[#f0b429]/90 transition-colors"
-          >
-            Join as an Athlete
-          </Link>
-          <p className="text-xs text-white/30">Free for all Zimbabwean athletes</p>
-        </div>
+        {/* CTA */}
+        {!loading && (
+          <div className="mt-12 text-center space-y-3">
+            <p className="text-xs text-gray-400">
+              All athletes registered on GrassRoots Sports · Zimbabwe&apos;s #1 talent discovery platform
+            </p>
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold text-white transition-colors"
+              style={{ background: GRS_GREEN }}
+            >
+              Join as an Athlete — Free
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
