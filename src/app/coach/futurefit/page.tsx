@@ -23,7 +23,6 @@ import {
   Loader2, Send, Sparkles, Flag, Map, Globe, Star, ClipboardList,
   Printer, UserPlus, Check, X, Trash2, BookOpen, AlertCircle,
 } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
 import { ProGate } from "@/components/ui/pro-gate";
 import { findRelevantSessions } from "@/lib/football-knowledge";
 import { useAuthStore } from "@/lib/auth-store";
@@ -1420,7 +1419,6 @@ export default function FutureFitPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
 
       <main className="gs-watermark flex-1 overflow-auto">
         <ProGate feature="FutureFit Junior Development Hub" preview={false}>

@@ -18,7 +18,6 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import { queryAI } from "@/lib/ai-query";
 import { MatchEvent, MatchPhase, MatchSetup } from "./_types";
 import { EventLogger } from "./_components/event-logger";
@@ -489,7 +488,6 @@ export default function LiveMatchPage() {
 
   return (
     <div className="flex h-screen bg-background dark">
-      <Sidebar />
       <main className="flex flex-1 flex-col overflow-hidden bg-zinc-950 text-white">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">

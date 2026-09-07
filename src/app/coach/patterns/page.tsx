@@ -7,7 +7,6 @@ import {
   Loader2, Brain, ChevronDown, ChevronUp, RefreshCw, Zap, Shield,
   Target, Activity, Layers, Radio, Eye, EyeOff, ExternalLink,
 } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 
@@ -458,7 +457,6 @@ Keep it under 200 words. Be specific, direct, actionable.`;
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
       <main className="gs-watermark flex-1 overflow-auto p-6">
 
         {/* Header */}

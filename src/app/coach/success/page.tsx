@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Flame, Target, Calendar, ChevronRight, ArrowLeft,
   CheckCircle2, Circle, TrendingUp, Zap, AlertTriangle,
   RefreshCw, Bell, BarChart3, Loader2, Users,
 } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
 import {
   getGoal, clearGoal, saveGoal, shouldShowAdjustment,
   hasSeenAdjustmentThisWeek, saveAdjustmentSeen, getWeeklyReportData,
@@ -542,7 +540,6 @@ export default function CoachSuccessPage() {
   if (!loaded) {
     return (
       <div className="flex min-h-screen bg-[#1a5c2a]">
-        <Sidebar />
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 text-[#f0b429] animate-spin" />
         </main>
@@ -552,18 +549,17 @@ export default function CoachSuccessPage() {
 
   return (
     <div className="flex min-h-screen bg-[#1a5c2a]">
-      <Sidebar />
 
       <main className="flex-1 p-4 md:p-6 max-w-2xl mx-auto w-full">
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/coach"
             className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Link>
           <div>
             <h1 className="text-xl font-bold text-white flex items-center gap-2">
               <Flame className="w-5 h-5 text-[#f0b429]" /> Coaching Success Engine

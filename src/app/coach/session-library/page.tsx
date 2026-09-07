@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, Search, ChevronDown, ChevronUp, Shield, Swords, Zap, Star, AlertTriangle } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
 import { COACHING_SESSIONS, CATEGORIES, type CoachingSession } from "@/lib/football-knowledge";
 
 const CATEGORY_META: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
@@ -176,7 +175,6 @@ export default function SessionLibraryPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
       <main className="gs-watermark flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-3xl">
 

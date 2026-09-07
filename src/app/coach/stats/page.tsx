@@ -13,7 +13,6 @@ import {
   Cell,
 } from "recharts";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import { PitchHeatmap, HeatmapPoint } from "@/components/analytics/pitch-heatmap";
 import { DefensiveAlerts } from "@/components/analytics/defensive-alerts";
 import api from "@/lib/api";
@@ -224,7 +223,6 @@ export default function StatsPage() {
   if (matches.length === 0) {
     return (
       <div className="flex h-screen bg-background">
-        <Sidebar />
         <main className="flex-1 overflow-auto p-6">
           <div className="mb-6 flex items-center gap-3">
             <Link href="/coach" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
@@ -252,7 +250,6 @@ export default function StatsPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
       <main className="flex-1 overflow-auto p-6">
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">

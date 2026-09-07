@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Layers, ChevronDown, ChevronUp, Loader2, CheckCircle2, Clock, Users, Target } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -308,7 +307,6 @@ export default function TrainingPlansPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
       <main className="flex-1 overflow-auto">
         {/* Header */}
         <div className="border-b bg-card px-6 py-5">

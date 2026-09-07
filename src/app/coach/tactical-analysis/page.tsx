@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, Brain, Send, Loader2, Target } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import { queryAI } from "@/lib/ai-query";
 import api from "@/lib/api";
 
@@ -196,7 +195,6 @@ export default function TacticalAnalysisPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
       <main className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-6 py-4">

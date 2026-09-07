@@ -7,7 +7,6 @@ import {
   ChevronDown, ChevronUp, Download, CheckCircle2,
   AlertTriangle, Lightbulb, User, Send,
 } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
 import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
 import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
@@ -507,9 +506,8 @@ export default function CoachDrillAnalysisPage() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#0f1a12" }}>
-      <Sidebar />
 
-      <main className="md:ml-64 p-4 md:p-6">
+      <main className="p-4 md:p-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <Link href="/coach" className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">

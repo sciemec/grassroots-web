@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import {
   ArrowLeft, Film, Upload, Play, ChevronUp, Trash2, Share2,
   Check, Loader2, LinkIcon, Download, Eye, Plus, X, Lock, Link2, Globe,
@@ -694,7 +693,6 @@ export default function CoachMatchVideosPage() {
 
   return (
     <div className="flex h-screen" style={{ background: "#f4f2ee" }}>
-      <Sidebar />
 
       <main className="flex-1 overflow-auto">
         {/* Sticky header */}

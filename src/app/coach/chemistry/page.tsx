@@ -12,7 +12,6 @@ import {
   ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import ChemistryMatrix, { type PairScore, type SquadPlayer } from "@/components/chemistry/ChemistryMatrix";
 import { safeArray } from "@/lib/safe-array";
 import api from "@/lib/api";
@@ -419,7 +418,6 @@ export default function CoachChemistryPage() {
 
   return (
     <div className="flex h-screen bg-[#f4f2ee]">
-      <Sidebar />
       <main className="flex-1 overflow-auto p-6 space-y-5">
 
         {/* Header */}

@@ -9,7 +9,6 @@ import {
   X, ImageDown, FileText, Users,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
 import jsPDF from "jspdf";
@@ -489,7 +488,6 @@ export default function TacticsPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
       <main className="flex-1 overflow-auto p-6">
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">

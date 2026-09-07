@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
 import PairDetail, { type PairData } from "@/components/chemistry/PairDetail";
 import api from "@/lib/api";
 
@@ -67,7 +66,6 @@ export default function ChemistryPairPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-xl">
 

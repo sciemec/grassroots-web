@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import { queryAI } from "@/lib/ai-query";
 import api from "@/lib/api";
 
@@ -164,7 +163,6 @@ export default function CoachMatchesPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
       <main className="flex-1 overflow-auto p-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">

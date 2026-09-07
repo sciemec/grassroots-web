@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserSearch, Search, Loader2, ChevronRight, Zap, Trophy, TrendingUp, Filter } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -296,7 +295,6 @@ export default function ScoutingDashboardPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
       <main className="flex-1 overflow-auto">
         {/* Header */}
         <div className="border-b bg-card px-6 py-5">

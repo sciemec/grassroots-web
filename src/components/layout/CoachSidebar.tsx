@@ -77,7 +77,7 @@ export function CoachSidebar() {
       </button>
 
       <aside
-        className={`fixed top-0 left-0 z-40 h-screen bg-[#1a5c2a] text-white flex flex-col shadow-xl transition-all duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} ${isCollapsed ? 'lg:w-16' : 'w-72'}`}
+        className={`fixed top-0 left-0 z-50 h-screen bg-[#1a5c2a] text-white flex flex-col shadow-xl transition-all duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} w-72 ${isCollapsed ? 'lg:w-16' : ''}`}
       >
         {/* Header */}
         <div className="p-4 border-b border-white/10 flex items-center justify-between gap-2 shrink-0">

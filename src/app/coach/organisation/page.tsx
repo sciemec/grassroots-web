@@ -8,7 +8,6 @@ import {
   CheckCircle2, AlertTriangle, Users, Globe, Lock,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -179,7 +178,6 @@ export default function OrganisationPage() {
   if (!_hasHydrated || loading) {
     return (
       <div className="flex h-screen bg-background">
-        <Sidebar />
         <main className="flex-1 overflow-auto p-6">
           <div className="h-8 w-52 animate-pulse rounded-lg bg-muted mb-4" />
           <div className="h-64 animate-pulse rounded-xl bg-muted" />
@@ -190,7 +188,6 @@ export default function OrganisationPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
       <main className="gs-watermark flex-1 overflow-auto p-6">
 
         {/* Header */}

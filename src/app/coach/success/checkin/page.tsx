@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Circle, Flame, ArrowLeft, Loader2 } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
 import { type Goal } from "@/lib/success/storage";
 import api from "@/lib/api";
 
@@ -133,7 +133,6 @@ Write ONE short motivational line for the coach (max 15 words). End with a Shona
   if (!loaded) {
     return (
       <div className="flex min-h-screen bg-[#1a5c2a]">
-        <Sidebar />
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 text-[#f0b429] animate-spin" />
         </main>
@@ -144,7 +143,6 @@ Write ONE short motivational line for the coach (max 15 words). End with a Shona
   if (!goal) {
     return (
       <div className="flex min-h-screen bg-[#1a5c2a]">
-        <Sidebar />
         <main className="flex-1 p-6 flex flex-col items-center justify-center text-center">
           <Flame className="w-12 h-12 text-[#f0b429] mb-4" />
           <p className="text-white font-semibold mb-2">No coaching goal set yet</p>
@@ -166,18 +164,17 @@ Write ONE short motivational line for the coach (max 15 words). End with a Shona
 
   return (
     <div className="flex min-h-screen bg-[#1a5c2a]">
-      <Sidebar />
 
       <main className="flex-1 p-4 md:p-6 max-w-lg mx-auto w-full">
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/coach/success"
             className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Link>
           <div>
             <h1 className="text-xl font-bold text-white">Coaching Check-In</h1>
             <p className="text-sm text-white/50">{today}</p>
