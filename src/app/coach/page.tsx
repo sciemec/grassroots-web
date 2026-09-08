@@ -171,7 +171,7 @@ export default function CoachHubPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           <HubCard href="/coach/training-plans" icon={Calendar}      iconBg="#dcfce7" iconColor="#16a34a" label="Training Plans"    desc="Build & assign plans"                  badge="core" />
           <HubCard href="/coach/drill-library"  icon={Dumbbell}      iconBg="#dbeafe" iconColor="#2563eb" label="Drill Library"     desc="Drills · sessions · AI drill analysis" />
-          <HubCard href="/player/assessment"    icon={ClipboardList} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Field Assessment"  desc="Position tests · benchmarks · radar chart" badge="new" />
+          <HubCard href="/coach/field-assessment" icon={ClipboardList} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Field Assessment"  desc="Position tests · benchmarks · radar chart" badge="new" />
           <HubCard href="/coach/skill-drills"   icon={Star}          iconBg="#fefce8" iconColor="#ca8a04" label="Skill Assessment"  desc="Rate & test squad across 6 core skills" badge="new" />
         </div>
 
