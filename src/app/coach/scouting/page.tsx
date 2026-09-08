@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserSearch, Search, Loader2, ChevronRight, Zap, Trophy, TrendingUp, Filter } from "lucide-react";
+import { UserSearch, Search, Loader2, ChevronRight, Zap, Trophy, TrendingUp, Filter, Globe } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 
@@ -302,12 +303,20 @@ export default function ScoutingDashboardPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
               <UserSearch className="h-5 w-5 text-primary" />
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="text-xl font-bold">Scouting Dashboard</h1>
               <p className="text-sm text-muted-foreground">
-                {loading ? "Loading players…" : `${filtered.length} of ${players.length} players`}
+                {loading ? "Loading players…" : `${filtered.length} of ${players.length} squad players`}
               </p>
             </div>
+            <Link
+              href="/players"
+              className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#1a5c2a" }}
+            >
+              <Globe className="h-4 w-4" />
+              Discover Athletes
+            </Link>
           </div>
         </div>
 
@@ -320,7 +329,15 @@ export default function ScoutingDashboardPage() {
             <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-10 text-center">
               <UserSearch className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
               <p className="font-semibold text-white">No squad members yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">Add players to your squad from the My Squad page first.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Add players to your squad from the My Squad page, or discover athletes from the platform.</p>
+              <Link
+                href="/players"
+                className="mt-4 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: "#1a5c2a" }}
+              >
+                <Globe className="h-4 w-4" />
+                Browse all athletes
+              </Link>
             </div>
           ) : (
             <>

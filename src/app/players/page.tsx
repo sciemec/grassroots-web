@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { MapPin, ChevronRight, Search, Filter, User, ChevronDown } from "lucide-react";
+import { MapPin, ChevronRight, Search, Filter, User, ChevronDown, ArrowLeft } from "lucide-react";
 import { PublicNavbar } from "@/components/layout/public-navbar";
+import { useAuthStore } from "@/lib/auth-store";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -119,6 +120,9 @@ function PlayerTile({ player }: { player: PlayerCard }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function PlayersPage() {
+  const user = useAuthStore((s) => s.user);
+  const isCoach = user?.role === "coach" || user?.role === "admin";
+
   const [players, setPlayers]         = useState<PlayerCard[]>([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState(false);
@@ -180,8 +184,28 @@ export default function PlayersPage() {
 
       <div className="max-w-5xl mx-auto px-4 pt-20 pb-12">
 
+        {/* Coach context banner */}
+        {isCoach && (
+          <div
+            className="flex items-center justify-between rounded-2xl px-4 py-3 mb-4 mt-4 text-sm"
+            style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}
+          >
+            <p style={{ color: "#15803d" }}>
+              <strong>Scouting mode</strong> — click any athlete to view their public profile
+            </p>
+            <Link
+              href="/coach/scouting"
+              className="flex items-center gap-1.5 font-semibold text-xs"
+              style={{ color: "#1a5c2a" }}
+            >
+              <ArrowLeft size={13} />
+              My Scouting Board
+            </Link>
+          </div>
+        )}
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-4 mt-4">
+        <div className="flex items-center justify-between mb-4" style={{ marginTop: isCoach ? 0 : "1rem" }}>
           <div>
             <h1 className="text-xl font-bold text-gray-900">Discover Athletes</h1>
             <p className="text-sm text-gray-500">
