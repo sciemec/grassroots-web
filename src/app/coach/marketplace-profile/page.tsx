@@ -64,6 +64,20 @@ interface MarketplaceProfile {
   availability: AvailabilitySlot[];
 }
 
+interface AssessmentRequest {
+  id: string;
+  player_user_id: string;
+  sport: string;
+  assessment_type: string;
+  message: string | null;
+  preferred_date: string | null;
+  status: "pending" | "accepted" | "declined" | "completed";
+  coach_response: string | null;
+  responded_at: string | null;
+  created_at: string;
+  player?: { id: string; name: string; email: string };
+}
+
 const DEFAULT_PROFILE: MarketplaceProfile = {
   current_club: "",
   current_role: "",
@@ -168,6 +182,11 @@ export default function CoachMarketplaceProfilePage() {
   const [saved, setSaved]         = useState(false);
   const [error, setError]         = useState<string | null>(null);
 
+  // Assessment requests
+  const [assessmentRequests, setAssessmentRequests] = useState<AssessmentRequest[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
   // Credential form state
   const [newCred, setNewCred] = useState<Credential>({ name: "", issuer: "", year: new Date().getFullYear() });
   const [addingCred, setAddingCred] = useState(false);
@@ -223,6 +242,36 @@ export default function CoachMarketplaceProfilePage() {
   }, [token]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
+
+  // ── Load assessment requests ───────────────────────────────────────────
+
+  useEffect(() => {
+    if (!token) return;
+    setRequestsLoading(true);
+    fetch(`${API_URL}/coach/assessment-requests`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : { data: [] })
+      .then(json => setAssessmentRequests(Array.isArray(json.data) ? json.data : []))
+      .catch(() => {})
+      .finally(() => setRequestsLoading(false));
+  }, [token]);
+
+  async function respondToRequest(id: string, status: "accepted" | "declined", coachResponse?: string) {
+    setUpdatingId(id);
+    try {
+      const res = await fetch(`${API_URL}/coach/assessment-requests/${id}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ status, coach_response: coachResponse ?? null }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setAssessmentRequests(prev => prev.map(r => r.id === id ? (updated.data ?? updated) : r));
+      }
+    } catch { /* ignore */ }
+    finally { setUpdatingId(null); }
+  }
 
   // ── Save profile ──────────────────────────────────────────────────────
 
@@ -858,29 +907,107 @@ export default function CoachMarketplaceProfilePage() {
         <SectionCard icon={ClipboardList} title="Assessment Requests">
           <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16, lineHeight: 1.6 }}>
             Players and parents who request a professional assessment from you will appear here.
-            Each request includes the player&apos;s profile, their sport, and contact details.
           </p>
-          <div style={{
-            backgroundColor: "#f9fafb", border: "1px solid #e5e7eb",
-            borderRadius: 12, padding: "20px 16px", textAlign: "center",
-          }}>
-            <ClipboardList size={28} style={{ color: "#d1d5db", marginBottom: 8 }} />
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: 0 }}>No requests yet</p>
-            <p style={{ fontSize: 11, color: "#9ca3af", margin: "4px 0 12px" }}>
-              Complete your profile above and requests will appear here when players book you.
-            </p>
-            <a
-              href="/player/coaching/browse"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                fontSize: 11, fontWeight: 700, color: GRS_GREEN,
-                textDecoration: "none",
-              }}
-            >
-              <ExternalLink size={11} />
-              See how your profile looks to players
-            </a>
-          </div>
+
+          {requestsLoading ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", padding: "16px 0", color: "#9ca3af", fontSize: 12 }}>
+              <Loader2 size={14} className="animate-spin" /> Loading requests…
+            </div>
+          ) : assessmentRequests.length === 0 ? (
+            <div style={{
+              backgroundColor: "#f9fafb", border: "1px solid #e5e7eb",
+              borderRadius: 12, padding: "20px 16px", textAlign: "center",
+            }}>
+              <ClipboardList size={28} style={{ color: "#d1d5db", marginBottom: 8 }} />
+              <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: 0 }}>No requests yet</p>
+              <p style={{ fontSize: 11, color: "#9ca3af", margin: "4px 0 12px" }}>
+                Complete your profile above and requests will appear here when players book you.
+              </p>
+              <a
+                href="/player/coaching/browse"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  fontSize: 11, fontWeight: 700, color: GRS_GREEN,
+                  textDecoration: "none",
+                }}
+              >
+                <ExternalLink size={11} />
+                See how your profile looks to players
+              </a>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {assessmentRequests.map(req => {
+                const statusColors: Record<string, { bg: string; text: string }> = {
+                  pending:   { bg: "#fef3c7", text: "#92400e" },
+                  accepted:  { bg: "#dcfce7", text: "#166534" },
+                  declined:  { bg: "#fee2e2", text: "#991b1b" },
+                  completed: { bg: "#e0f2fe", text: "#075985" },
+                };
+                const sc = statusColors[req.status] ?? statusColors.pending;
+                return (
+                  <div key={req.id} style={{
+                    border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px",
+                    backgroundColor: "#fafafa",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: "#111", margin: 0 }}>
+                          {req.player?.name ?? "Player"}
+                        </p>
+                        <p style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 0" }}>
+                          {req.sport} · {req.assessment_type}
+                          {req.preferred_date ? ` · ${new Date(req.preferred_date).toLocaleDateString()}` : ""}
+                        </p>
+                      </div>
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
+                        padding: "3px 8px", borderRadius: 20,
+                        backgroundColor: sc.bg, color: sc.text,
+                      }}>
+                        {req.status}
+                      </span>
+                    </div>
+                    {req.message && (
+                      <p style={{ fontSize: 12, color: "#374151", margin: "6px 0 0", fontStyle: "italic" }}>
+                        &ldquo;{req.message}&rdquo;
+                      </p>
+                    )}
+                    {req.status === "pending" && (
+                      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                        <button
+                          onClick={() => respondToRequest(req.id, "accepted")}
+                          disabled={updatingId === req.id}
+                          style={{
+                            flex: 1, padding: "7px 0", borderRadius: 8, border: "none", cursor: "pointer",
+                            backgroundColor: GRS_GREEN, color: "#fff", fontSize: 12, fontWeight: 700,
+                          }}
+                        >
+                          {updatingId === req.id ? "…" : "Accept"}
+                        </button>
+                        <button
+                          onClick={() => respondToRequest(req.id, "declined")}
+                          disabled={updatingId === req.id}
+                          style={{
+                            flex: 1, padding: "7px 0", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                            backgroundColor: "#f3f4f6", color: "#374151",
+                            border: "1px solid #e5e7eb", cursor: "pointer",
+                          }}
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    )}
+                    {req.coach_response && (
+                      <p style={{ fontSize: 11, color: "#6b7280", margin: "8px 0 0" }}>
+                        Your reply: {req.coach_response}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </SectionCard>
         </div>
 
