@@ -1124,9 +1124,9 @@ export default function PlayerVaultPage() {
       <main className="flex-1 overflow-auto p-6 pt-16 lg:pt-6">
         {/* Header */}
         <div className="mb-6">
-          <p className="text-xs font-medium uppercase tracking-widest text-accent">
-            Player Hub
-          </p>
+          <a href="/player" className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-[#f0b429] transition-colors">
+            <ChevronRight className="h-3.5 w-3.5 rotate-180" /> Player Hub
+          </a>
           <h1 className="mt-1 flex items-center gap-2 text-2xl font-bold text-[#f0b429]">
             <Film className="h-6 w-6 text-primary" />
             Highlight Vault
