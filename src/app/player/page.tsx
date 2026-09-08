@@ -22,7 +22,7 @@ import {
   IconHandFinger,
   IconWorld,
   IconBrain,
-  IconFlag,
+  IconChalkboard,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -303,12 +303,12 @@ export default function PlayerHubPage() {
         />
 
         <HubCard
-          href="/player/goal"
-          icon={IconFlag}
+          href="/player/coaching"
+          icon={IconChalkboard}
           iconBg={O}
           iconColor={OL}
-          title="Goal Engine"
-          subtitle="Set your target, get your AI plan"
+          title="Coaching"
+          subtitle="Personalised coaching sessions"
         />
 
         {/* Section 3 — Showcase */}
