@@ -102,13 +102,19 @@ export type PlayerStatus = "fit" | "injured" | "caution";
 
 export interface SquadMember {
   id: string;
-  player_id: string;
-  player: User;
-  shirt_no: number;
+  name: string;
   position: string;
+  shirt_no: number;
+  age_phase: string | null;
   status: PlayerStatus;
   status_note: string | null;
+  player_user_id: string | null;
   joined_at: string;
+  stats: {
+    sessions_14d: number;
+    avg_score: number | null;
+    last_session: string | null;
+  };
 }
 
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────

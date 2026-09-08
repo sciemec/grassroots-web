@@ -20,26 +20,23 @@ const STATUS_STYLES: Record<string, string> = {
   caution: "bg-amber-500/15 text-amber-700",
 };
 
-interface AddForm { player_email: string; shirt_no: string; position: string }
-interface CoachRating { player_id: string; skill_code: string; rating: number; }
+interface AddForm { name: string; shirt_no: string; position: string }
 
 export default function CoachSquadPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [squad, setSquad] = useState<SquadMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
-  const [addForm, setAddForm] = useState<AddForm>({ player_email: "", shirt_no: "", position: "" });
+  const [addForm, setAddForm] = useState<AddForm>({ name: "", shirt_no: "", position: "" });
   const [addError, setAddError] = useState("");
   const [adding, setAdding] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [coachRatings, setCoachRatings] = useState<Record<string, CoachRating[]>>({});
   const [activeTab, setActiveTab] = useState<"players" | "injuries" | "fatigue" | "chemistry">("players");
 
   useEffect(() => {
     fetchSquad();
-    fetchCoachRatings();
   }, [user, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchSquad = () => {
@@ -54,21 +51,6 @@ export default function CoachSquadPage() {
       .finally(() => setLoading(false));
   };
 
-  const fetchCoachRatings = () => {
-    api.get("/coach/skill-ratings")
-      .then((res) => {
-        const _r = res.data?.data ?? res.data;
-        const arr: CoachRating[] = Array.isArray(_r) ? _r : [];
-        const grouped: Record<string, CoachRating[]> = {};
-        arr.forEach((r) => {
-          if (!grouped[r.player_id]) grouped[r.player_id] = [];
-          grouped[r.player_id].push(r);
-        });
-        setCoachRatings(grouped);
-      })
-      .catch(() => {});
-  };
-
   const updateStatus = async (id: string, status: string) => {
     await api.patch(`/coach/squad/${id}`, { status }).catch(() => {});
     setSquad((prev) => prev.map((m) => m.id === id ? { ...m, status: status as SquadMember["status"] } : m));
@@ -81,23 +63,23 @@ export default function CoachSquadPage() {
   };
 
   const addPlayer = async () => {
-    if (!addForm.player_email || !addForm.shirt_no || !addForm.position) {
+    if (!addForm.name || !addForm.shirt_no || !addForm.position) {
       setAddError("All fields are required."); return;
     }
     setAdding(true);
     setAddError("");
     try {
       await api.post("/coach/squad", {
-        player_email: addForm.player_email,
+        name: addForm.name,
         shirt_no: Number(addForm.shirt_no),
         position: addForm.position,
       });
-      setAddForm({ player_email: "", shirt_no: "", position: "" });
+      setAddForm({ name: "", shirt_no: "", position: "" });
       setShowAdd(false);
       fetchSquad();
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setAddError(msg ?? "Failed to add player. Check the email is registered.");
+      setAddError(msg ?? "Failed to add player.");
     } finally {
       setAdding(false);
     }
@@ -105,7 +87,7 @@ export default function CoachSquadPage() {
 
   const filtered = squad.filter((m) => {
     const matchSearch = !search ||
-      m.player?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      m.name?.toLowerCase().includes(search.toLowerCase()) ||
       m.position?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || m.status === statusFilter;
     return matchSearch && matchStatus;
@@ -169,12 +151,12 @@ export default function CoachSquadPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
-                <label className="mb-1.5 block text-sm font-medium">Player email</label>
+                <label className="mb-1.5 block text-sm font-medium">Player name</label>
                 <input
-                  type="email"
-                  placeholder="player@email.com"
-                  value={addForm.player_email}
-                  onChange={(e) => setAddForm((f) => ({ ...f, player_email: e.target.value }))}
+                  type="text"
+                  placeholder="e.g. Takudzwa Musona"
+                  value={addForm.name}
+                  onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
                   className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
@@ -276,7 +258,6 @@ export default function CoachSquadPage() {
                     <th className="px-4 py-3 font-medium">Position</th>
                     <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium">Joined</th>
-                    <th className="px-4 py-3 font-medium">Ratings</th>
                     <th className="px-4 py-3 font-medium"></th>
                   </tr>
                 </thead>
@@ -290,7 +271,7 @@ export default function CoachSquadPage() {
                         </td>
                         <td className="px-4 py-3.5 font-medium">
                           <Link href={`/coach/squad/${m.id}`} className="hover:text-primary transition-colors">
-                            {m.player?.name ?? "—"}
+                            {m.name}
                           </Link>
                         </td>
                         <td className="px-4 py-3.5 capitalize text-muted-foreground">{m.position}</td>
@@ -306,21 +287,7 @@ export default function CoachSquadPage() {
                           </select>
                         </td>
                         <td className="px-4 py-3.5 text-xs text-muted-foreground">
-                          {new Date(m.joined_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          {(() => {
-                            const pid = (m as { player_id?: string }).player_id ?? m.id;
-                            const ratings = coachRatings[pid] ?? [];
-                            if (ratings.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
-                            const avg = ratings.reduce((s, r) => s + r.rating, 0) / ratings.length;
-                            const colour = avg >= 7 ? "bg-green-500/15 text-green-700" : avg >= 5 ? "bg-amber-500/15 text-amber-700" : "bg-red-500/15 text-red-700";
-                            return (
-                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${colour}`}>
-                                {avg.toFixed(1)}<span className="ml-0.5 opacity-60">/10</span>
-                              </span>
-                            );
-                          })()}
+                          {m.joined_at ? new Date(m.joined_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                         </td>
                         <td className="px-4 py-3.5">
                           <button
@@ -372,7 +339,7 @@ export default function CoachSquadPage() {
                         {m.shirt_no}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{m.player?.name ?? "—"}</p>
+                        <p className="font-medium text-sm truncate">{m.name}</p>
                         <p className="text-xs text-muted-foreground capitalize">{m.position}</p>
                       </div>
                       <select
