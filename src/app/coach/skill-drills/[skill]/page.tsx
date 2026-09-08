@@ -478,7 +478,13 @@ ${fbKeys},
               <div style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <ClipboardList size={14} color="#1a5c2a" />
               </div>
-              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#111" }}>Select Player</h2>
+              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#111", flex: 1 }}>Select Player</h2>
+              <Link
+                href="/coach/registered-players"
+                style={{ fontSize: 12, fontWeight: 600, color: "#1a5c2a", textDecoration: "none", backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "4px 10px" }}
+              >
+                + Add Player
+              </Link>
             </div>
 
             {squadLoading ? (
@@ -486,7 +492,7 @@ ${fbKeys},
             ) : squad.length === 0 ? (
               <div style={{ backgroundColor: "#fef2f2", borderRadius: 8, padding: "12px 16px", border: "1px solid #fecaca" }}>
                 <p style={{ margin: 0, fontSize: 14, color: "#dc2626" }}>
-                  No squad players found. <Link href="/coach/squad" style={{ color: "#dc2626", fontWeight: 600 }}>Add players to your squad</Link> first.
+                  No squad players found. <Link href="/coach/registered-players" style={{ color: "#dc2626", fontWeight: 600 }}>Register a player</Link> first.
                 </p>
               </div>
             ) : (
