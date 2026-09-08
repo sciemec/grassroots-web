@@ -307,8 +307,8 @@ export default function PlayerHubPage() {
           icon={IconChalkboard}
           iconBg={O}
           iconColor={OL}
-          title="Coaching"
-          subtitle="Personalised coaching sessions"
+          title="Find A Coach"
+          subtitle="Connect with a coach near you"
         />
 
         {/* Section 3 — Showcase */}
