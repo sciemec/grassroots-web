@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trash2, Users, Search, UserPlus } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Search, UserPlus, Activity, Zap, AlertTriangle, ShieldCheck, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 import type { SquadMember } from "@/types";
@@ -35,6 +35,7 @@ export default function CoachSquadPage() {
   const [adding, setAdding] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [coachRatings, setCoachRatings] = useState<Record<string, CoachRating[]>>({});
+  const [activeTab, setActiveTab] = useState<"players" | "injuries" | "fatigue" | "chemistry">("players");
 
   useEffect(() => {
     fetchSquad();
@@ -110,11 +111,18 @@ export default function CoachSquadPage() {
     return matchSearch && matchStatus;
   });
 
+  const TABS = [
+    { id: "players"   as const, label: "Players",   icon: Users },
+    { id: "injuries"  as const, label: "Injuries",  icon: AlertTriangle },
+    { id: "fatigue"   as const, label: "Fatigue",   icon: Activity },
+    { id: "chemistry" as const, label: "Chemistry", icon: Zap },
+  ];
+
   return (
     <div className="flex-1 overflow-auto p-6">
       <main className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/coach" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
               <ArrowLeft className="h-4 w-4" />
@@ -124,16 +132,36 @@ export default function CoachSquadPage() {
               <p className="text-sm text-muted-foreground">{squad.length} players registered</p>
             </div>
           </div>
-          <button
-            onClick={() => setShowAdd((v) => !v)}
-            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="h-4 w-4" /> Add player
-          </button>
+          {activeTab === "players" && (
+            <button
+              onClick={() => setShowAdd((v) => !v)}
+              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="h-4 w-4" /> Add player
+            </button>
+          )}
+        </div>
+
+        {/* Tab bar */}
+        <div className="mb-6 flex gap-1 rounded-xl border bg-muted/30 p-1">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors ${
+                activeTab === id
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{label}</span>
+            </button>
+          ))}
         </div>
 
         {/* Add player form */}
-        {showAdd && (
+        {activeTab === "players" && showAdd && (
           <div className="mb-6 rounded-xl border bg-card p-5">
             <div className="mb-4 flex items-center gap-2">
               <UserPlus className="h-5 w-5 text-primary" />
@@ -191,6 +219,9 @@ export default function CoachSquadPage() {
             </div>
           </div>
         )}
+
+        {/* ── PLAYERS TAB ──────────────────────────────────────────── */}
+        {activeTab === "players" && (<>
 
         {/* Search + filter */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row">
@@ -307,6 +338,106 @@ export default function CoachSquadPage() {
             </div>
           </div>
         )}
+
+        </>)} {/* end Players tab */}
+
+        {/* ── INJURIES TAB ─────────────────────────────────────────── */}
+        {activeTab === "injuries" && (() => {
+          const injured  = squad.filter((m) => m.status === "injured");
+          const caution  = squad.filter((m) => m.status === "caution");
+          const fit      = squad.filter((m) => m.status === "fit");
+
+          const Group = ({
+            title, icon: Icon, colour, players, emptyMsg,
+          }: {
+            title: string;
+            icon: React.ElementType;
+            colour: string;
+            players: SquadMember[];
+            emptyMsg: string;
+          }) => (
+            <div className="rounded-xl border bg-card overflow-hidden">
+              <div className={`flex items-center gap-2 px-4 py-3 border-b ${colour}`}>
+                <Icon className="h-4 w-4" />
+                <span className="font-semibold text-sm">{title}</span>
+                <span className="ml-auto text-xs opacity-70">{players.length}</span>
+              </div>
+              {players.length === 0 ? (
+                <p className="px-4 py-6 text-center text-sm text-muted-foreground">{emptyMsg}</p>
+              ) : (
+                <ul className="divide-y">
+                  {players.map((m) => (
+                    <li key={m.id} className="flex items-center gap-3 px-4 py-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                        {m.shirt_no}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{m.player?.name ?? "—"}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{m.position}</p>
+                      </div>
+                      <select
+                        value={m.status}
+                        onChange={(e) => updateStatus(m.id, e.target.value)}
+                        className={`rounded-full border-0 px-2.5 py-1 text-xs font-medium cursor-pointer ${STATUS_STYLES[m.status] ?? "bg-muted text-muted-foreground"}`}
+                      >
+                        <option value="fit">Fit</option>
+                        <option value="caution">Caution</option>
+                        <option value="injured">Injured</option>
+                      </select>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+
+          return (
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Group title="Injured"    icon={AlertCircle}   colour="bg-red-500/10 text-red-700"    players={injured}  emptyMsg="No injured players" />
+              <Group title="Caution"    icon={AlertTriangle} colour="bg-amber-500/10 text-amber-700" players={caution}  emptyMsg="No players on caution" />
+              <Group title="Fit"        icon={ShieldCheck}   colour="bg-green-500/10 text-green-700" players={fit}      emptyMsg="No players marked fit yet" />
+            </div>
+          );
+        })()}
+
+        {/* ── FATIGUE TAB ──────────────────────────────────────────── */}
+        {activeTab === "fatigue" && (
+          <div className="rounded-xl border bg-card p-8 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10">
+              <Activity className="h-7 w-7 text-amber-600" />
+            </div>
+            <h2 className="mb-1 text-lg font-bold">Fatigue Monitor</h2>
+            <p className="mb-6 text-sm text-muted-foreground max-w-xs mx-auto">
+              Track training load, recovery times, and overtraining risk for every player in your squad.
+            </p>
+            <Link
+              href="/coach/fatigue"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Open Fatigue Monitor →
+            </Link>
+          </div>
+        )}
+
+        {/* ── CHEMISTRY TAB ────────────────────────────────────────── */}
+        {activeTab === "chemistry" && (
+          <div className="rounded-xl border bg-card p-8 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-violet-500/10">
+              <Zap className="h-7 w-7 text-violet-600" />
+            </div>
+            <h2 className="mb-1 text-lg font-bold">Squad Chemistry</h2>
+            <p className="mb-6 text-sm text-muted-foreground max-w-xs mx-auto">
+              Analyse how well your players gel — playing style compatibility, positional chemistry, and combination scores.
+            </p>
+            <Link
+              href="/coach/chemistry"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Open Chemistry →
+            </Link>
+          </div>
+        )}
+
       </main>
     </div>
   );
