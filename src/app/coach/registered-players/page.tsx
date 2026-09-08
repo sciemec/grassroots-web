@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Plus, CheckCircle2, Clock, X, UserCheck,
   Loader2, Trash2, ShieldCheck, AlertCircle, Download, Play, ChevronUp, Star,
+  Camera, AlertTriangle,
 } from "lucide-react";
 import api from "@/lib/api";
 import jsPDF from "jspdf";
@@ -19,6 +20,13 @@ interface Registration {
   sport: string | null;
   position: string | null;
   phone: string | null;
+  gender: string | null;
+  province: string | null;
+  school: string | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  dominant_foot: string | null;
+  photo_url: string | null;
   notes: string | null;
   video_url: string | null;
   linked_user_id: string | null;
@@ -27,6 +35,17 @@ interface Registration {
   confirmed_at: string | null;
   created_at: string;
 }
+
+interface DuplicateWarning {
+  other_clubs?: { organisation_name: string; match_status: string; registered_at: string }[];
+  has_platform_account?: boolean;
+}
+
+const ZW_PROVINCES = [
+  "Harare", "Bulawayo", "Manicaland", "Mashonaland Central",
+  "Mashonaland East", "Mashonaland West", "Masvingo",
+  "Matabeleland North", "Matabeleland South", "Midlands",
+];
 
 interface SkillRating {
   code: string;
@@ -250,13 +269,22 @@ export default function RegisteredPlayersPage() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [actionId, setActionId]     = useState<string | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<DuplicateWarning | null>(null);
+  const [photoFile, setPhotoFile]   = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const user      = useAuthStore((s) => s.user);
+  const token     = useAuthStore((s) => s.token);
   const coachName = (user as { name?: string } | null)?.name ?? "Coach";
 
   const [form, setForm] = useState({
     first_name: "", surname: "", date_of_birth: "",
-    sport: "", position: "", phone: "", notes: "", video_url: "",
+    sport: "", position: "", phone: "",
+    gender: "", province: "", school: "",
+    height_cm: "", weight_kg: "", dominant_foot: "",
+    notes: "", video_url: "",
   });
 
   useEffect(() => { load(); }, []);
@@ -272,21 +300,96 @@ export default function RegisteredPlayersPage() {
     }
   }
 
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Photo must be under 5 MB");
+      return;
+    }
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadPhoto(file: File): Promise<string | null> {
+    try {
+      setUploadingPhoto(true);
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const key = `player-photos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+      // Get presigned URL from existing R2 route
+      const presignRes = await fetch("/api/upload/presigned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ key, contentType: file.type }),
+      });
+      if (!presignRes.ok) return null;
+      const { url, publicUrl } = await presignRes.json();
+
+      // PUT directly to R2
+      const putRes = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!putRes.ok) return null;
+      return publicUrl as string;
+    } catch {
+      return null;
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.first_name || !form.surname || !form.date_of_birth) return;
     setSubmitting(true);
+    setDuplicateWarning(null);
     try {
+      // Upload photo first if one was selected
+      let photoUrl: string | undefined;
+      if (photoFile) {
+        const uploaded = await uploadPhoto(photoFile);
+        if (uploaded) photoUrl = uploaded;
+      }
+
       const res = await api.post("/coach/registered-players", {
-        ...form,
-        sport:     form.sport     || undefined,
-        position:  form.position  || undefined,
-        phone:     form.phone     || undefined,
-        notes:     form.notes     || undefined,
-        video_url: form.video_url || undefined,
+        first_name:    form.first_name,
+        surname:       form.surname,
+        date_of_birth: form.date_of_birth,
+        sport:         form.sport         || undefined,
+        position:      form.position      || undefined,
+        phone:         form.phone         || undefined,
+        gender:        form.gender        || undefined,
+        province:      form.province      || undefined,
+        school:        form.school        || undefined,
+        height_cm:     form.height_cm     ? Number(form.height_cm)   : undefined,
+        weight_kg:     form.weight_kg     ? Number(form.weight_kg)   : undefined,
+        dominant_foot: form.dominant_foot || undefined,
+        photo_url:     photoUrl           || undefined,
+        notes:         form.notes         || undefined,
+        video_url:     form.video_url     || undefined,
       });
+
       setRegs((prev) => [res.data.data, ...prev]);
-      setForm({ first_name: "", surname: "", date_of_birth: "", sport: "", position: "", phone: "", notes: "", video_url: "" });
+
+      // Show duplicate warnings if backend found any — but don't block
+      if (res.data.warnings) {
+        setDuplicateWarning(res.data.warnings);
+      }
+
+      setForm({
+        first_name: "", surname: "", date_of_birth: "",
+        sport: "", position: "", phone: "",
+        gender: "", province: "", school: "",
+        height_cm: "", weight_kg: "", dominant_foot: "",
+        notes: "", video_url: "",
+      });
+      setPhotoFile(null);
+      setPhotoPreview(null);
       setShowForm(false);
     } catch {
       // silent — keep form open
@@ -389,111 +492,216 @@ export default function RegisteredPlayersPage() {
           </p>
         </div>
 
+        {/* Duplicate warning banner (shown after successful save if warnings returned) */}
+        {duplicateWarning && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={15} className="mt-0.5 flex-shrink-0 text-amber-600" />
+              <div>
+                <p className="text-xs font-bold text-amber-800">Duplicate Alert</p>
+                {duplicateWarning.has_platform_account && (
+                  <p className="mt-0.5 text-xs text-amber-700">
+                    This player already has a GrassRoots account. Check the "Action Required" section above — they may already appear as a pending match.
+                  </p>
+                )}
+                {duplicateWarning.other_clubs && duplicateWarning.other_clubs.length > 0 && (
+                  <div className="mt-1">
+                    <p className="text-xs text-amber-700">This player is also registered with:</p>
+                    {duplicateWarning.other_clubs.map((c, i) => (
+                      <p key={i} className="mt-0.5 text-xs font-semibold text-amber-800">· {c.organisation_name}</p>
+                    ))}
+                    <p className="mt-1 text-[11px] text-amber-600">
+                      The player&apos;s Talent Passport will show all academies that registered them — this is intentional for provenance purposes.
+                    </p>
+                  </div>
+                )}
+                <button onClick={() => setDuplicateWarning(null)} className="mt-2 text-[11px] font-semibold text-amber-700 underline">
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add form */}
         {showForm && (
           <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-black uppercase tracking-wide text-gray-900">Register a Player</h3>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-wide text-gray-900">Register a Player</h3>
+                <p className="text-[11px] text-gray-400 mt-0.5">Fill in as much as you know — all fields except name and DOB are optional</p>
+              </div>
+              <button onClick={() => { setShowForm(false); setPhotoFile(null); setPhotoPreview(null); }} className="text-gray-400 hover:text-gray-600">
                 <X size={16} />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide">First Name *</label>
-                  <input
-                    value={form.first_name}
-                    onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-                    required
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none"
-                    placeholder="Tino"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Surname *</label>
-                  <input
-                    value={form.surname}
-                    onChange={(e) => setForm({ ...form, surname: e.target.value })}
-                    required
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none"
-                    placeholder="Chikosi"
-                  />
-                </div>
-              </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* Photo upload */}
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Date of Birth *</label>
-                <input
-                  type="date"
-                  value={form.date_of_birth}
-                  onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
-                  required
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Sport</label>
-                  <select
-                    value={form.sport}
-                    onChange={(e) => setForm({ ...form, sport: e.target.value })}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none"
+                <label className="mb-1 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Player Photo</label>
+                <div className="flex items-center gap-3">
+                  <div
+                    onClick={() => photoInputRef.current?.click()}
+                    className="flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-gray-200 bg-gray-50 hover:border-[#1a5c2a] hover:bg-green-50 transition-colors"
                   >
-                    <option value="">Select...</option>
-                    {["Football", "Rugby", "Athletics", "Netball", "Basketball", "Cricket", "Swimming", "Tennis", "Volleyball", "Hockey"].map((s) => (
-                      <option key={s} value={s.toLowerCase()}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Position</label>
+                    {photoPreview
+                      ? <img src={photoPreview} alt="preview" className="h-full w-full object-cover" />
+                      : <Camera size={18} className="text-gray-300" />
+                    }
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                    >
+                      {photoPreview ? "Change photo" : "Choose photo"}
+                    </button>
+                    <p className="mt-0.5 text-[10px] text-gray-400">JPG or PNG · max 5 MB</p>
+                  </div>
                   <input
-                    value={form.position}
-                    onChange={(e) => setForm({ ...form, position: e.target.value })}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none"
-                    placeholder="e.g. Striker"
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handlePhotoSelect}
                   />
                 </div>
               </div>
+
+              {/* Identity — required */}
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Player / Guardian Phone (optional)</label>
-                <input
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none"
-                  placeholder="+263 77 123 4567"
-                />
+                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Identity *</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">First Name *</label>
+                    <input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} required className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="Tino" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">Surname *</label>
+                    <input value={form.surname} onChange={(e) => setForm({ ...form, surname: e.target.value })} required className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="Chikosi" />
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">Date of Birth *</label>
+                    <input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} required className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">Gender</label>
+                    <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none">
+                      <option value="">Select...</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
               </div>
+
+              {/* Location */}
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Coach Notes (optional)</label>
-                <textarea
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  rows={2}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none resize-none"
-                  placeholder="e.g. Excellent pace, needs work on left foot"
-                />
+                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Location & School</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">Province</label>
+                    <select value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none">
+                      <option value="">Select...</option>
+                      {ZW_PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">School / Club</label>
+                    <input value={form.school} onChange={(e) => setForm({ ...form, school: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="e.g. Harare High School" />
+                  </div>
+                </div>
               </div>
+
+              {/* Sport profile */}
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Highlight Clip URL (optional)</label>
-                <input
-                  value={form.video_url}
-                  onChange={(e) => setForm({ ...form, video_url: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none"
-                  placeholder="Paste video URL from your Video Library"
-                />
-                <p className="mt-0.5 text-[10px] text-gray-400">
-                  Upload to your <Link href="/coach/video-library" className="underline">Video Library</Link> first, then paste the link here.
-                </p>
+                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Sport Profile</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">Sport</label>
+                    <select value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none">
+                      <option value="">Select...</option>
+                      {["Football", "Rugby", "Athletics", "Netball", "Basketball", "Cricket", "Swimming", "Tennis", "Volleyball", "Hockey"].map((s) => (
+                        <option key={s} value={s.toLowerCase()}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">Position</label>
+                    <input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="e.g. Striker" />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <label className="mb-1 block text-[11px] font-semibold text-gray-500">Dominant Foot</label>
+                  <div className="flex gap-2">
+                    {["Right", "Left", "Both"].map((f) => (
+                      <button
+                        key={f} type="button"
+                        onClick={() => setForm({ ...form, dominant_foot: form.dominant_foot === f.toLowerCase() ? "" : f.toLowerCase() })}
+                        className="flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors"
+                        style={{
+                          borderColor: form.dominant_foot === f.toLowerCase() ? "#1a5c2a" : "#e5e7eb",
+                          backgroundColor: form.dominant_foot === f.toLowerCase() ? "#f0fdf4" : "#fff",
+                          color: form.dominant_foot === f.toLowerCase() ? "#1a5c2a" : "#6b7280",
+                        }}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
+
+              {/* Physical */}
+              <div>
+                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Physical</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">Height (cm)</label>
+                    <input type="number" min="50" max="250" value={form.height_cm} onChange={(e) => setForm({ ...form, height_cm: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="165" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">Weight (kg)</label>
+                    <input type="number" min="20" max="200" value={form.weight_kg} onChange={(e) => setForm({ ...form, weight_kg: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="60" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div>
+                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Contact</p>
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-gray-500">Player / Guardian Phone</label>
+                  <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="+263 77 123 4567" />
+                </div>
+              </div>
+
+              {/* Coach notes + video */}
+              <div>
+                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Notes & Clips</p>
+                <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none resize-none" placeholder="e.g. Excellent pace, needs work on left foot" />
+                <div className="mt-2">
+                  <label className="mb-1 block text-[11px] font-semibold text-gray-500">Highlight Clip URL</label>
+                  <input value={form.video_url} onChange={(e) => setForm({ ...form, video_url: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="Paste video URL from your Video Library" />
+                  <p className="mt-0.5 text-[10px] text-gray-400">
+                    Upload to your <Link href="/coach/video-library" className="underline">Video Library</Link> first, then paste the link here.
+                  </p>
+                </div>
+              </div>
+
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || uploadingPhoto}
                 className="flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-bold text-white disabled:opacity-60"
                 style={{ backgroundColor: "#1a5c2a" }}
               >
-                {submitting ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-                {submitting ? "Registering..." : "Register Player"}
+                {(submitting || uploadingPhoto) ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                {uploadingPhoto ? "Uploading photo..." : submitting ? "Registering..." : "Register Player"}
               </button>
             </form>
           </div>
@@ -656,6 +864,18 @@ function RegistrationCard({
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2">
+        {/* Photo avatar */}
+        <div className="flex-shrink-0">
+          {reg.photo_url
+            ? <img src={reg.photo_url} alt={reg.first_name} className="h-12 w-12 rounded-full object-cover border border-gray-100" />
+            : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-sm font-black text-gray-400">
+                {reg.first_name[0]}{reg.surname[0]}
+              </div>
+            )
+          }
+        </div>
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-black text-gray-900">
@@ -665,9 +885,21 @@ function RegistrationCard({
           </div>
           <p className="mt-0.5 text-xs text-gray-500">
             DOB: {new Date(reg.date_of_birth).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+            {reg.gender ? ` · ${reg.gender.charAt(0).toUpperCase() + reg.gender.slice(1)}` : ""}
             {reg.sport ? ` · ${reg.sport}` : ""}
             {reg.position ? ` · ${reg.position}` : ""}
           </p>
+          {(reg.province || reg.school || reg.height_cm || reg.dominant_foot) && (
+            <p className="mt-0.5 text-[10px] text-gray-400">
+              {[
+                reg.province,
+                reg.school,
+                reg.height_cm ? `${reg.height_cm} cm` : null,
+                reg.weight_kg ? `${reg.weight_kg} kg` : null,
+                reg.dominant_foot ? `${reg.dominant_foot.charAt(0).toUpperCase() + reg.dominant_foot.slice(1)} foot` : null,
+              ].filter(Boolean).join(" · ")}
+            </p>
+          )}
           <p className="text-[10px] text-gray-400 mt-0.5">
             Registered under <span className="font-semibold">{reg.organisation_name}</span>
             {" "}on {new Date(reg.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
