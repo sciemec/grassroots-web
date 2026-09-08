@@ -12,7 +12,7 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/ap
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type VideoVisibility = "private" | "link_only" | "public";
+type VideoVisibility = "private" | "team" | "public";
 
 interface MatchVideo {
   id: string;
@@ -43,7 +43,7 @@ async function generateThumbnailSafe(file: File): Promise<Blob | null> {
 
 const VISIBILITY_CONFIG: Record<VideoVisibility, { label: string; icon: React.ReactNode; color: string; bg: string; border: string }> = {
   private: { label: "Private", icon: <Lock  size={10} />, color: "#92400e", bg: "#fffbeb", border: "#fde68a" },
-  link_only: { label: "Team",    icon: <Link2 size={10} />, color: "#1a5c2a", bg: "#f0fdf4", border: "#bbf7d0" },
+  team:      { label: "Team",    icon: <Link2 size={10} />, color: "#1a5c2a", bg: "#f0fdf4", border: "#bbf7d0" },
   public:  { label: "Public",  icon: <Globe size={10} />, color: "#1e40af", bg: "#eff6ff", border: "#bfdbfe" },
 };
 
@@ -332,7 +332,7 @@ function UploadForm({ onUploaded }: { onUploaded: (v: MatchVideo) => void }) {
   const [opponent,    setOpponent]    = useState("");
   const [competition, setCompetition] = useState("");
   const [file,        setFile]        = useState<File | null>(null);
-  const [visibility,  setVisibility]  = useState<VideoVisibility>("link_only");
+  const [visibility,  setVisibility]  = useState<VideoVisibility>("team");
   const [uploading,   setUploading]   = useState(false);
   const [progress,    setProgress]    = useState(0);
   const [error,       setError]       = useState("");
