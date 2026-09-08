@@ -97,7 +97,7 @@ function greedyLineup(players: SquadPlayer[], scoreMap: Map<string, number>, siz
   if (players.length <= size) return players.map((p) => p.id);
 
   // Seed with highest-scoring pair
-  let best: [string, string] = [players[0].id, players[1]?.id ?? players[0].id];
+  let best: [string, string] = [players[0].id, players[1].id];
   let bestScore = -1;
   for (let i = 0; i < players.length; i++) {
     for (let j = i + 1; j < players.length; j++) {
@@ -181,6 +181,7 @@ export default function CoachChemistryPage() {
   const [selectedFpPlayer,  setSelectedFpPlayer]  = useState<string>("");
   const [playerFingerprint, setPlayerFingerprint] = useState<PlayerFingerprint | null>(null);
   const [fpLoading,         setFpLoading]         = useState(false);
+  const [fpError,           setFpError]           = useState(false);
 
   // ── Data loading ─────────────────────────────────────────────────────────
 
@@ -226,14 +227,10 @@ export default function CoachChemistryPage() {
     if (!selectedFpPlayer || activeTab !== "fingerprint") return;
     setFpLoading(true);
     setPlayerFingerprint(null);
-    const token = useAuthStore.getState().token ?? "";
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/chemistry/fingerprint/${selectedFpPlayer}`, {
-      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
-    })
-      .then((r) => r.json())
+    setFpError(false);
+    api.get(`/chemistry/fingerprint/${selectedFpPlayer}`)
       .then((res) => {
-        const raw = (res.data ?? res) as Record<string, unknown>;
-        // dimension_labels is a string[] of 32 key names; fingerprint_vector is float[] (0–1)
+        const raw = (res.data?.data ?? res.data) as Record<string, unknown>;
         const keys: string[]   = Array.isArray(raw.dimension_labels) ? (raw.dimension_labels as string[]) : [];
         const vector: number[] = Array.isArray(raw.fingerprint_vector) ? (raw.fingerprint_vector as number[]) : [];
         const dimensions = keys.map((key, idx) => ({
@@ -241,15 +238,15 @@ export default function CoachChemistryPage() {
           label:     key.replace(/_/g, " "),
           value:     Math.round((vector[idx] ?? 0) * 100),
         }));
-        const playerName = players.find((p) => p.id === selectedFpPlayer)?.name ?? "Player";
+        const pName = players.find((p) => p.id === selectedFpPlayer)?.name ?? "Player";
         setPlayerFingerprint({
           player_id:   selectedFpPlayer,
-          player_name: playerName,
+          player_name: pName,
           dimensions,
           computed_at: (raw.generated_at as string) ?? "",
         });
       })
-      .catch(() => {})
+      .catch(() => setFpError(true))
       .finally(() => setFpLoading(false));
   }, [selectedFpPlayer, activeTab, players]);
 
@@ -306,6 +303,8 @@ export default function CoachChemistryPage() {
       .map(([g, v]) => ({ group: g, avg: Math.round(v.sum / v.count) }))
       .sort((a, b) => a.avg - b.avg)[0] ?? null;
   }, [players, pairs]);
+
+  const historyDesc = useMemo(() => [...history].reverse(), [history]);
 
   const playerName = (id: string) => players.find((p) => p.id === id)?.name ?? id.slice(0, 8) + "…";
 
@@ -765,8 +764,15 @@ export default function CoachChemistryPage() {
                 </div>
               )}
 
+              {/* Error loading fingerprint */}
+              {!fpLoading && fpError && (
+                <div className="py-6 text-center">
+                  <p className="text-red-400 text-sm">Could not load fingerprint. Check your connection.</p>
+                </div>
+              )}
+
               {/* Empty — player selected but no fingerprint */}
-              {!fpLoading && selectedFpPlayer && !playerFingerprint && (
+              {!fpLoading && !fpError && selectedFpPlayer && !playerFingerprint && (
                 <div className="py-8 text-center">
                   <Dna size={28} className="mx-auto mb-2 text-gray-200" />
                   <p className="text-gray-400 text-sm">No fingerprint yet for this player.</p>
@@ -1135,7 +1141,7 @@ export default function CoachChemistryPage() {
               <div className="rounded-2xl border border-gray-200 bg-white p-6">
                 <h3 className="font-bold text-gray-900 mb-4">Snapshot Log</h3>
                 <div className="space-y-3">
-                  {[...history].reverse().map((snap, i, arr) => {
+                  {historyDesc.map((snap, i, arr) => {
                     const prev  = arr[i + 1];
                     const delta = prev ? snap.avg - prev.avg : null;
                     return (
