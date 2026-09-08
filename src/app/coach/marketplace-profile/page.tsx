@@ -8,7 +8,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import {
   ChevronLeft, Save, Plus, Trash2, CheckCircle2, Loader2,
   Star, Clock, DollarSign, Users, Award, Calendar,
-  Briefcase, Globe, BookOpen, AlertCircle,
+  Briefcase, Globe, BookOpen, AlertCircle, ClipboardList, ExternalLink,
 } from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────
@@ -851,6 +851,37 @@ export default function CoachMarketplaceProfilePage() {
               <p style={{ fontSize: 10, color: "#9ca3af", margin: "2px 0 0" }}>{label}</p>
             </div>
           ))}
+        </div>
+
+        {/* Assessment Requests */}
+        <div style={{ marginTop: 20 }}>
+        <SectionCard icon={ClipboardList} title="Assessment Requests">
+          <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16, lineHeight: 1.6 }}>
+            Players and parents who request a professional assessment from you will appear here.
+            Each request includes the player&apos;s profile, their sport, and contact details.
+          </p>
+          <div style={{
+            backgroundColor: "#f9fafb", border: "1px solid #e5e7eb",
+            borderRadius: 12, padding: "20px 16px", textAlign: "center",
+          }}>
+            <ClipboardList size={28} style={{ color: "#d1d5db", marginBottom: 8 }} />
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: 0 }}>No requests yet</p>
+            <p style={{ fontSize: 11, color: "#9ca3af", margin: "4px 0 12px" }}>
+              Complete your profile above and requests will appear here when players book you.
+            </p>
+            <a
+              href="/player/coaching/browse"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                fontSize: 11, fontWeight: 700, color: GRS_GREEN,
+                textDecoration: "none",
+              }}
+            >
+              <ExternalLink size={11} />
+              See how your profile looks to players
+            </a>
+          </div>
+        </SectionCard>
         </div>
 
       </div>

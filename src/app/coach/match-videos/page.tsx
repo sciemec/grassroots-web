@@ -710,7 +710,7 @@ export default function CoachMatchVideosPage() {
             <Film size={16} color="#c8962a" />
           </div>
           <div>
-            <p className="text-sm font-bold text-gray-900 leading-tight">Match Videos</p>
+            <p className="text-sm font-bold text-gray-900 leading-tight">Video Hub</p>
             <p className="text-xs text-gray-500">
               {loading ? "Loading…" : `${videos.length} video${videos.length !== 1 ? "s" : ""} stored`}
             </p>

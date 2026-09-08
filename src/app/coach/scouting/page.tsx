@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserSearch, Search, Loader2, ChevronRight, Zap, Trophy, TrendingUp, Filter, Globe } from "lucide-react";
+import { UserSearch, Search, Loader2, ChevronRight, Zap, Trophy, TrendingUp, Filter, Globe, Briefcase, ArrowRight } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 
@@ -234,6 +234,7 @@ export default function ScoutingDashboardPage() {
   const [gradeFilter, setGradeFilter] = useState("All");
   const [sortBy, setSortBy] = useState<"score" | "name" | "sessions">("score");
   const [selected, setSelected] = useState<Player | null>(null);
+  const [activeTab, setActiveTab] = useState<"squad_intel" | "recruitment">("squad_intel");
 
   useEffect(() => {
     if (!user) return; // guests allowed — shows empty scouting board
@@ -318,10 +319,65 @@ export default function ScoutingDashboardPage() {
               Discover Athletes
             </Link>
           </div>
+
+          {/* Tabs */}
+          <div className="mt-4 flex gap-1 rounded-xl border bg-muted/30 p-1">
+            {([
+              { id: "squad_intel" as const, label: "Squad Intel", icon: UserSearch },
+              { id: "recruitment" as const, label: "Recruitment", icon: Briefcase },
+            ] as const).map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors ${
+                  activeTab === id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mx-auto max-w-3xl space-y-4 p-6">
-          {loading ? (
+          {activeTab === "recruitment" ? (
+            <div className="space-y-4">
+              {/* Talent Board cross-link */}
+              <Link
+                href="/arena/recruitment"
+                className="flex items-center justify-between rounded-2xl border p-5 bg-card hover:border-[#1a5c2a] transition-colors group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: "#dcfce7" }}>
+                    <Briefcase className="h-5 w-5" style={{ color: "#1a5c2a" }} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-foreground">Talent Board</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Post open positions · browse talent want-ads · accept applications from the Arena network</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-[#1a5c2a] transition-colors" />
+              </Link>
+
+              {/* Browse public players */}
+              <Link
+                href="/players/browse"
+                className="flex items-center justify-between rounded-2xl border p-5 bg-card hover:border-[#1a5c2a] transition-colors group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: "#dbeafe" }}>
+                    <Globe className="h-5 w-5" style={{ color: "#2563eb" }} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-foreground">Discover Athletes</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Browse all registered players on the platform — filter by sport, position, province, age</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-[#1a5c2a] transition-colors" />
+              </Link>
+            </div>
+          ) : loading ? (
             <div className="flex items-center justify-center py-20 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading squad data…
             </div>
