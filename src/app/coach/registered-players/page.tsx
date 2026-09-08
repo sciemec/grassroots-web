@@ -284,7 +284,7 @@ export default function RegisteredPlayersPage() {
     sport: "", position: "", phone: "",
     gender: "", province: "", school: "",
     height_cm: "", weight_kg: "", dominant_foot: "",
-    notes: "", video_url: "",
+    notes: "",
   });
 
   useEffect(() => { load(); }, []);
@@ -371,7 +371,6 @@ export default function RegisteredPlayersPage() {
         dominant_foot: form.dominant_foot || undefined,
         photo_url:     photoUrl           || undefined,
         notes:         form.notes         || undefined,
-        video_url:     form.video_url     || undefined,
       });
 
       setRegs((prev) => [res.data.data, ...prev]);
@@ -386,7 +385,7 @@ export default function RegisteredPlayersPage() {
         sport: "", position: "", phone: "",
         gender: "", province: "", school: "",
         height_cm: "", weight_kg: "", dominant_foot: "",
-        notes: "", video_url: "",
+        notes: "",
       });
       setPhotoFile(null);
       setPhotoPreview(null);
@@ -681,17 +680,10 @@ export default function RegisteredPlayersPage() {
                 </div>
               </div>
 
-              {/* Coach notes + video */}
+              {/* Coach notes */}
               <div>
-                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Notes & Clips</p>
+                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Coach Notes</p>
                 <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none resize-none" placeholder="e.g. Excellent pace, needs work on left foot" />
-                <div className="mt-2">
-                  <label className="mb-1 block text-[11px] font-semibold text-gray-500">Highlight Clip URL</label>
-                  <input value={form.video_url} onChange={(e) => setForm({ ...form, video_url: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="Paste video URL from your Video Library" />
-                  <p className="mt-0.5 text-[10px] text-gray-400">
-                    Upload to your <Link href="/coach/video-library" className="underline">Video Library</Link> first, then paste the link here.
-                  </p>
-                </div>
               </div>
 
               <button
