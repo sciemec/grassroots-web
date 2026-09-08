@@ -83,9 +83,14 @@ export default function PlayerCoachingDashboard() {
       <div className="max-w-5xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black text-gray-900">🎯 Coaching Hub</h1>
-            <p className="text-sm text-gray-500">Track your coaching sessions and progress</p>
+          <div className="flex items-center gap-3">
+            <Link href="/player" className="p-2 rounded-full hover:bg-gray-200 transition-colors text-gray-700">
+              <Icons.ArrowLeft size={20} />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-black text-gray-900">🎯 Coaching Hub</h1>
+              <p className="text-sm text-gray-500">Track your coaching sessions and progress</p>
+            </div>
           </div>
           <Link
             href="/player/coaching/browse"
