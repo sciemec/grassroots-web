@@ -105,8 +105,6 @@ const MECHANICS: MechanicRating[] = [
   },
 ];
 
-const SPORTS = ["Football", "Rugby", "Athletics", "Netball", "Basketball", "Cricket", "Swimming", "Tennis", "Volleyball", "Hockey"];
-
 const DRIBBLE_TYPES = [
   "Close Control",
   "Speed Dribbling",
@@ -149,7 +147,7 @@ export default function DribblingAnalyzerPage() {
   const token = useAuthStore((s) => s.token);
 
   const [phase,       setPhase]       = useState<"setup" | "assess" | "results">("setup");
-  const [sport,       setSport]       = useState("Football");
+  const sport = "Football";
   const [position,    setPosition]    = useState("");
   const [dribbleType, setDribbleType] = useState("Close Control");
   const [ratings,     setRatings]     = useState<Record<string, number>>({});
@@ -373,27 +371,6 @@ Return this exact JSON structure:
             <div>
               <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#111" }}>Dribbling Analyzer</h1>
               <p style={{ margin: 0, fontSize: 14, color: "#6b7280" }}>Assess your dribbling mechanics and get AI drill recommendations</p>
-            </div>
-          </div>
-
-          {/* Sport */}
-          <div style={card}>
-            <h2 style={{ margin: "0 0 14px", fontSize: 15, fontWeight: 700, color: "#111" }}>Your Sport</h2>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {SPORTS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSport(s)}
-                  style={{
-                    padding: "7px 14px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 500,
-                    border: `2px solid ${sport === s ? "#1a5c2a" : "#e5e7eb"}`,
-                    backgroundColor: sport === s ? "#1a5c2a" : "white",
-                    color: sport === s ? "white" : "#374151",
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
             </div>
           </div>
 
