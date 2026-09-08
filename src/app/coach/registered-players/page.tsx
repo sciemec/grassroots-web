@@ -347,6 +347,7 @@ export default function RegisteredPlayersPage() {
   const pending   = regs.filter((r) => r.match_status === "pending_confirmation");
   const confirmed = regs.filter((r) => r.match_status === "confirmed" || r.match_status === "standalone_confirmed");
   const unmatched = regs.filter((r) => r.match_status === "unmatched");
+  const rejected  = regs.filter((r) => r.match_status === "rejected");
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
@@ -580,6 +581,29 @@ export default function RegisteredPlayersPage() {
             </div>
           </section>
         )}
+
+        {/* Rejected matches */}
+        {rejected.length > 0 && (
+          <section className="mb-6">
+            <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-red-400">
+              Match rejected — {rejected.length}
+            </p>
+            <div className="space-y-3">
+              {rejected.map((r) => (
+                <RegistrationCard
+                  key={r.id}
+                  reg={r}
+                  actionId={actionId}
+                  onConfirm={handleConfirm}
+                  onReject={handleReject}
+                  onDelete={handleDelete}
+                  onStandaloneConfirm={handleStandaloneConfirm}
+                  onCertificate={() => generateCertificate(r, coachName)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );
@@ -640,7 +664,7 @@ function RegistrationCard({
             <StatusBadge status={reg.match_status} />
           </div>
           <p className="mt-0.5 text-xs text-gray-500">
-            DOB: {reg.date_of_birth}
+            DOB: {new Date(reg.date_of_birth).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
             {reg.sport ? ` · ${reg.sport}` : ""}
             {reg.position ? ` · ${reg.position}` : ""}
           </p>
@@ -670,7 +694,7 @@ function RegistrationCard({
           >
             <Download size={13} />
           </button>
-          {reg.match_status !== "confirmed" && (
+          {reg.match_status !== "confirmed" && reg.match_status !== "standalone_confirmed" && (
             <button
               onClick={() => onDelete(reg.id)}
               disabled={busy}
@@ -754,6 +778,13 @@ function RegistrationCard({
             Mark Confirmed
           </button>
         </div>
+      )}
+
+      {/* Rejected match */}
+      {reg.match_status === "rejected" && (
+        <p className="mt-2 text-[10px] text-red-500">
+          Match rejected — the player who joined was not this person. Delete this record and re-register if needed.
+        </p>
       )}
 
       {/* Standalone confirmed state */}
