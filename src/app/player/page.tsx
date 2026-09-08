@@ -23,6 +23,7 @@ import {
   IconWorld,
   IconBrain,
   IconChalkboard,
+  IconListCheck,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -260,6 +261,14 @@ export default function PlayerHubPage() {
           iconColor={OL}
           title="AI Physical Test"
           subtitle="Full-body movement scan"
+        />
+        <HubCard
+          href="/player/assess-me"
+          icon={IconListCheck}
+          iconBg={O}
+          iconColor={OL}
+          title="Full Skill Assessment"
+          subtitle="Coach rates all 6 skills — auto-fills your profile"
         />
         <HubCard
           href="/player/assessment"
