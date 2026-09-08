@@ -79,6 +79,23 @@ const TAG_COLORS: Record<VideoTag, string> = {
 
 const TAG_OPTIONS: VideoTag[] = ["Goals", "Skills", "Assists", "Defending", "Full Match"];
 
+const TAG_STYLE: Record<VideoTag, { color: string; bg: string }> = {
+  Goals:        { color: "#166534", bg: "#dcfce7" },
+  Skills:       { color: "#1e40af", bg: "#dbeafe" },
+  Assists:      { color: "#92400e", bg: "#fef3c7" },
+  Defending:    { color: "#9f1239", bg: "#ffe4e6" },
+  "Full Match": { color: "#581c87", bg: "#f3e8ff" },
+};
+
+function timeAgoVault(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 30)  return `${days}d ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatDuration(seconds?: number): string {
@@ -631,177 +648,150 @@ function VideoCard({
   onToggleSelect,
 }: {
   video: PlayerVideo;
-  onPlay: (v: PlayerVideo) => void;
+  onPlay?: (v: PlayerVideo) => void;
   onDelete: (id: string) => void;
   onShareToArena?: (v: PlayerVideo) => void;
   selected?: boolean;
   selectable?: boolean;
   onToggleSelect?: (id: string) => void;
 }) {
+  const [playing,  setPlaying]  = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete(e: React.MouseEvent) {
     e.stopPropagation();
     if (!confirm(`Delete "${video.title}"?`)) return;
     setDeleting(true);
-    // Local videos (id starts with "local-") don't need an API call
-    if (video.id.startsWith("local-")) {
-      onDelete(video.id);
-      return;
-    }
+    if (video.id.startsWith("local-")) { onDelete(video.id); return; }
     try {
       await api.delete(`/media/${video.id}`);
       onDelete(video.id);
     } catch {
-      // If delete fails (backend down), remove locally anyway
       onDelete(video.id);
     }
   }
 
-  return (
-    <div
-      onClick={() => {
-        if (selectable) onToggleSelect?.(video.id);
-        else onPlay(video);
-      }}
-      className={`group relative cursor-pointer overflow-hidden rounded-xl border transition-all ${
-        selected
-          ? "border-primary bg-primary/10 ring-1 ring-primary"
-          : "border-[#f0b429]/15 bg-card/60 hover:border-[#f0b429]/25 hover:bg-card"
-      }`}
-    >
-      {/* Thumbnail / poster */}
-      <div className="relative aspect-video w-full overflow-hidden bg-black/40">
-        {video.thumbnail_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={video.thumbnail_url}
-            alt={video.title}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <span className="text-4xl">⚽</span>
-          </div>
-        )}
-        {/* Play overlay */}
-        {!selectable && (
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
-            <div className="rounded-full bg-black/60 p-3">
-              <Play className="h-6 w-6 text-white" />
-            </div>
-          </div>
-        )}
-        {/* Select checkbox */}
-        {selectable && (
+  // ── Selectable tile — used inside Create Reel modal ───────────────────────
+  if (selectable) {
+    return (
+      <div
+        onClick={() => onToggleSelect?.(video.id)}
+        className={`group relative cursor-pointer overflow-hidden rounded-xl border transition-all ${
+          selected
+            ? "border-primary bg-primary/10 ring-1 ring-primary"
+            : "border-[#f0b429]/15 bg-card/60 hover:border-[#f0b429]/25 hover:bg-card"
+        }`}
+      >
+        <div className="relative aspect-video w-full overflow-hidden bg-black/40">
+          {video.thumbnail_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={video.thumbnail_url} alt={video.title} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full items-center justify-center"><span className="text-4xl">⚽</span></div>
+          )}
           <div className={`absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
             selected ? "border-primary bg-primary" : "border-[#f0b429]/60 bg-black/40"
           }`}>
             {selected && <Check className="h-3.5 w-3.5 text-white" />}
           </div>
-        )}
-        {/* Tag badge */}
-        <div className="absolute left-2 top-2">
-          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${TAG_COLORS[video.tag]}`}>
-            {video.tag}
-          </span>
-        </div>
-      </div>
-
-      {/* Info */}
-      <div className="p-3">
-        <p className="truncate text-sm font-medium text-[#f0b429]">{video.title}</p>
-        {!selectable && onShareToArena && video.video_url && !video.id.startsWith("local-") && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onShareToArena(video); }}
-            className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-green-400 hover:text-green-300 transition-colors"
-          >
-            <Share2 className="h-3 w-3" /> Share to Arena
-          </button>
-        )}
-        <div className="mt-1.5 flex items-center justify-between">
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {formatDuration(video.duration)}
-            </span>
-            <span className="flex items-center gap-1">
-              <HardDrive className="h-3 w-3" />
-              {formatSize(video.size_mb)}
-            </span>
-          </div>
-          {!selectable && (
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 disabled:opacity-40"
-            >
-              {deleting ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Trash2 className="h-3.5 w-3.5" />
-              )}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Video Modal ──────────────────────────────────────────────────────────────
-
-function VideoModal({ video, onClose }: { video: PlayerVideo; onClose: () => void }) {
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="relative w-full max-w-3xl rounded-2xl bg-card shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-[#f0b429]/15 px-5 py-4">
-          <div>
-            <h3 className="font-semibold text-[#f0b429]">{video.title}</h3>
-            <span className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${TAG_COLORS[video.tag]}`}>
+          <div className="absolute left-2 top-2">
+            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${TAG_COLORS[video.tag]}`}>
               {video.tag}
             </span>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-[#f0b429]">
-            <X className="h-5 w-5" />
-          </button>
         </div>
-        <div className="p-4">
-          {video.video_url ? (
-            <video
-              src={video.video_url}
-              controls
-              autoPlay
-              className="w-full rounded-lg bg-black"
-              style={{ maxHeight: "60vh" }}
-            />
-          ) : (
-            <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-black/40 text-center text-sm text-muted-foreground">
-              <div>
-                <WifiOff className="mx-auto mb-2 h-8 w-8 opacity-40" />
-                <p>Video saved locally — playback available after upload to cloud storage.</p>
-              </div>
-            </div>
-          )}
-          {video.description && (
-            <p className="mt-3 text-sm text-muted-foreground">{video.description}</p>
-          )}
+        <div className="p-2">
+          <p className="truncate text-xs font-medium text-[#f0b429]">{video.title}</p>
         </div>
       </div>
+    );
+  }
+
+  // ── Normal list row (matches coach video library style) ───────────────────
+  const tagStyle = TAG_STYLE[video.tag] ?? { color: "#374151", bg: "#f3f4f6" };
+
+  return (
+    <div style={{ backgroundColor: "white", borderRadius: 12, padding: "14px 18px", border: "1px solid #e5e7eb" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+        {/* Thumbnail */}
+        <div style={{ width: 40, height: 40, borderRadius: 8, flexShrink: 0, overflow: "hidden",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: video.thumbnail_url ? undefined : "#f0fdf4" }}>
+          {video.thumbnail_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={video.thumbnail_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <Film size={18} color="#1a5c2a" />
+          )}
+        </div>
+
+        {/* Title + meta */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 3 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {video.title}
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: tagStyle.color,
+              backgroundColor: tagStyle.bg, padding: "1px 8px", borderRadius: 10 }}>
+              {video.tag}
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>
+            {video.duration ? formatDuration(video.duration) : ""}
+            {video.duration && video.size_mb ? " · " : ""}
+            {video.size_mb ? formatSize(video.size_mb) : ""}
+            {video.created_at ? ` · ${timeAgoVault(video.created_at)}` : ""}
+          </p>
+        </div>
+
+        {/* Delete */}
+        <button onClick={handleDelete} disabled={deleting} title="Delete"
+          style={{ background: "none", border: "none", cursor: "pointer", color: "#d1d5db", padding: 4, flexShrink: 0 }}>
+          {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+        </button>
+      </div>
+
+      {/* Action buttons */}
+      <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+        <button onClick={() => setPlaying((p) => !p)}
+          style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px",
+            backgroundColor: playing ? "#1a3d26" : "#1a5c2a", color: "white",
+            borderRadius: 7, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer" }}>
+          {playing ? <><X size={11} /> Close</> : <><Play size={11} fill="white" /> Play</>}
+        </button>
+
+        {onShareToArena && video.video_url && !video.id.startsWith("local-") && (
+          <button onClick={() => onShareToArena(video)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px",
+              backgroundColor: "#f3f4f6", color: "#374151",
+              borderRadius: 7, fontSize: 12, fontWeight: 700, border: "1px solid #e5e7eb", cursor: "pointer" }}>
+            <Share2 size={11} /> Share to Arena
+          </button>
+        )}
+
+        {video.video_url && (
+          <a href={video.video_url} download target="_blank" rel="noreferrer"
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px",
+              backgroundColor: "#f3f4f6", color: "#374151",
+              borderRadius: 7, fontSize: 12, fontWeight: 700, textDecoration: "none", border: "1px solid #e5e7eb" }}>
+            <HardDrive size={11} /> Download
+          </a>
+        )}
+      </div>
+
+      {/* Inline player */}
+      {playing && (
+        <div style={{ marginTop: 14 }}>
+          {video.video_url ? (
+            <video controls autoPlay src={video.video_url}
+              style={{ width: "100%", display: "block", borderRadius: 10, backgroundColor: "#000", maxHeight: 420 }} />
+          ) : (
+            <div style={{ padding: 24, backgroundColor: "#f9fafb", borderRadius: 10, textAlign: "center", fontSize: 13, color: "#9ca3af" }}>
+              Video saved locally — playback available after upload to cloud storage.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1050,7 +1040,6 @@ export default function PlayerVaultPage() {
   const [storage, setStorage] = useState<StorageInfo>({ used_mb: 0, limit_mb: 500 });
   const [loading, setLoading] = useState(true);
   const [localMode, setLocalMode] = useState(false);
-  const [playingVideo, setPlayingVideo] = useState<PlayerVideo | null>(null);
   const [showReelModal, setShowReelModal] = useState(false);
   const [shareLink, setShareLink] = useState<{ url: string; title: string } | null>(null);
   const [shareTarget, setShareTarget] = useState<PlayerVideo | null>(null);
@@ -1212,9 +1201,9 @@ export default function PlayerVaultPage() {
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="aspect-video animate-pulse rounded-xl bg-muted" />
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="animate-pulse rounded-xl bg-muted" style={{ height: 72 }} />
                 ))}
               </div>
             ) : videos.length === 0 ? (
@@ -1226,12 +1215,11 @@ export default function PlayerVaultPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {videos.map((video) => (
                   <VideoCard
                     key={video.id}
                     video={video}
-                    onPlay={setPlayingVideo}
                     onDelete={handleDeleted}
                     onShareToArena={setShareTarget}
                   />
@@ -1262,11 +1250,6 @@ export default function PlayerVaultPage() {
           </div>
         </div>
       </main>
-
-      {/* Video playback modal */}
-      {playingVideo && (
-        <VideoModal video={playingVideo} onClose={() => setPlayingVideo(null)} />
-      )}
 
       {/* Create reel modal */}
       {showReelModal && (
