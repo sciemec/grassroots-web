@@ -210,7 +210,7 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
         }),
       });
       if (!presignRes.ok) throw new Error("presign");
-      const { uploadUrl, key } = await presignRes.json() as { uploadUrl: string; key: string; publicUrl: string };
+      const { uploadUrl, key, publicUrl: serverPublicUrl } = await presignRes.json() as { uploadUrl: string; key: string; publicUrl: string };
 
       // Step 2 — PUT file directly to R2 (progress via XHR for accurate %)
       await new Promise<void>((resolve, reject) => {
@@ -227,7 +227,8 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
       set({ progress: 92 });
 
       // Step 3 — save metadata to unified /media endpoint
-      const publicUrl = key ? `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? ""}/${key}` : "";
+      // Use publicUrl from the server (has access to R2_PUBLIC_URL) — never reconstruct client-side
+      const publicUrl = serverPublicUrl || "";
       const res = await api.post("/media", {
         r2_key:     key,
         r2_url:     publicUrl,
