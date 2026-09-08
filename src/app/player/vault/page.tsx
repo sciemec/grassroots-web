@@ -959,8 +959,8 @@ function ShareToArenaModal({
     setError("");
     try {
       await api.post("/arena/posts/share-video", {
-        video_id: video.id,
-        body:     caption.trim() || `New video: ${video.title}`,
+        video_url: video.video_url,
+        body:      caption.trim() || `New video: ${video.title}`,
       });
       onShared();
     } catch (err: unknown) {
