@@ -110,8 +110,8 @@ export default function CoachSquadPage() {
               <ArrowLeft className="h-4 w-4" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold">My Squad</h1>
-              <p className="text-sm text-muted-foreground">{squad.length} players registered</p>
+              <h1 className="text-2xl font-bold" style={{ color: "#f0b429" }}>My Squad</h1>
+              <p className="text-sm" style={{ color: "#f0b429", opacity: 0.75 }}>{squad.length} players registered</p>
             </div>
           </div>
           {activeTab === "players" && (
@@ -132,9 +132,10 @@ export default function CoachSquadPage() {
               onClick={() => setActiveTab(id)}
               className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors ${
                 activeTab === id
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card shadow-sm"
+                  : "hover:text-foreground"
               }`}
+              style={{ color: activeTab === id ? "#f0b429" : "rgba(240,180,41,0.55)" }}
             >
               <Icon className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{label}</span>
