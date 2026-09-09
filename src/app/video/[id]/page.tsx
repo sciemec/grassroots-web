@@ -63,11 +63,31 @@ export default function PublicVideoPage({ params }: { params: { id: string } }) 
   if (error || !video) {
     return (
       <div className="min-h-screen bg-[#111] flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <div
+          className="flex h-14 w-14 items-center justify-center rounded-full mb-1"
+          style={{ background: "rgba(240,180,41,0.12)" }}
+        >
+          <Play className="h-6 w-6 text-[#f0b429] fill-[#f0b429]" />
+        </div>
         <p className="text-white text-lg font-semibold">Video not found</p>
-        <p className="text-gray-400 text-sm">This clip may have been removed or made private.</p>
-        <Link href="/" className="text-[#f0b429] text-sm font-semibold underline">
-          Back to home
-        </Link>
+        <p className="text-gray-400 text-sm max-w-xs">
+          This clip may have been removed, made private, or not yet shared to the Arena.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2 mt-2">
+          <Link
+            href="/"
+            className="rounded-lg px-4 py-2 text-sm font-semibold border border-white/20 text-gray-300 hover:bg-white/10 transition"
+          >
+            Back to home
+          </Link>
+          <Link
+            href="/player/vault"
+            className="rounded-lg px-4 py-2 text-sm font-bold transition"
+            style={{ background: "#f0b429", color: "#1c3d22" }}
+          >
+            Go to My Vault
+          </Link>
+        </div>
       </div>
     );
   }
