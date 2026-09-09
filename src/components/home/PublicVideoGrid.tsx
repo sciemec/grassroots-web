@@ -161,48 +161,53 @@ function SkeletonCard() {
 }
 
 export default function PublicVideoGrid() {
-  const [sport, setSport]             = useState("All");
-  const [tiles, setTiles]             = useState<VideoTile[]>([]);
-  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  const [sport, setSport]     = useState("All");
+  const [tiles, setTiles]     = useState<VideoTile[]>([]);
+  const [page, setPage]       = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading]         = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError]             = useState(false);
 
-  const fetchPage = useCallback(async (url: string) => {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("fetch failed");
-    return res.json() as Promise<PaginatedResponse>;
-  }, []);
+  // Build the URL ourselves so we never depend on Laravel's next_page_url
+  // (which can be http:// on Render, blocked as mixed-content from https://)
+  const buildUrl = useCallback((pageNum: number) => {
+    const params = new URLSearchParams({ per_page: "12", page: String(pageNum) });
+    if (sport !== "All") params.set("sport", sport.toLowerCase());
+    return `${API}/public/videos?${params}`;
+  }, [sport]);
 
   // Initial load and sport change
   useEffect(() => {
     setLoading(true);
     setError(false);
     setTiles([]);
-    setNextPageUrl(null);
+    setPage(1);
+    setHasMore(false);
 
-    const params = new URLSearchParams({ per_page: "12" });
-    if (sport !== "All") params.set("sport", sport.toLowerCase());
-    const url = `${API}/public/videos?${params}`;
-
-    fetchPage(url)
+    fetch(buildUrl(1))
+      .then((r) => { if (!r.ok) throw new Error("fetch failed"); return r.json() as Promise<PaginatedResponse>; })
       .then((json) => {
         setTiles(Array.isArray(json.data) ? json.data : []);
-        setNextPageUrl(json.next_page_url ?? null);
+        setHasMore(json.next_page_url !== null);
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [sport, fetchPage]);
+  }, [sport, buildUrl]);
 
   const handleLoadMore = async () => {
-    if (!nextPageUrl || loadingMore) return;
+    if (!hasMore || loadingMore) return;
+    const nextPage = page + 1;
     setLoadingMore(true);
     try {
-      const json = await fetchPage(nextPageUrl);
+      const res = await fetch(buildUrl(nextPage));
+      if (!res.ok) throw new Error("fetch failed");
+      const json = await res.json() as PaginatedResponse;
       setTiles((prev) => [...prev, ...(Array.isArray(json.data) ? json.data : [])]);
-      setNextPageUrl(json.next_page_url ?? null);
+      setPage(nextPage);
+      setHasMore(json.next_page_url !== null);
     } catch {
-      // silently ignore — button stays visible for retry
+      // keep button visible so user can retry
     } finally {
       setLoadingMore(false);
     }
