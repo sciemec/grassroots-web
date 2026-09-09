@@ -10882,3 +10882,220 @@ Rules:
 /coach/video-library   UPDATED — Play button, Download, corrected Post-to-Arena flow
 /watch/[videoId]       UPDATED — autoPlay inline player (direct src), Download button
 ```
+
+---
+
+## SESSION LOG — September 2026
+
+### Theme — Coach Hub Consolidation · Skill Assessment System · Chemistry Audit
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Coach Hub Consolidation ✅
+
+`src/app/coach/page.tsx` — restructured from ~26 cards to 5 focused sections with 12 cards.
+Removed 14 unused/advanced cards (Ubuntu sessions, Touch Tracker, FutureFit, etc.).
+
+**5 sections:**
+1. Squad & Players — My Squad · Player Registry · Scouting & Recruitment
+2. Match & Tactics — Intelligence Board · Set Pieces · Video Analysis · Tactics Academy
+3. Training — Training Plans · Drill Library · Field Assessment · Skill Assessment
+4. Network & Videos — The Arena · Talent Board · Video Hub · My Coach Profile
+5. School Programme — School Hub
+
+Commit: `4202807` → refined by `1592921`
+
+---
+
+#### 2. My Squad — 4-Tab Page (`/coach/squad`) ✅
+
+`src/app/coach/squad/page.tsx` — replaced flat player list with 4 tabs.
+
+| Tab | Content |
+|---|---|
+| Players | Squad list with form, position, squad number |
+| Injuries | Injury log per player |
+| Fatigue | Fatigue/load tracking |
+| Chemistry | Links through to `/coach/chemistry` |
+
+Commit: `b934e82`
+
+---
+
+#### 3. Coach Skill Assessment (`/coach/skill-drills`) ✅
+
+**New page:** `src/app/coach/skill-drills/page.tsx`
+
+6-skill assessment wizard: Dribbling · Passing · Shooting · Defending · First Touch · Athleticism
+
+- Coach selects player → picks skill → rates 5 mechanics (0–10 sliders) → overall score auto-calculated
+- AI feedback panel via `/api/ai-coach`
+- Saves to `POST /coach/skill-drills` → backend upserts `coach_player_skill_ratings` (radar source)
+- History tab: `GET /coach/skill-drills?player_id=X` — last 20 sessions per skill
+- Radar chart (recharts) shows live skill ratings pulled from `GET /coach/skill-ratings`
+
+Commit: `f2883e0`
+
+---
+
+#### 4. Player Self-Assessment (`/player/assess-me`) ✅
+
+**New page:** `src/app/player/assess-me/page.tsx`
+
+Coach-assisted 6-skill assessment wizard for players.
+- Player goes through 6 skills guided by THUTO prompts
+- Submits to coach for review
+- Results feed into player radar chart
+
+Commit: `d3a025b`
+
+---
+
+#### 5. Coach Field Assessment (`/coach/field-assessment`) ✅
+
+**New page:** `src/app/coach/field-assessment/page.tsx`
+
+Position-specific benchmark test system.
+
+- Coach selects player + position → sees benchmark targets for that position
+- Records test results (sprint, agility, endurance, jump, etc.)
+- Live radar chart updates as results are entered
+- AI drill recommendations based on gaps vs benchmark
+- Saves to `POST /coach/field-tests`
+- Position badge shown as "Verified" when coach confirms results
+
+Commits: `595ad73`, `6c4127c`
+
+---
+
+#### 6. Player Registry — Full Profile Form ✅
+
+`src/app/coach/registered-players/page.tsx` — registration form expanded:
+
+- Full profile fields: name, DOB, sport, position, school/club, photo upload
+- Duplicate detection (flags if name+DOB already registered)
+- Rejected section rendered correctly
+- DOB display format fixed
+
+Commit: `4df7ec7`, refined by `74ec05b`
+
+---
+
+#### 7. Marketplace Profile — Live API ✅
+
+`src/app/coach/marketplace-profile/page.tsx` — wired to live backend:
+
+- `GET /coaches/me` — loads existing profile (rates, bio, credentials)
+- `POST /coaches/me` — saves profile
+- `GET /coaches/me/credentials` — lists credential verifications
+- `GET /coach/assessment-requests` — pending/completed assessment requests tab
+- Assessment requests tab: Accept/Decline buttons with status tracking
+
+Commits: `f9b9a41`, `49049d6`
+
+---
+
+#### 8. Scouting Board — Connected to Players Discovery ✅
+
+`src/app/coach/scouting/page.tsx` — "Browse All Athletes" button navigates to `/players`
+with coach context banner ("Scouting mode — click any athlete to view their public profile").
+
+`src/app/players/page.tsx` — coach banner shows when `user.role === "coach"` with back link to `/coach/scouting`.
+
+Commit: `d3e0489`
+
+---
+
+#### 9. Player Vault — Improvements ✅
+
+`src/app/player/vault/page.tsx`:
+- Switched from grid to vertical list with inline video playback (no modal)
+- Back arrow added to header (→ `/player`)
+- Share-to-Arena: now sends `video_url` (not `video_id`) to `POST /arena/posts/share-video`
+- Upload: uses server-returned `publicUrl` from presigned response (stops client-side URL reconstruction)
+
+Commits: `68e8ab2`, `f9eeb0f`, `b98fd2c`, `631458d`
+
+---
+
+#### 10. Collapsible Sidebar + Branded Error Page ✅
+
+`src/components/layout/sidebar.tsx` — sidebar collapses to icon-only mode (toggle button at bottom).
+19 coach pages migrated from old duplicate Sidebar import.
+
+`src/app/error.tsx` / `src/app/not-found.tsx` — branded 500/404 pages with GRS logo + home link.
+
+Commits: `49049d6`, `f04a8a2`, `2faf416`
+
+---
+
+#### 11. Player Hub — Find A Coach ✅
+
+Goal Engine card replaced with "Find A Coach" card linking to `/coach/find`.
+`/coach/find` — player-facing page to browse and request assessments from coaches.
+
+Back arrow added to Find A Coach page.
+
+Commits: `f41099c`, `3ec95b6`, `f68e1eb`
+
+---
+
+#### 12. Chemistry Page Audit + Fixes ✅
+
+Full 1,173-line audit of `src/app/coach/chemistry/page.tsx`. 5 fixes applied:
+
+| Fix | What changed |
+|---|---|
+| `fpError` state added | Fingerprint fetch failures now show an error banner instead of silent empty |
+| Raw `fetch` → `api.get()` | Fingerprint endpoint now uses Axios (401 interceptor + dev-bypass respected) |
+| Dead `token` variable removed | Was declared but immediately shadowed — removed |
+| `greedyLineup` seed guard | `players[1]?.id ?? players[0].id` replaced with `players[1].id` (requires 2 distinct players) |
+| `historyDesc` useMemo | `[...history].reverse()` moved into a memo — no array allocation on every render |
+
+**Chemistry migrations confirmed applied on Render** — `php artisan migrate --force` → "Nothing to migrate". Tables exist. Page shows correct empty state until coaches log ≥8 drills across ≥3 sessions.
+
+Commit: `a796a08`
+
+---
+
+#### 13. Gemini Drills — File Upload ✅
+
+`src/app/player/gemini-drills/page.tsx` — camera recording removed; replaced with file picker (upload existing video). Simpler on mobile, works without camera permission.
+
+Commit: `b6d4352`
+
+---
+
+#### 14. Match Videos — Visibility Fix ✅
+
+`link_only` visibility value renamed to `team` across frontend + backend to match DB migration enum.
+
+Commit: `fa546d7`
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (September 2026)
+
+```
+/coach/skill-drills        Coach 6-skill assessment wizard with radar update
+/coach/field-assessment    Position benchmark tests + live radar + drill recs
+/player/assess-me          Player self-assessment wizard (6 skills, coach-assisted)
+/coach/marketplace-profile UPDATED — wired to live API (GET/POST /coaches/me)
+/coach/squad               UPDATED — 4 tabs: Players · Injuries · Fatigue · Chemistry
+/players                   UPDATED — coach scouting mode banner
+/coach/scouting            UPDATED — connects to /players discovery page
+```
+
+---
+
+### CHEMISTRY MIGRATIONS — CONFIRMED STATUS (September 2026)
+
+All chemistry/style fingerprint migrations are applied on Render PostgreSQL.
+`php artisan migrate:force` → "Nothing to migrate" — tables exist.
+Pages show empty state (not errors) until drill data accumulates.
+
+Tables confirmed: `style_fingerprints`, `style_fingerprint_history`, `style_similarities`,
+`chemistry_data_access_log`, `coach_player_skill_ratings`, `coach_skill_drill_results`
+
