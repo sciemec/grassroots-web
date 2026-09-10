@@ -278,7 +278,7 @@ export default function PublicVideoGrid() {
         )}
 
         {/* Load more */}
-        {nextPageUrl && !loading && (
+        {hasMore && !loading && (
           <div className="mt-8 flex justify-center">
             <button
               onClick={handleLoadMore}
