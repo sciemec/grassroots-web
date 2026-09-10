@@ -527,28 +527,57 @@ export default function ArenaPage() {
       if (!uploadUrl || !publicUrl) return null;
 
       // Step 2 — upload directly to R2 with progress tracking via XHR
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            setUploadProgress(Math.round((e.loaded / e.total) * 100));
-          }
-        };
-        xhr.onload = () =>
-          xhr.status >= 200 && xhr.status < 300
-            ? resolve()
-            : reject(new Error(`Upload failed (HTTP ${xhr.status}). Check R2 bucket permissions.`));
-        xhr.onerror = () =>
-          reject(new Error(
-            "Upload blocked — this is usually a CORS error. " +
-            "The R2 bucket needs a CORS rule allowing PUT from this domain. " +
-            "Go to Cloudflare R2 → your bucket → Settings → CORS and add: " +
-            "AllowedOrigins: [\"https://grassrootssports.live\"], AllowedMethods: [\"PUT\"], AllowedHeaders: [\"*\"]"
-          ));
-        xhr.send(file);
-      });
+      // Acquire screen wake lock so Samsung/Android battery manager doesn't kill
+      // the TCP socket mid-upload when the screen dims.
+      let wakeLock: WakeLockSentinel | null = null;
+      try {
+        if (typeof navigator !== "undefined" && "wakeLock" in navigator) {
+          wakeLock = await (navigator.wakeLock as { request: (type: string) => Promise<WakeLockSentinel> }).request("screen");
+        }
+      } catch { /* wake lock not supported — continue without it */ }
+
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("PUT", uploadUrl);
+          xhr.setRequestHeader("Content-Type", file.type);
+          // Fix 1 — explicit timeout so stalled mobile connections don't hang forever
+          xhr.timeout = 120_000; // 2 minutes
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              setUploadProgress(Math.round((e.loaded / e.total) * 100));
+            }
+          };
+          xhr.onload = () =>
+            xhr.status >= 200 && xhr.status < 300
+              ? resolve()
+              : reject(new Error(`Upload failed (HTTP ${xhr.status}). Check R2 bucket permissions.`));
+          // Fix 2 — timeout handler for stalled connections
+          xhr.ontimeout = () =>
+            reject(new Error("Upload timed out. Your connection may be too slow for this file size — try on Wi-Fi."));
+          // Fix 3 — smarter onerror: detect Samsung battery-kill vs genuine CORS failure
+          xhr.onerror = () => {
+            const conn = (navigator as { connection?: { effectiveType?: string; downlink?: number } }).connection;
+            const isMobileData = conn?.effectiveType === "4g" && (conn?.downlink ?? 0) > 2;
+            if (isMobileData) {
+              reject(new Error(
+                "Upload dropped — your phone's battery saver may have killed the connection. " +
+                "Disable battery saver or switch to Wi-Fi and try again."
+              ));
+            } else {
+              reject(new Error(
+                "Upload blocked — this is usually a CORS error. " +
+                "The R2 bucket needs a CORS rule allowing PUT from this domain. " +
+                "Go to Cloudflare R2 → your bucket → Settings → CORS and add: " +
+                "AllowedOrigins: [\"https://grassrootssports.live\"], AllowedMethods: [\"PUT\"], AllowedHeaders: [\"*\"]"
+              ));
+            }
+          };
+          xhr.send(file);
+        });
+      } finally {
+        wakeLock?.release().catch(() => {});
+      }
 
       return publicUrl as string;
     } catch (e) {
