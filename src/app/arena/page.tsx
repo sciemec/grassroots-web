@@ -1042,9 +1042,14 @@ export default function ArenaPage() {
                 <GraduationCap size={40} className="mx-auto mb-3 text-gray-300" />
                 <p className="text-gray-600 font-semibold mb-1">Sign in to see your scholarship matches</p>
                 <p className="text-gray-400 text-sm mb-4">We match your THUTO score, position, and reel against 25+ programs.</p>
-                <a href="/login" className="inline-block px-5 py-2 rounded-lg text-sm font-bold text-white" style={{ background: GRS_GREEN }}>
-                  Sign in →
-                </a>
+                <div className="flex items-center justify-center gap-3 flex-wrap">
+                  <a href="/login" className="inline-block px-5 py-2 rounded-lg text-sm font-bold text-white" style={{ background: GRS_GREEN }}>
+                    Sign in →
+                  </a>
+                  <a href="/register" className="inline-block px-5 py-2 rounded-lg text-sm font-bold border" style={{ borderColor: GRS_GREEN, color: GRS_GREEN }}>
+                    Join free →
+                  </a>
+                </div>
               </div>
             ) : (
               <>
