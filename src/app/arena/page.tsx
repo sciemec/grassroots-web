@@ -927,11 +927,19 @@ export default function ArenaPage() {
                     : "No training videos posted yet."
                   }
                 </p>
-                <Link href="/player/drills"
-                  className="inline-block px-5 py-2 rounded-lg text-sm font-bold text-white"
-                  style={{ background: GRS_GREEN }}>
-                  Upload a drill video →
-                </Link>
+                {user ? (
+                  <Link href="/player/drills"
+                    className="inline-block px-5 py-2 rounded-lg text-sm font-bold text-white"
+                    style={{ background: GRS_GREEN }}>
+                    Upload a drill video →
+                  </Link>
+                ) : (
+                  <Link href="/register"
+                    className="inline-block px-5 py-2 rounded-lg text-sm font-bold text-white"
+                    style={{ background: GRS_GREEN }}>
+                    Join free to share your videos →
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
