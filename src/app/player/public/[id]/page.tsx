@@ -1,4 +1,5 @@
-import { ShieldCheck, MapPin, Ruler, Trophy, User, Scale, Footprints, Zap, CheckCircle } from "lucide-react";
+import { ShieldCheck, MapPin, Ruler, Trophy, User, Scale, Footprints, Zap, CheckCircle, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { LogProfileView } from "@/components/player/LogProfileView";
 import { AdBanner } from "@/components/ui/AdBanner";
 import PublicPassportTabs from "@/components/player/PublicPassportTabs";
@@ -108,6 +109,17 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
     <LogProfileView playerId={profile.id} />
     <div className="min-h-screen" style={{ background: "#1a5c2a" }}>
       <div className="mx-auto max-w-sm px-4 py-10">
+
+        {/* Back to Arena */}
+        <div className="mb-6">
+          <Link
+            href="/arena"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#f0b429]/70 hover:text-[#f0b429] transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to The Arena
+          </Link>
+        </div>
 
         {/* Platform logo / header */}
         <div className="mb-8 text-center">
