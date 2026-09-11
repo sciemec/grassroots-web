@@ -789,7 +789,28 @@ export default function ArenaPage() {
   // ─────────────────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────
-  if (!hasHydrated) return null;
+  if (!hasHydrated) return (
+    <div className="min-h-screen" style={{ backgroundColor: BG }}>
+      <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] h-20" />
+      <div className="max-w-4xl mx-auto px-4 py-6 animate-pulse space-y-4">
+        {[1,2,3].map(i => (
+          <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="flex gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-gray-200" />
+              <div className="flex-1 space-y-2 pt-1">
+                <div className="h-3 bg-gray-200 rounded w-1/3" />
+                <div className="h-2 bg-gray-100 rounded w-1/4" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-3 bg-gray-200 rounded w-full" />
+              <div className="h-3 bg-gray-200 rounded w-4/5" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: BG }}>
@@ -814,17 +835,22 @@ export default function ArenaPage() {
         </div>
       </div>
 
-      {/* Login prompt banner */}
+      {/* Guest banner */}
       {!user && (
-        <div className="bg-amber-50 border-b border-amber-200 py-3 px-4">
+        <div className="bg-[#1a5c2a]/95 border-b border-[#f0b429]/20 py-3 px-4">
           <div className="max-w-4xl mx-auto flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2 text-amber-800">
-              <LogIn size={16} />
-              <span className="text-sm">Sign in to like, comment, and share your own content!</span>
+            <div className="flex items-center gap-2 text-white/90">
+              <LogIn size={15} className="text-[#f0b429] shrink-0" />
+              <span className="text-sm">You&apos;re browsing as a guest — join free to post, like, and comment.</span>
             </div>
-            <Link href="/login" className="px-4 py-1.5 bg-[#1a5c2a] text-white rounded-lg text-sm font-bold hover:bg-[#2a6e3a] transition">
-              Sign In
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/login" className="px-4 py-1.5 border border-white/30 text-white rounded-lg text-sm font-semibold hover:bg-white/10 transition">
+                Sign In
+              </Link>
+              <Link href="/register" className="px-4 py-1.5 bg-[#f0b429] text-[#1a3a1a] rounded-lg text-sm font-bold hover:bg-[#e0a420] transition">
+                Join Free
+              </Link>
+            </div>
           </div>
         </div>
       )}
@@ -1075,7 +1101,19 @@ export default function ArenaPage() {
         {/* ── SOCIAL FEED TABS ───────────────────────────────────────────────── */}
         {activeTab !== "videos" && activeTab !== "pathways" && (
           <>
-            {/* Create post — logged-in users only */}
+            {/* Create post — logged-in users only; guests see a join nudge */}
+            {!user && (
+              <Link href="/register" className="block bg-white rounded-2xl p-4 mb-6 shadow-sm border border-gray-200 hover:border-[#1a5c2a]/30 transition group">
+                <div className="flex gap-3 items-center">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 group-hover:border-[#1a5c2a]/40 transition">
+                    <span className="text-lg">+</span>
+                  </div>
+                  <span className="text-sm text-gray-400 group-hover:text-[#1a5c2a] transition">
+                    Join free to share your progress, highlights, and achievements...
+                  </span>
+                </div>
+              </Link>
+            )}
             {user && (
               <div className="bg-white rounded-2xl p-4 mb-6 shadow-sm border border-gray-200">
                 <div className="flex gap-3">
