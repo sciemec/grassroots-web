@@ -123,7 +123,8 @@ export default function PathwayPage() {
 
   // Load pathway profile + outreach
   useEffect(() => {
-    if (!hydrated || !token) return;
+    if (!hydrated) return;
+    if (!token) { setLoading(false); return; }
     Promise.all([
       fetch(`${API}/player/pathway`,  { headers: authHeaders(token) }).then(r => r.json()),
       fetch(`${API}/player/outreach`, { headers: authHeaders(token) }).then(r => r.json()),
@@ -229,6 +230,31 @@ export default function PathwayPage() {
     return (
       <div style={{ minHeight: '100vh', background: OFF, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ color: '#333', fontSize: 14, fontWeight: 600 }}>Loading pathway...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div style={{ minHeight: '100vh', background: OFF, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+        <div style={{ maxWidth: 400, width: '100%', background: '#fff', borderRadius: 16, padding: '32px 24px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>🎓</div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 8 }}>Sign in to access your pathway</h2>
+          <p style={{ fontSize: 13, color: '#555', marginBottom: 24 }}>
+            Track your scholarship pathway, log coach outreach, and build your academic profile.
+          </p>
+          <a href="/login"
+            style={{ display: 'block', padding: '12px', borderRadius: 10, background: G, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none', marginBottom: 10, textAlign: 'center' }}>
+            Sign in →
+          </a>
+          <a href="/register"
+            style={{ display: 'block', padding: '12px', borderRadius: 10, border: '1px solid #ddd', color: '#555', fontWeight: 700, fontSize: 14, textDecoration: 'none', textAlign: 'center' }}>
+            Create free account →
+          </a>
+          <a href="/player" style={{ display: 'inline-block', marginTop: 16, fontSize: 12, color: '#999' }}>
+            ← Back to Player Hub
+          </a>
+        </div>
       </div>
     );
   }
