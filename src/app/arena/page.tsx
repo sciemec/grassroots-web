@@ -817,7 +817,7 @@ export default function ArenaPage() {
       <Suspense fallback={null}>
         <PlayParamReader setPlayId={setPlayId} />
       </Suspense>
-      <ArenaNav userName={user?.name ?? "You"} />
+      <ArenaNav userName={user?.name ?? ""} />
 
       {/* Hero banner */}
       <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] text-white">
