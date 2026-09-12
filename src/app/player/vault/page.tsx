@@ -1080,7 +1080,7 @@ export default function PlayerVaultPage() {
   }, []);
 
   useEffect(() => {
-    if (!user) return; // guests see empty vault
+    if (!user) { setLoading(false); return; } // guests see empty vault
     if (user.role !== "player" && user.role !== "admin") { router.push("/dashboard"); return; }
     fetchVault();
   }, [user, router, fetchVault]);

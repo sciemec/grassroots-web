@@ -91,7 +91,7 @@ export default function ConsentPage() {
 
   // ── Load current values from profile ──────────────────────────────────────
   useEffect(() => {
-    if (!token) return;
+    if (!token) { setPageLoading(false); return; }
     fetch(`${API}/profile`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -203,6 +203,20 @@ export default function ConsentPage() {
         {pageLoading ? (
           <div style={{ color: "#555", fontSize: 13, textAlign: "center", marginTop: 40 }}>
             Loading your settings…
+          </div>
+        ) : !token ? (
+          <div style={{ textAlign: "center", marginTop: 60, padding: "0 16px" }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🔒</div>
+            <div style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Sign in to manage consent</div>
+            <div style={{ color: "#777", fontSize: 13, marginBottom: 24 }}>
+              Control who can see your profile and how your data is used.
+            </div>
+            <a href="/login" style={{ display: "block", padding: "12px", borderRadius: 10, background: "#1a5c2a", color: "#fff", fontWeight: 700, fontSize: 14, textDecoration: "none", marginBottom: 10, textAlign: "center" }}>
+              Sign in →
+            </a>
+            <a href="/register" style={{ display: "block", padding: "12px", borderRadius: 10, border: "1px solid #333", color: "#aaa", fontWeight: 700, fontSize: 14, textDecoration: "none", textAlign: "center" }}>
+              Create free account →
+            </a>
           </div>
         ) : (
           <>

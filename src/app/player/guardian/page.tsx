@@ -35,7 +35,7 @@ export default function GuardianPage() {
 
   // ── Load current guardian status ──────────────────────────────────────────
   useEffect(() => {
-    if (!token) return;
+    if (!token) { setPageLoading(false); return; }
     fetch(`${API}/guardian/my-guardian`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -463,6 +463,20 @@ export default function GuardianPage() {
         {pageLoading ? (
           <div style={{ color: "#555", fontSize: 13, textAlign: "center", marginTop: 40 }}>
             Loading…
+          </div>
+        ) : !token ? (
+          <div style={{ textAlign: "center", marginTop: 60, padding: "0 16px" }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>👨‍👩‍👧</div>
+            <div style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Sign in to manage guardian link</div>
+            <div style={{ color: "#777", fontSize: 13, marginBottom: 24 }}>
+              Players under 18 can link a guardian to their account for safeguarding.
+            </div>
+            <a href="/login" style={{ display: "block", padding: "12px", borderRadius: 10, background: "#1a5c2a", color: "#fff", fontWeight: 700, fontSize: 14, textDecoration: "none", marginBottom: 10, textAlign: "center" }}>
+              Sign in →
+            </a>
+            <a href="/register" style={{ display: "block", padding: "12px", borderRadius: 10, border: "1px solid #333", color: "#aaa", fontWeight: 700, fontSize: 14, textDecoration: "none", textAlign: "center" }}>
+              Create free account →
+            </a>
           </div>
         ) : linkStatus.status === "none"    ? renderNone()
           : linkStatus.status === "pending"  ? renderPending(linkStatus)
