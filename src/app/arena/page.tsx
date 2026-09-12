@@ -1225,7 +1225,25 @@ export default function ArenaPage() {
             </div>
 
             {/* Posts feed */}
-            {loadingPosts ? (
+            {!user && (activeTab === "following" || activeTab === "connections") ? (
+              <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
+                <Users size={48} className="mx-auto text-gray-300 mb-3" />
+                <p className="text-gray-700 font-semibold mb-1">
+                  {activeTab === "following"
+                    ? "Sign in to see posts from people you follow"
+                    : "Sign in to see posts from your connections"}
+                </p>
+                <p className="text-gray-400 text-sm mb-4">Join GrassRoots Sports to build your network.</p>
+                <div className="flex items-center justify-center gap-3 flex-wrap">
+                  <a href="/login" className="inline-block px-5 py-2 rounded-lg text-sm font-bold text-white" style={{ background: GRS_GREEN }}>
+                    Sign in →
+                  </a>
+                  <a href="/register" className="inline-block px-5 py-2 rounded-lg text-sm font-bold border" style={{ borderColor: GRS_GREEN, color: GRS_GREEN }}>
+                    Join free →
+                  </a>
+                </div>
+              </div>
+            ) : loadingPosts ? (
               <div className="flex justify-center py-12">
                 <div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" />
               </div>
