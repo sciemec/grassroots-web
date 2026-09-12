@@ -200,7 +200,8 @@ export default function ArenaPostDetailPage() {
   // ── Like toggle ────────────────────────────────────────────────────────────
 
   const toggleLike = async () => {
-    if (!token || !post) return;
+    if (!token) { router.push("/login"); return; }
+    if (!post) return;
     const wasLiked = liked;
     setLiked(!wasLiked);
     setLikeCount((c) => wasLiked ? c - 1 : c + 1);
@@ -815,36 +816,46 @@ export default function ArenaPostDetailPage() {
           padding: "10px 16px 10px",
         }}
       >
-        <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", gap: 10, alignItems: "flex-end" }}>
-          <div style={{ width: 34, height: 34, borderRadius: "50%", backgroundColor: GRS_GREEN, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "#fff" }}>
-              {user ? (user.name ?? "?")[0].toUpperCase() : "?"}
-            </span>
+        {user ? (
+          <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", gap: 10, alignItems: "flex-end" }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", backgroundColor: GRS_GREEN, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: "#fff" }}>
+                {(user.name ?? "?")[0].toUpperCase()}
+              </span>
+            </div>
+            <div style={{ flex: 1, position: "relative" }}>
+              <textarea
+                ref={commentInputRef}
+                value={commentBody}
+                onChange={(e) => setCommentBody(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitComment(); } }}
+                placeholder="Write a comment…"
+                rows={1}
+                style={{ width: "100%", resize: "none", border: "1px solid #e5e7eb", borderRadius: 22, padding: "9px 40px 9px 14px", fontSize: 14, outline: "none", fontFamily: "inherit", lineHeight: 1.5, boxSizing: "border-box", backgroundColor: "#f9fafb" }}
+                onInput={(e) => {
+                  const t = e.currentTarget;
+                  t.style.height = "auto";
+                  t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
+                }}
+              />
+              <button
+                onClick={submitComment}
+                disabled={!commentBody.trim() || submitting}
+                style={{ position: "absolute", right: 10, bottom: 9, background: "none", border: "none", cursor: commentBody.trim() ? "pointer" : "default", padding: 0, color: commentBody.trim() ? GRS_GREEN : "#d1d5db" }}
+              >
+                {submitting ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
+              </button>
+            </div>
           </div>
-          <div style={{ flex: 1, position: "relative" }}>
-            <textarea
-              ref={commentInputRef}
-              value={commentBody}
-              onChange={(e) => setCommentBody(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitComment(); } }}
-              placeholder="Write a comment…"
-              rows={1}
-              style={{ width: "100%", resize: "none", border: "1px solid #e5e7eb", borderRadius: 22, padding: "9px 40px 9px 14px", fontSize: 14, outline: "none", fontFamily: "inherit", lineHeight: 1.5, boxSizing: "border-box", backgroundColor: "#f9fafb" }}
-              onInput={(e) => {
-                const t = e.currentTarget;
-                t.style.height = "auto";
-                t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
-              }}
-            />
-            <button
-              onClick={submitComment}
-              disabled={!commentBody.trim() || submitting}
-              style={{ position: "absolute", right: 10, bottom: 9, background: "none", border: "none", cursor: commentBody.trim() ? "pointer" : "default", padding: 0, color: commentBody.trim() ? GRS_GREEN : "#d1d5db" }}
-            >
-              {submitting ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
-            </button>
+        ) : (
+          <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>Sign in to like and comment</p>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              <a href="/login" style={{ fontSize: 12, fontWeight: 700, color: "#fff", backgroundColor: GRS_GREEN, borderRadius: 20, padding: "7px 18px", textDecoration: "none" }}>Sign in</a>
+              <a href="/register" style={{ fontSize: 12, fontWeight: 700, color: GRS_GREEN, border: `1px solid ${GRS_GREEN}`, borderRadius: 20, padding: "7px 18px", textDecoration: "none" }}>Join free</a>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
