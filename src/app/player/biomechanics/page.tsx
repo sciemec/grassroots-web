@@ -830,9 +830,15 @@ export default function BiometricsPage() {
               >
                 New scan
               </button>
-              <Link href="/player/passport" style={{ flex: 1, backgroundColor: '#1a5c2a', color: '#fff', borderRadius: 14, padding: '0.75rem', fontSize: 14, fontWeight: 700, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                View Passport →
-              </Link>
+              {user ? (
+                <Link href="/player/passport" style={{ flex: 1, backgroundColor: '#1a5c2a', color: '#fff', borderRadius: 14, padding: '0.75rem', fontSize: 14, fontWeight: 700, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  View Passport →
+                </Link>
+              ) : (
+                <a href="/register" style={{ flex: 1, backgroundColor: '#1a5c2a', color: '#fff', borderRadius: 14, padding: '0.75rem', fontSize: 14, fontWeight: 700, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  Sign in to save →
+                </a>
+              )}
             </div>
           </>
         )}
