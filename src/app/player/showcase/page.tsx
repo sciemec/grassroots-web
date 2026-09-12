@@ -512,8 +512,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
             <div>
               <p className="text-sm font-semibold text-amber-300">Local mode — clips not yet visible to scouts</p>
               <p className="mt-0.5 text-xs text-amber-400/80">
-                Your clips are saved on this device. Scouts cannot discover them until the backend is deployed.
-                Ask Nigel to run <code className="rounded bg-black/30 px-1">php artisan migrate --force</code> on Render.
+                Your clips are saved on this device. Sign in to make them visible to scouts.
               </p>
             </div>
           </div>
@@ -544,7 +543,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
                 key={clip.id}
                 clip={clip}
                 playerName={user?.name ?? "Player"}
-                playerId={user?.id ?? ""}
+                playerId={user?.id ?? null}
                 onToggleScouting={() => toggleScouting(clip.id)}
                 onDelete={() => deleteClip(clip.id)}
                 shareOpen={shareClipId === clip.id}
@@ -623,6 +622,17 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
               {/* Idle — form */}
               {phase === "idle" && (
                 <>
+                  {!user ? (
+                    <div className="py-6 text-center">
+                      <p className="mb-1 text-sm font-semibold text-[#f0b429]">Sign in to analyse clips with AI</p>
+                      <p className="mb-5 text-xs text-muted-foreground">
+                        Create a free account — scouts will be able to find you.
+                      </p>
+                      <a href="/login" className="block w-full rounded-xl bg-[#1a5c2a] py-3 text-sm font-bold text-white mb-2 text-center">Sign in →</a>
+                      <a href="/register" className="block w-full rounded-xl border border-zinc-700 py-3 text-sm font-bold text-zinc-300 hover:bg-zinc-800 transition-colors text-center">Join free →</a>
+                    </div>
+                  ) : (
+                  <>
                   {/* Skill type */}
                   <p className="mb-3 text-sm font-medium text-[#f0b429]">
                     What skill are you showing? <span className="text-red-400">*</span>
@@ -764,6 +774,8 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
                       {gateProbing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronRight className="h-4 w-4" />} Analyse with AI
                     </button>
                   )}
+                  </>
+                  )}
                 </>
               )}
 
@@ -789,7 +801,7 @@ function ClipCard({
 }: {
   clip: ShowcaseClip;
   playerName: string;
-  playerId: string;
+  playerId: string | null;
   onToggleScouting: () => void;
   onDelete: () => void;
   shareOpen: boolean;
@@ -798,7 +810,9 @@ function ClipCard({
 }) {
   const [copied, setCopied] = useState(false);
 
-  const profileUrl = `https://grassrootssports.live/player/public/${playerId}`;
+  const profileUrl = playerId
+    ? `https://grassrootssports.live/player/public/${playerId}`
+    : null;
 
   const scoutCardText =
     `🌟 GrassRoots Sports — Skill Showcase\n` +
@@ -808,7 +822,7 @@ function ClipCard({
     `Positions: ${clip.position_fit.join(", ")}\n\n` +
     `Scout Note: "${clip.scout_note}"\n\n` +
     (clip.video_url ? `Watch clip: ${clip.video_url}\n` : "") +
-    `Full profile: ${profileUrl}`;
+    (profileUrl ? `Full profile: ${profileUrl}` : "");
 
   const whatsappUrl =
     `https://wa.me/?text=${encodeURIComponent(scoutCardText)}`;
@@ -816,7 +830,7 @@ function ClipCard({
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(
-        clip.video_url || profileUrl
+        clip.video_url || profileUrl || ""
       );
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -927,6 +941,14 @@ function ClipCard({
             Share with Scout
           </p>
 
+          {!playerId ? (
+            <div className="py-2 text-center">
+              <p className="mb-3 text-xs text-muted-foreground">Sign in to share your profile link with scouts.</p>
+              <a href="/login" className="block w-full rounded-lg bg-[#1a5c2a] py-2 text-xs font-bold text-white text-center mb-2">Sign in →</a>
+              <a href="/register" className="block w-full rounded-lg border border-zinc-600 py-2 text-xs font-bold text-zinc-300 text-center">Join free →</a>
+            </div>
+          ) : (
+          <>
           {/* Video / profile link */}
           <div className="mb-3 flex items-center gap-2 rounded-lg bg-black/30 px-3 py-2">
             <p className="flex-1 truncate text-xs text-muted-foreground">
@@ -974,6 +996,8 @@ function ClipCard({
               {scoutCardText}
             </pre>
           </details>
+          </>
+          )}
         </div>
       )}
     </div>
