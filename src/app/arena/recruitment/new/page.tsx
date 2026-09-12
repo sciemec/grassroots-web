@@ -65,10 +65,35 @@ export default function NewRecruitmentPage() {
 
   if (!hasHydrated) return null;
 
-  if (!token || (user?.role !== "coach" && user?.role !== "admin")) {
+  if (!user) {
     return (
       <div style={{ minHeight: "100vh", backgroundColor: BG }}>
-        <ArenaNav userName={user?.name ?? "A"} />
+        <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
+          <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
+            <Link href="/arena/recruitment" className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
+              <ChevronLeft size={18} className="text-gray-600" />
+            </Link>
+            <span className="font-semibold text-sm text-gray-900">Post Talent Listing</span>
+          </div>
+        </header>
+        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+          <p className="font-bold text-lg text-gray-800 mb-1">Sign in to post a listing</p>
+          <p className="text-gray-400 text-sm mb-6">
+            Coach accounts can post talent wanted listings<br />on The Arena Talent Board.
+          </p>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <a href="/login" className="inline-block px-6 py-2.5 rounded-lg text-sm font-bold text-white" style={{ background: GRS_GREEN }}>Sign in →</a>
+            <a href="/register" className="inline-block px-6 py-2.5 rounded-lg text-sm font-bold border" style={{ borderColor: GRS_GREEN, color: GRS_GREEN }}>Join free →</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (user.role !== "coach" && user.role !== "admin") {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: BG }}>
+        <ArenaNav userName={user.name ?? ""} />
         <div className="text-center py-20">
           <p className="text-gray-500 text-sm">Only coaches can post talent listings.</p>
           <Link href="/arena/recruitment" className="text-sm font-medium mt-3 inline-block hover:underline" style={{ color: GRS_GREEN }}>Back to Talent Board</Link>
@@ -111,7 +136,7 @@ export default function NewRecruitmentPage() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: BG }}>
-      <ArenaNav userName={user?.name ?? "A"} />
+      <ArenaNav userName={user.name ?? ""} />
       <div className="max-w-2xl mx-auto px-4 py-6">
         <button onClick={() => router.back()} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4">
           <ChevronLeft size={16} /> Back
