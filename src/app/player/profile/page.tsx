@@ -178,7 +178,10 @@ export default function PlayerProfilePage() {
   const watchedValues = watch();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     api.get("/profile")
       .then((res) => {
         setProfile({ ...res.data, scout_visible: res.data.profile?.scout_visible ?? false });
@@ -484,6 +487,35 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             </div>
             <div className="h-28 animate-pulse rounded-xl bg-muted" />
             <div className="h-11 animate-pulse rounded-xl bg-muted" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex h-screen bg-[#f4f2ee]" style={lightTheme}>
+        <Sidebar />
+        <main className="flex-1 overflow-auto p-4 md:p-6">
+          <div className="mx-auto max-w-2xl">
+            <div className="mt-16 rounded-2xl border border-white/10 bg-card p-8 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                <User className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h2 className="mb-1 text-lg font-bold">Sign in to view your profile</h2>
+              <p className="mb-6 text-sm text-muted-foreground">
+                Build your player profile, get verified, and be discovered by scouts.
+              </p>
+              <a href="/login"
+                className="block w-full rounded-xl bg-[#1a5c2a] py-3 text-sm font-bold text-white mb-3 text-center">
+                Sign in →
+              </a>
+              <a href="/register"
+                className="block w-full rounded-xl border border-white/20 py-3 text-sm font-bold text-white/70 hover:text-white text-center transition-colors">
+                Create free account →
+              </a>
+            </div>
           </div>
         </main>
       </div>
