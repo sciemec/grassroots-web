@@ -303,7 +303,31 @@ export default function RecruitmentPage() {
       .finally(() => setLoading(false));
   }, [token, sport, province]);
 
-  if (!hasHydrated || !user) return null;
+  if (!hasHydrated) return null;
+
+  if (!user) {
+    return (
+      <div style={{ minHeight: "100vh", background: BG }}>
+        <ArenaNav userName="" />
+        <div className="max-w-3xl mx-auto px-4 py-16 text-center">
+          <Briefcase size={56} className="mx-auto text-gray-300 mb-4" />
+          <p className="font-bold text-lg text-gray-800 mb-1">Talent Board</p>
+          <p className="text-gray-400 text-sm mb-6">
+            Sign in to browse trial opportunities posted by coaches and scouts<br />across Zimbabwe — or post your own.
+          </p>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <a href="/login" className="inline-block px-6 py-2.5 rounded-lg text-sm font-bold text-white" style={{ background: GRS_GREEN }}>
+              Sign in →
+            </a>
+            <a href="/register" className="inline-block px-6 py-2.5 rounded-lg text-sm font-bold border" style={{ borderColor: GRS_GREEN, color: GRS_GREEN }}>
+              Join free →
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const userName = user.name ?? "You";
   const canPost  = user.role === "coach" || user.role === "scout" || user.role === "admin";
 
