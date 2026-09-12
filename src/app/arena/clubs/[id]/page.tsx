@@ -128,7 +128,33 @@ export default function ClubDetailPage() {
     setSubmitting(false);
   };
 
-  if (!hasHydrated || !user) return null;
+  if (!hasHydrated) return null;
+
+  if (!user) {
+    return (
+      <div style={{ minHeight: "100vh", background: BG }}>
+        <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
+          <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
+            <Link href="/arena/clubs" className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
+              <ArrowLeft size={18} className="text-gray-600" />
+            </Link>
+            <span className="font-semibold text-sm text-gray-900">Clubs</span>
+          </div>
+        </header>
+        <div className="max-w-3xl mx-auto px-4 py-16 text-center">
+          <Users size={56} className="mx-auto text-gray-300 mb-4" />
+          <p className="font-bold text-lg text-gray-800 mb-1">Join to view this club</p>
+          <p className="text-gray-400 text-sm mb-6">
+            Sign in to view club details, members, and reviews<br />across Zimbabwe.
+          </p>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <a href="/login" className="inline-block px-6 py-2.5 rounded-lg text-sm font-bold text-white" style={{ background: GRS_GREEN }}>Sign in →</a>
+            <a href="/register" className="inline-block px-6 py-2.5 rounded-lg text-sm font-bold border" style={{ borderColor: GRS_GREEN, color: GRS_GREEN }}>Join free →</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
