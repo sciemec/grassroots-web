@@ -10,6 +10,7 @@ import { PlayerCoachingStats, CoachingSession, Review } from "@/types/coaching";
 export default function PlayerCoachingDashboard() {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const [stats, setStats] = useState<PlayerCoachingStats | null>(null);
   const [upcomingSessions, setUpcomingSessions] = useState<CoachingSession[]>([]);
   const [recentSessions, setRecentSessions] = useState<CoachingSession[]>([]);
@@ -19,7 +20,8 @@ export default function PlayerCoachingDashboard() {
 
   useEffect(() => {
     const loadData = async () => {
-      if (!token) return;
+      if (!hasHydrated) return;
+      if (!token) { setLoading(false); return; }
       try {
         // Load stats
         const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/coaching/stats`, {
@@ -68,12 +70,36 @@ export default function PlayerCoachingDashboard() {
       }
     };
     loadData();
-  }, [token]);
+  }, [token, hasHydrated]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f4f2ee] flex items-center justify-center">
         <Icons.Loader2 className="animate-spin text-[#1a5c2a]" size={32} />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#f4f2ee] flex items-center justify-center p-4">
+        <div className="max-w-sm w-full bg-white rounded-2xl border border-gray-200 p-8 text-center">
+          <div className="text-4xl mb-3">🎯</div>
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Sign in to access Coaching Hub</h2>
+          <p className="text-sm text-gray-500 mb-6">
+            Book coaching sessions, track your progress, and connect with coaches across Zimbabwe.
+          </p>
+          <a href="/login"
+            className="block py-3 rounded-xl text-white font-bold text-sm mb-2"
+            style={{ background: "#1a5c2a" }}>
+            Sign in →
+          </a>
+          <a href="/register"
+            className="block py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm mb-4">
+            Create free account →
+          </a>
+          <a href="/player" className="text-xs text-gray-400 hover:text-gray-600">← Back to Player Hub</a>
+        </div>
       </div>
     );
   }
