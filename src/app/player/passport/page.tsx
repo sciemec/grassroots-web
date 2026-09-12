@@ -468,6 +468,41 @@ Output exactly 3 sentences. No bullet points. No headers.`,
     );
   }
 
+  // ── Guest wall ─────────────────────────────────────────────────────────────
+  if (!user) {
+    return (
+      <div className="flex h-screen bg-zinc-950">
+        <Sidebar />
+        <main className="flex-1 flex items-center justify-center px-6">
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-8 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f0b429]/10">
+              <span className="text-2xl">📋</span>
+            </div>
+            <h2 className="mb-1 text-lg font-bold text-white">Your Talent Passport</h2>
+            <p className="mb-6 text-sm text-zinc-400">
+              Sign in to build your passport — the document scouts and scholarship agencies use to find you.
+            </p>
+            <div className="flex flex-col gap-3">
+              <a
+                href="/login"
+                className="w-full rounded-xl py-3 text-sm font-bold text-white text-center"
+                style={{ background: "#1a5c2a" }}
+              >
+                Sign in →
+              </a>
+              <a
+                href="/register"
+                className="w-full rounded-xl border border-zinc-700 py-3 text-sm font-bold text-zinc-300 hover:bg-zinc-800 transition-colors text-center"
+              >
+                Join free →
+              </a>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   const shareUrl = `/passport/${user?.id ?? ""}`;
 
   // ── Render ─────────────────────────────────────────────────────────────────
