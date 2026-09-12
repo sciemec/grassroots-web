@@ -179,6 +179,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
   }, [loading, playId]);
 
   const toggleFollow = async () => {
+    if (!token) { router.push("/login"); return; }
     const prev = isFollowing;
     setIsFollowing(!prev);
     await fetch(`${API}/arena/follow/${id}`, {
@@ -200,6 +201,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
   };
 
   const sendConnect = async () => {
+    if (!token) { router.push("/login"); return; }
     setConnStatus("pending");
     await fetch(`${API}/arena/connect/${id}`, {
       method: "POST",
@@ -209,7 +211,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
 
   if (!hasHydrated || loading) return (
     <div style={{ minHeight: "100vh", backgroundColor: BG }}>
-      <ArenaNav userName={user?.name ?? "A"} />
+      <ArenaNav userName={user?.name ?? ""} />
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-4">
         {[1,2,3].map((i) => <div key={i} className="bg-white rounded-2xl border border-gray-200 p-6 animate-pulse"><div className="h-20 bg-gray-100 rounded-xl" /></div>)}
       </div>
@@ -218,7 +220,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
 
   if (notFound || !profile) return (
     <div style={{ minHeight: "100vh", backgroundColor: BG }}>
-      <ArenaNav userName={user?.name ?? "A"} />
+      <ArenaNav userName={user?.name ?? ""} />
       <div className="text-center py-20">
         <p className="text-gray-400">Profile not found</p>
         <Link href="/arena/discover" className="text-sm font-medium mt-3 inline-block hover:underline" style={{ color: GRS_GREEN }}>Discover Athletes</Link>
@@ -234,7 +236,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: BG }}>
-      <ArenaNav userName={user?.name ?? "A"} />
+      <ArenaNav userName={user?.name ?? ""} />
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
         {/* Profile header */}
@@ -283,32 +285,42 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
 
           {/* Action buttons */}
           {!isOwnProfile && (
-            <div className="flex gap-2 mt-4">
-              <button onClick={toggleFollow}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border transition-colors"
-                style={isFollowing
-                  ? { background: "#f9fafb", color: "#6b7280", borderColor: "#d1d5db" }
-                  : { background: GRS_GREEN, color: "white", borderColor: GRS_GREEN }}>
-                {isFollowing ? <UserCheck size={14} /> : <UserPlus size={14} />}
-                {isFollowing ? "Following" : "Follow"}
-              </button>
-              {connStatus === "none" && (
-                <button onClick={sendConnect}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-white transition-colors"
-                  style={{ background: GOLD }}>
-                  Connect
+            user ? (
+              <div className="flex gap-2 mt-4">
+                <button onClick={toggleFollow}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border transition-colors"
+                  style={isFollowing
+                    ? { background: "#f9fafb", color: "#6b7280", borderColor: "#d1d5db" }
+                    : { background: GRS_GREEN, color: "white", borderColor: GRS_GREEN }}>
+                  {isFollowing ? <UserCheck size={14} /> : <UserPlus size={14} />}
+                  {isFollowing ? "Following" : "Follow"}
                 </button>
-              )}
-              {connStatus === "pending" && (
-                <span className="px-4 py-2 rounded-full text-sm text-gray-500 border border-dashed border-gray-300">Pending</span>
-              )}
-              {connStatus === "connected" && (
-                <Link href="/arena/messages"
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50">
-                  <MessageCircle size={14} /> Message
-                </Link>
-              )}
-            </div>
+                {connStatus === "none" && (
+                  <button onClick={sendConnect}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-white transition-colors"
+                    style={{ background: GOLD }}>
+                    Connect
+                  </button>
+                )}
+                {connStatus === "pending" && (
+                  <span className="px-4 py-2 rounded-full text-sm text-gray-500 border border-dashed border-gray-300">Pending</span>
+                )}
+                {connStatus === "connected" && (
+                  <Link href="/arena/messages"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50">
+                    <MessageCircle size={14} /> Message
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100 flex-wrap">
+                <p className="text-sm text-gray-500">Sign in to follow and connect</p>
+                <div className="flex gap-2 flex-shrink-0">
+                  <a href="/login" className="px-4 py-1.5 rounded-full text-sm font-semibold text-white" style={{ background: GRS_GREEN }}>Sign in</a>
+                  <a href="/register" className="px-4 py-1.5 rounded-full text-sm font-semibold border" style={{ borderColor: GRS_GREEN, color: GRS_GREEN }}>Join free</a>
+                </div>
+              </div>
+            )
           )}
         </div>
 
