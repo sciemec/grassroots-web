@@ -39,7 +39,7 @@ export default function SkillRatingsOverviewPage() {
   const [search,         setSearch]         = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) { setLoading(false); return; }
 
     fetch(`${API}/coach/registered-players`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -94,6 +94,22 @@ export default function SkillRatingsOverviewPage() {
   const totalRated = Object.values(ratingAvgs).filter(
     (v) => v !== null && v !== undefined
   ).length;
+
+  if (!token) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0e0e0e", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px" }}>
+        <div style={{ maxWidth: 320, width: "100%", background: "#151515", borderRadius: 16, padding: "32px 24px", textAlign: "center", border: "1px solid #1e1e1e" }}>
+          <IconStar size={36} color="#c8962a" style={{ margin: "0 auto 12px" }} />
+          <div style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Sign in to view Skill Ratings</div>
+          <div style={{ color: "#777", fontSize: 13, marginBottom: 24, lineHeight: 1.5 }}>
+            Rate your squad&apos;s technical skills and track player development over time.
+          </div>
+          <a href="/login" style={{ display: "block", padding: "12px", borderRadius: 10, background: "#1a5c2a", color: "#fff", fontWeight: 700, fontSize: 14, textDecoration: "none", marginBottom: 10 }}>Sign in →</a>
+          <a href="/register" style={{ display: "block", padding: "12px", borderRadius: 10, border: "1px solid #333", color: "#aaa", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>Create free account →</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#0e0e0e", paddingBottom: 48 }}>

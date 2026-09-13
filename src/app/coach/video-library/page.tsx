@@ -565,7 +565,7 @@ export default function CoachVideoLibraryPage() {
   const [mediaLoading, setMediaLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) { setMatchLoading(false); setMediaLoading(false); return; }
 
     // Fetch match videos
     fetch(`${API}/coach/match-videos`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
@@ -608,6 +608,23 @@ export default function CoachVideoLibraryPage() {
   function handleUploaded(v: MatchVideo) {
     setMatchVideos((prev) => [v, ...prev]);
     setActiveFilter("match");
+  }
+
+  if (!token) {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px" }}>
+        <div style={{ maxWidth: 360, width: "100%", background: "#fff", borderRadius: 16, padding: "32px 24px", textAlign: "center", border: "1px solid #e5e7eb" }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>🎬</div>
+          <div style={{ fontWeight: 700, fontSize: 16, color: "#111827", marginBottom: 8 }}>Sign in to access Video Library</div>
+          <div style={{ color: "#6b7280", fontSize: 13, marginBottom: 24, lineHeight: 1.5 }}>
+            Upload, organise and review your match and training videos in one place.
+          </div>
+          <a href="/login" style={{ display: "block", padding: "12px", borderRadius: 10, background: "#1a5c2a", color: "#fff", fontWeight: 700, fontSize: 14, textDecoration: "none", marginBottom: 10 }}>Sign in →</a>
+          <a href="/register" style={{ display: "block", padding: "12px", borderRadius: 10, border: "1px solid #e5e7eb", color: "#374151", fontWeight: 700, fontSize: 14, textDecoration: "none", marginBottom: 16 }}>Create free account →</a>
+          <a href="/coach" style={{ fontSize: 12, color: "#9ca3af", textDecoration: "none" }}>← Back to Coach Hub</a>
+        </div>
+      </div>
+    );
   }
 
   return (

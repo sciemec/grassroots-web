@@ -39,7 +39,7 @@ export default function FieldTestRequestsPage() {
   const [error,         setError]         = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) { setLoading(false); return; }
     setLoading(true);
     api.get("/coach/field-test-requests")
       .then((res) => {
@@ -67,6 +67,22 @@ export default function FieldTestRequestsPage() {
   };
 
   const successCount = Object.keys(accepted).length;
+
+  if (!token) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0a120b", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px" }}>
+        <div style={{ maxWidth: 320, width: "100%", background: "#0f1f12", borderRadius: 16, padding: "32px 24px", textAlign: "center", border: "1px solid #1a2e1c" }}>
+          <ClipboardList size={36} color="#f0b429" style={{ margin: "0 auto 12px" }} />
+          <div style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Sign in to view Assessment Requests</div>
+          <div style={{ color: "#888", fontSize: 13, marginBottom: 24, lineHeight: 1.5 }}>
+            Players in your area submit assessment requests. Sign in to accept them and run field tests.
+          </div>
+          <a href="/login" style={{ display: "block", padding: "12px", borderRadius: 10, background: "#1a5c2a", color: "#fff", fontWeight: 700, fontSize: 14, textDecoration: "none", marginBottom: 10 }}>Sign in →</a>
+          <a href="/register" style={{ display: "block", padding: "12px", borderRadius: 10, border: "1px solid #1a2e1c", color: "#888", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>Create free account →</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a120b", color: "#fff", fontFamily: "system-ui, sans-serif" }}>

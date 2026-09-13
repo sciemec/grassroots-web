@@ -253,7 +253,7 @@ export default function CoachRecruitmentPage() {
 
   // Load postings
   useEffect(() => {
-    if (!token) return;
+    if (!token) { setLoadingPostings(false); return; }
     setLoadingPostings(true);
     fetch(`${API}/arena/talent-wanted?mine=true`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
       .then((r) => r.json())
@@ -313,6 +313,23 @@ export default function CoachRecruitmentPage() {
     trial_invited:applications.filter((a) => a.status === "trial_invited").length,
     declined:     applications.filter((a) => a.status === "declined").length,
   };
+
+  if (!token) {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px" }}>
+        <div className="max-w-sm w-full bg-white rounded-2xl border border-gray-200 p-8 text-center">
+          <div className="text-4xl mb-3">📋</div>
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Sign in to manage Recruitment</h2>
+          <p className="text-sm text-gray-500 mb-6">
+            Post talent wanted listings, review applicants, and manage your recruitment pipeline.
+          </p>
+          <a href="/login" className="block py-3 rounded-xl text-white font-bold text-sm mb-2" style={{ background: "#1a5c2a" }}>Sign in →</a>
+          <a href="/register" className="block py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm mb-4">Create free account →</a>
+          <a href="/coach" className="text-xs text-gray-400 hover:text-gray-600">← Back to Coach Hub</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
