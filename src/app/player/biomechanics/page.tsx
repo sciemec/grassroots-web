@@ -294,7 +294,9 @@ export default function BiometricsPage() {
   const [useCamera,      setUseCamera]     = useState(false);
   const [recording,      setRecording]     = useState(false);
   const [countdown,      setCountdown]     = useState(60);
-  const [passportSaved,  setPassportSaved] = useState(false);
+  const [passportSaved,    setPassportSaved]    = useState(false);
+  const [radarSaveError,   setRadarSaveError]   = useState(false);
+  const [radarSavePayload, setRadarSavePayload] = useState<{ attribute_code: string; raw_value: number; unit: string } | null>(null);
 
   const videoRef    = useRef<HTMLVideoElement>(null);
   const mediaRef    = useRef<MediaRecorder | null>(null);
@@ -429,21 +431,40 @@ export default function BiometricsPage() {
 
   // ── Physical radar write-back ─────────────────────────────────────────────
 
-  const saveToPhysicalRadar = (players: PlayerResult[]) => {
+  const saveToPhysicalRadar = async (players: PlayerResult[]) => {
     const p = players[0];
     if (!p || !token || token === 'dev-token' || !drill) return;
     const attributeCode = DRILL_TO_ATTRIBUTE[drill.id];
     if (!attributeCode) return;
 
-    fetch(`${API_URL}/measurements/by-code`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        attribute_code: attributeCode,
-        raw_value:      p.performance_index,
-        unit:           'ai_score',
-      }),
-    }).catch(() => { /* silent — non-blocking */ });
+    const payload = { attribute_code: attributeCode, raw_value: p.performance_index, unit: 'ai_score' };
+    setRadarSavePayload(payload);
+    setRadarSaveError(false);
+    try {
+      const res = await fetch(`${API_URL}/measurements/by-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch {
+      setRadarSaveError(true);
+    }
+  };
+
+  const retryRadarSave = async () => {
+    if (!radarSavePayload || !token) return;
+    setRadarSaveError(false);
+    try {
+      const res = await fetch(`${API_URL}/measurements/by-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(radarSavePayload),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch {
+      setRadarSaveError(true);
+    }
   };
 
   // ── Passport write-back ───────────────────────────────────────────────────
@@ -773,6 +794,18 @@ export default function BiometricsPage() {
               </div>
             )}
 
+            {radarSaveError && (
+              <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '0.5rem 0.875rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <span style={{ fontSize: 13, color: '#dc2626' }}>Your result didn&apos;t save to your profile — tap to retry</span>
+                <button
+                  onClick={retryRadarSave}
+                  style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, padding: '0.375rem 0.75rem', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
             {/* Two big scores */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: '1.25rem' }}>
               {[
@@ -847,7 +880,7 @@ export default function BiometricsPage() {
             {/* Actions */}
             <div style={{ display: 'flex', gap: 10 }}>
               <button
-                onClick={() => { setStage('select'); setDrill(null); setVideoFile(null); setResults([]); setThutoNote(null); setPassportSaved(false); }}
+                onClick={() => { setStage('select'); setDrill(null); setVideoFile(null); setResults([]); setThutoNote(null); setPassportSaved(false); setRadarSaveError(false); setRadarSavePayload(null); }}
                 style={{ flex: 1, backgroundColor: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 14, padding: '0.75rem', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
               >
                 New scan
