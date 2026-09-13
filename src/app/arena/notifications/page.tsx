@@ -89,7 +89,7 @@ export default function ArenaNotificationsPage() {
   const [loading, setLoading]             = useState(true);
 
   useEffect(() => {
-    if (!hasHydrated || !token) return;
+    if (!hasHydrated || !token) { setLoading(false); return; }
     fetch(`${API}/notifications`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
       .then((r) => r.json())
       .then((json) => setNotifications(safeArray<ArenaNotification>(json)))
@@ -143,6 +143,21 @@ export default function ArenaNotificationsPage() {
           className="flex-shrink-0 p-1 rounded text-gray-400 hover:text-red-500 transition-colors">
           <Trash2 size={13} />
         </button>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: BG, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px" }}>
+        <div className="max-w-sm w-full bg-white rounded-2xl border border-gray-200 p-8 text-center">
+          <Bell size={36} color={GRS_GREEN} className="mx-auto mb-3" />
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Sign in to view Arena Alerts</h2>
+          <p className="text-sm text-gray-500 mb-6">Get notified when scouts view your profile, clubs post opportunities, and more.</p>
+          <a href="/login" className="block py-3 px-6 rounded-xl text-white font-bold text-sm mb-3" style={{ background: GRS_GREEN }}>Sign in →</a>
+          <a href="/register" className="block py-3 px-6 rounded-xl text-sm font-bold border" style={{ borderColor: GRS_GREEN, color: GRS_GREEN }}>Join free →</a>
+          <Link href="/arena" className="block mt-4 text-xs text-gray-400 hover:text-gray-600">← Back to The Arena</Link>
+        </div>
       </div>
     );
   }
