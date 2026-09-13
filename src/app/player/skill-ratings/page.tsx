@@ -156,7 +156,7 @@ export default function PlayerSkillRatingsPage() {
   const [loading,     setLoading]     = useState(true);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) { setLoading(false); return; }
     fetch(`${API}/player/skill-ratings`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -181,6 +181,17 @@ export default function PlayerSkillRatingsPage() {
       : null;
 
   const oc = overallScore ? overallColor(overallScore) : "#2a2a2a";
+
+  if (!user) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0e0e0e", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ color: "#fff", fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Sign in to view your skill ratings</div>
+          <a href="/login" style={{ display: "block", padding: "12px 24px", borderRadius: 10, background: "#1a5c2a", color: "#fff", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>Sign in →</a>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

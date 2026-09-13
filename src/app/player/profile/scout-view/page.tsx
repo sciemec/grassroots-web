@@ -54,7 +54,7 @@ export default function ScoutViewPage() {
   const [copied, setCopied]     = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     Promise.all([
       api.get("/profile").catch(() => null),
       api.get("/player/showcase").catch(() => null),
@@ -89,7 +89,9 @@ export default function ScoutViewPage() {
 
   const visibleClips = clips.filter((c) => c.open_for_scouting);
 
-  if (!user || loading) {
+  if (!user) return null;
+
+  if (loading) {
     return (
       <div className="flex h-screen bg-background">
         <Sidebar />
