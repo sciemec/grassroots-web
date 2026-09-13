@@ -421,7 +421,7 @@ export default function SkillRaterPage() {
 
   // ── Load player + skill ratings ─────────────────────────────────────────
   useEffect(() => {
-    if (!token || !id) return;
+    if (!token || !id) { setPageLoading(false); return; }
 
     Promise.all([
       fetch(`${API}/coach/registered-players/${id}`, {
@@ -598,6 +598,19 @@ export default function SkillRaterPage() {
     } finally {
       setSavingTests(false);
     }
+  }
+
+  // ── Guest wall ───────────────────────────────────────────────────────────
+  if (!user) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0e0e0e", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <IconStar size={36} color="#c8962a" style={{ margin: "0 auto 12px" }} />
+          <div style={{ color: "#fff", fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Sign in to rate players</div>
+          <a href="/login" style={{ display: "block", padding: "12px 24px", borderRadius: 10, background: "#1a5c2a", color: "#fff", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>Sign in →</a>
+        </div>
+      </div>
+    );
   }
 
   // ── Loading / not found ──────────────────────────────────────────────────

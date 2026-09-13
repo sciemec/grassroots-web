@@ -186,7 +186,7 @@ export default function CoachChemistryPage() {
   // ── Data loading ─────────────────────────────────────────────────────────
 
   const load = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) { setLoading(false); return; }
     setLoading(true);
     setError(null);
     try {
@@ -414,6 +414,8 @@ export default function CoachChemistryPage() {
   ];
 
   // ── Render ────────────────────────────────────────────────────────────────
+
+  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-[#f4f2ee]">
