@@ -361,6 +361,19 @@ export default function BiometricsPage() {
 
   const analyseLocally = async () => {
     if (!videoFile || !drill) return;
+
+    // WebGL check — MediaPipe needs GPU delegate; show a clear message if unavailable
+    const testCanvas = document.createElement('canvas');
+    const hasWebGL = !!(testCanvas.getContext('webgl') || testCanvas.getContext('webgl2'));
+    if (!hasWebGL) {
+      setErrorMsg(
+        'Your browser does not support WebGL, which is needed for movement analysis. ' +
+        'Try opening this page in Chrome or Samsung Internet on your phone.'
+      );
+      setStage('error');
+      return;
+    }
+
     setStage('processing');
     setUploadPct(0);
     setErrorMsg('');
@@ -723,7 +736,11 @@ export default function BiometricsPage() {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <span style={{ fontSize: 12, color: '#6b7280' }}>
-                    {uploadPct < 30 ? 'Extracting frames…' : uploadPct < 65 ? 'Detecting skeleton…' : uploadPct < 90 ? 'Cross-checking…' : 'Finalising…'}
+                    {uploadPct < 5  ? 'Downloading AI models (first time only)…'
+                    : uploadPct < 30 ? 'Extracting frames…'
+                    : uploadPct < 65 ? 'Detecting skeleton…'
+                    : uploadPct < 90 ? 'Cross-checking…'
+                    : 'Finalising…'}
                   </span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: '#1a5c2a' }}>{uploadPct}%</span>
                 </div>
@@ -731,6 +748,11 @@ export default function BiometricsPage() {
                   <div style={{ height: 6, backgroundColor: '#1a5c2a', width: `${uploadPct}%`, borderRadius: 3, transition: 'width 0.3s' }} />
                 </div>
               </div>
+              {uploadPct < 5 && (
+                <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 8, textAlign: 'center' }}>
+                  AI models load from the internet once — future scans start faster.
+                </p>
+              )}
             </div>
           </>
         )}
@@ -849,8 +871,21 @@ export default function BiometricsPage() {
             <div style={{ fontSize: 40, marginBottom: '1rem' }}>😔</div>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 8 }}>Something went wrong</h2>
             <p style={{ fontSize: 14, color: '#6b7280', marginBottom: '1.5rem' }}>{errorMsg || 'The analysis failed. Try again with a shorter, clearer clip.'}</p>
-            <button onClick={() => { setStage('upload'); setVideoFile(null); }} style={{ backgroundColor: '#1a5c2a', color: '#fff', border: 'none', borderRadius: 12, padding: '0.75rem 1.5rem', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-              Try Again
+            {/* Primary: retry with the same clip — does not clear videoFile */}
+            {videoFile && (
+              <button
+                onClick={analyseLocally}
+                style={{ backgroundColor: '#1a5c2a', color: '#fff', border: 'none', borderRadius: 12, padding: '0.75rem 1.5rem', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10, display: 'block', width: '100%' }}
+              >
+                Tap to retry
+              </button>
+            )}
+            {/* Secondary: start fresh with a different clip */}
+            <button
+              onClick={() => { setStage('upload'); setVideoFile(null); setErrorMsg(''); }}
+              style={{ backgroundColor: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 12, padding: '0.75rem 1.5rem', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'block', width: '100%' }}
+            >
+              Use a different clip
             </button>
           </div>
         )}

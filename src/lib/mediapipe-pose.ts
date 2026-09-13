@@ -23,34 +23,67 @@ let _landmarker: any = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _loading: Promise<any> | null = null;
 
+const LOAD_TIMEOUT_MS = 60_000; // 60 s — allows for slow mobile CDN
+
 async function getLandmarker() {
   if (_landmarker) return _landmarker;
   if (_loading)   return _loading;
 
-  _loading = (async () => {
-    const { PoseLandmarker, FilesetResolver } = await import(
-      /* webpackIgnore: true */
-      /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
-      // @ts-ignore
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/vision_bundle.mjs"
-    );
+  _loading = new Promise<any>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      _loading = null; // clear so next tap can retry
+      reject(new Error("AI model took too long to load. Check your connection and tap retry."));
+    }, LOAD_TIMEOUT_MS);
 
-    const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm",
-    );
+    (async () => {
+      try {
+        const { PoseLandmarker, FilesetResolver } = await import(
+          /* webpackIgnore: true */
+          /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
+          // @ts-ignore
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/vision_bundle.mjs"
+        );
 
-    const lm = await PoseLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath:
-          "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-        delegate: "GPU",
-      },
-      runningMode: "IMAGE",
-      numPoses:    1,
-    });
-    _landmarker = lm;
-    return lm;
-  })();
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm",
+        );
+
+        // Try GPU first; silently fall back to CPU on devices without WebGL
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let lm: any;
+        try {
+          lm = await PoseLandmarker.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath:
+                "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+              delegate: "GPU",
+            },
+            runningMode: "IMAGE",
+            numPoses:    1,
+          });
+        } catch {
+          // GPU/WebGL not available on this device — use CPU
+          lm = await PoseLandmarker.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath:
+                "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+              delegate: "CPU",
+            },
+            runningMode: "IMAGE",
+            numPoses:    1,
+          });
+        }
+
+        clearTimeout(timer);
+        _landmarker = lm;
+        resolve(lm);
+      } catch (err) {
+        clearTimeout(timer);
+        _loading = null; // clear so next tap can retry
+        reject(err);
+      }
+    })();
+  });
 
   return _loading;
 }
