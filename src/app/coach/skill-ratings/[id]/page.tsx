@@ -392,6 +392,7 @@ function bestIsMin(unit: string): boolean {
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function SkillRaterPage() {
+  const user   = useAuthStore((s) => s.user);
   const token  = useAuthStore((s) => s.token);
   const params = useParams<{ id: string }>();
   const id     = params?.id ?? "";

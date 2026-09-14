@@ -71,6 +71,7 @@ export default function CoachPlayerDetailPage() {
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [guardiansPayload, setGuardiansPayload] = useState<GuardiansPayload | null>(null);
   const [skillRatings, setSkillRatings] = useState<{ skill_code: string; rating: number; notes: string | null }[]>([]);
+  const [biometricScore, setBiometricScore] = useState<{ drill: string; resilience_index: number; flags: string[]; created_at: string } | null>(null);
   const [aiReport, setAiReport] = useState("");
   const [loadingAi, setLoadingAi] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -83,7 +84,8 @@ export default function CoachPlayerDetailPage() {
       api.get(`/coach/squad/${memberId}/stats`).catch(() => ({ data: null })),
       api.get(`/coach/squad/${memberId}/guardians`).catch(() => ({ data: null })),
       api.get(`/coach/squad/${memberId}/skill-ratings`).catch(() => ({ data: { data: [] } })),
-    ]).then(([memberRes, sessionsRes, statsRes, guardiansRes, ratingsRes]) => {
+      api.get(`/coach/squad/${memberId}/biometric-scores`).catch(() => ({ data: { data: [] } })),
+    ]).then(([memberRes, sessionsRes, statsRes, guardiansRes, ratingsRes, bioRes]) => {
       setMember(memberRes.data?.data ?? memberRes.data);
       setSessions(sessionsRes.data?.data ?? sessionsRes.data ?? []);
       setStats(statsRes.data?.data ?? statsRes.data);
@@ -91,6 +93,10 @@ export default function CoachPlayerDetailPage() {
         setGuardiansPayload(guardiansRes.data);
       }
       setSkillRatings(Array.isArray(ratingsRes.data?.data) ? ratingsRes.data.data : []);
+      const bioRows = bioRes.data?.data ?? [];
+      if (Array.isArray(bioRows) && bioRows.length > 0) {
+        setBiometricScore(bioRows[0] as { drill: string; resilience_index: number; flags: string[]; created_at: string });
+      }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [user, router, memberId]);
 
@@ -334,6 +340,48 @@ export default function CoachPlayerDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Body Safety Score */}
+            {biometricScore && (() => {
+              const FLAG_LABELS: Record<string, string> = {
+                knee_valgus:         "Knee alignment",
+                bilateral_asymmetry: "Movement asymmetry",
+                heel_recovery_poor:  "Heel recovery",
+                arm_swing_weak:      "Arm swing",
+                landing_too_stiff:   "Landing stiffness",
+                trunk_too_upright:   "Trunk lean",
+              };
+              const ri = Math.round(biometricScore.resilience_index);
+              const barColor = ri >= 70 ? "#22c55e" : ri >= 45 ? "#f59e0b" : "#ef4444";
+              return (
+                <div className="rounded-xl border bg-card p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-semibold flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-emerald-600" /> Body Safety Score
+                    </h2>
+                    <span className="text-xs text-muted-foreground">{biometricScore.drill}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${ri}%`, backgroundColor: barColor }} />
+                    </div>
+                    <span className="text-sm font-bold tabular-nums" style={{ color: barColor }}>{ri}/100</span>
+                  </div>
+                  {biometricScore.flags.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {biometricScore.flags.map((f) => (
+                        <span key={f} className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-red-500/10 text-red-700">
+                          <AlertTriangle className="h-2.5 w-2.5" />
+                          {FLAG_LABELS[f] ?? f.replace(/_/g, " ")}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No movement flags detected.</p>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Recent sessions */}
             <div className="rounded-xl border bg-card p-5">

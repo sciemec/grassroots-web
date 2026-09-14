@@ -150,6 +150,7 @@ function SkillRow({ skill, rating }: {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function PlayerSkillRatingsPage() {
+  const user  = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
 
   const [ratings,     setRatings]     = useState<SkillRating[]>([]);

@@ -79,6 +79,14 @@ interface ProvenanceRecord {
   confirmed_at: string | null;
 }
 
+interface BiometricScore {
+  drill: string;
+  performance_index: number;
+  resilience_index: number;
+  flags: string[];
+  created_at: string;
+}
+
 // ─── Rating bar helper ─────────────────────────────────────────────────────────
 function RatingBar({ value, max = 10 }: { value: number; max?: number }) {
   const pct = (value / max) * 100;
@@ -115,6 +123,7 @@ export default function PassportPage() {
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
   const [aiSummary, setAiSummary] = useState("");
   const [provenance, setProvenance] = useState<ProvenanceRecord[]>([]);
+  const [biometricScore, setBiometricScore] = useState<BiometricScore | null>(null);
   const [reel, setReel] = useState<ReelState>(EMPTY_REEL);
 
   type SkillReading = { score: number; grade: string; recorded_at?: string } | null;
@@ -179,7 +188,8 @@ export default function PassportPage() {
       api.get("/profile").catch(() => null),
       api.get("/player/showcase").catch(() => null),
       api.get("/player/provenance").catch(() => null),
-    ]).then(([profRes, clipsRes, provRes]) => {
+      api.get("/player/biometric-scores").catch(() => null),
+    ]).then(([profRes, clipsRes, provRes, bioRes]) => {
       if (profRes) {
         const p = profRes.data?.profile ?? profRes.data;
         setProfile(p);
@@ -207,6 +217,11 @@ export default function PassportPage() {
       if (provRes) {
         const records = provRes.data?.data ?? provRes.data ?? [];
         setProvenance(Array.isArray(records) ? records : []);
+      }
+      if (bioRes) {
+        const rows = bioRes.data?.data ?? bioRes.data ?? [];
+        const latest = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+        if (latest) setBiometricScore(latest as BiometricScore);
       }
     }).finally(() => setLoading(false));
   }, []);
@@ -612,6 +627,48 @@ Output exactly 3 sentences. No bullet points. No headers.`,
               </div>
             </div>
           )}
+
+          {/* ── Body Safety Score ── */}
+          {biometricScore && (() => {
+            const FLAG_LABELS: Record<string, string> = {
+              knee_valgus:         "Knee alignment",
+              bilateral_asymmetry: "Movement asymmetry",
+              heel_recovery_poor:  "Heel recovery",
+              arm_swing_weak:      "Arm swing",
+              landing_too_stiff:   "Landing stiffness",
+              trunk_too_upright:   "Trunk lean",
+            };
+            const ri = Math.round(biometricScore.resilience_index);
+            const barColor = ri >= 70 ? "#22c55e" : ri >= 45 ? "#f59e0b" : "#ef4444";
+            return (
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20">
+                    <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Body Safety Score</h3>
+                    <p className="text-xs text-zinc-400">From your last on-device drill · {biometricScore.drill}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-2 rounded-full bg-zinc-700 overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${ri}%`, backgroundColor: barColor }} />
+                  </div>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: barColor }}>{ri}/100</span>
+                </div>
+                {biometricScore.flags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {biometricScore.flags.map((f) => (
+                      <span key={f} className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style={{ backgroundColor: "#fef2f2", color: "#b91c1c" }}>
+                        ⚠ {FLAG_LABELS[f] ?? f.replace(/_/g, " ")}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ── Share link banner ── */}
           <div className="flex items-center gap-3 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3">
