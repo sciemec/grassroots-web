@@ -286,7 +286,7 @@ function buildFallback(cfg: SkillCfg, activityType: string): AiFeedback {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function CoachSkillDrillPage() {
-  const { skill } = useParams<{ skill: string }>();
+  const skill = useParams<{ skill: string }>()?.skill ?? "";
   const token    = useAuthStore((s) => s.token);
   const cfg      = skill ? SKILL_CONFIG[skill] : null;
 

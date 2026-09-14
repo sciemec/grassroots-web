@@ -8,7 +8,7 @@ export async function POST(
   const { id } = await params;
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-  revalidateTag(`player-${id}`);
+  revalidateTag(`player-${id}`, "default");
   revalidatePath(`/player/public/${id}`);
 
   return NextResponse.json({ revalidated: true });

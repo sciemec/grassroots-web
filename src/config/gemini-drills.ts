@@ -2023,7 +2023,9 @@ export function getDrillsForSport(sport: string): GeminiDrill[] {
 }
 
 export function getDrillsBySlot(sport: string, slot: ReelSlot): UniversalDrill[] {
-  return getDrillsForSport(sport).filter(d => d.reelSlot === slot);
+  return getDrillsForSport(sport).filter((d): d is UniversalDrill =>
+    "reelSlot" in d && (d as UniversalDrill).reelSlot === slot
+  );
 }
 
 // ── ALL DRILLS (legacy + scholarship) ────────────────────────────────────────

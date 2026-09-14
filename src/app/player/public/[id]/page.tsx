@@ -52,6 +52,7 @@ interface PublicProfile {
   xp_total: number;
   daily_streak: number;
   trained_minutes: number;
+  position_verified?: boolean;
 }
 
 async function getPublicProfile(id: string): Promise<PublicProfile | null> {
