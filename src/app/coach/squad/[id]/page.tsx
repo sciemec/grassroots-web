@@ -105,7 +105,7 @@ export default function CoachPlayerDetailPage() {
     setLoadingAi(true);
     setAiReport("");
     try {
-      const reply = await queryAI(`Generate a player development report for ${member.player?.name}, position: ${member.position}, status: ${member.status}. Recent sessions: ${sessions.length}. Avg score: ${stats?.avg_score ?? "N/A"}. Top skill: ${stats?.top_skill ?? "N/A"}. Area to improve: ${stats?.improvement_area ?? "N/A"}. Provide: 1) Current form assessment, 2) Recommended training focus for next 2 weeks, 3) Tactical role suitability.`, "coach");
+      const reply = await queryAI(`Generate a player development report for ${member.name}, position: ${member.position}, status: ${member.status}. Recent sessions: ${sessions.length}. Avg score: ${stats?.avg_score ?? "N/A"}. Top skill: ${stats?.top_skill ?? "N/A"}. Area to improve: ${stats?.improvement_area ?? "N/A"}. Provide: 1) Current form assessment, 2) Recommended training focus for next 2 weeks, 3) Tactical role suitability.`, "coach");
       setAiReport(reply);
     } catch { setAiReport("Unable to generate report. Please try again."); }
     finally { setLoadingAi(false); }
@@ -144,17 +144,14 @@ export default function CoachPlayerDetailPage() {
                   {member.shirt_no}
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold">{member.player?.name ?? "—"}</h2>
+                  <h2 className="text-xl font-bold">{member.name ?? "—"}</h2>
                   <p className="text-sm text-muted-foreground capitalize">{member.position}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_BADGE[member.status] ?? "bg-muted"}`}>
                       {member.status}
                     </span>
-                    {member.player?.province && (
-                      <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs">{member.player.province}</span>
-                    )}
-                    {member.player?.age_group && (
-                      <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs uppercase">{member.player.age_group}</span>
+                    {member.age_phase && (
+                      <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs uppercase">{member.age_phase}</span>
                     )}
                   </div>
                   {member.status_note && (
@@ -165,7 +162,7 @@ export default function CoachPlayerDetailPage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <Link
-                    href={`/injury-tracker?player_id=${member.player_id}&position=${member.position}`}
+                    href={`/injury-tracker?player_id=${member.player_user_id}&position=${member.position}`}
                     className="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-muted transition-colors"
                   >
                     <Activity className="h-4 w-4 text-orange-500" /> Injury Risk
@@ -442,7 +439,7 @@ export default function CoachPlayerDetailPage() {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Generate an AI-powered development report for {member.player?.name?.split(" ")[0] ?? "this player"} based on their training history and performance data.
+                  Generate an AI-powered development report for {member.name?.split(" ")[0] ?? "this player"} based on their training history and performance data.
                 </p>
               )}
             </div>
