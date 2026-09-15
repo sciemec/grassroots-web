@@ -119,12 +119,24 @@ export default function RegisterPlayerPage() {
         body.phone = normalizePhone(form.phone.trim());
       }
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 25_000);
       let res: Response;
-      res = await fetch("/api/auth/register", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(body),
-      });
+      try {
+        res = await fetch("/api/auth/register", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(body),
+          signal:  controller.signal,
+        });
+      } catch (fetchErr) {
+        if (fetchErr instanceof Error && fetchErr.name === "AbortError") {
+          throw new Error("__waking__");
+        }
+        throw fetchErr;
+      } finally {
+        clearTimeout(timeout);
+      }
 
       if (!res.ok) {
         // Cold start / server crash — show amber retry prompt, not red error
@@ -255,8 +267,9 @@ export default function RegisterPlayerPage() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => { setRetryCountdown(null); void handleSubmit(); }}
-                  className="mt-2 text-xs underline text-amber-700 hover:text-amber-900"
+                  onClick={() => { if (!isSubmitting) { setRetryCountdown(null); void handleSubmit(); } }}
+                  disabled={isSubmitting}
+                  className="mt-2 text-xs underline text-amber-700 hover:text-amber-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Retry now
                 </button>
