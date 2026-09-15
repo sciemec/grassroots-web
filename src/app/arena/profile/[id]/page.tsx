@@ -218,7 +218,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
     </div>
   );
 
-  if (notFound || !profile) return (
+  if (notFound) return (
     <div style={{ minHeight: "100vh", backgroundColor: BG }}>
       <ArenaNav userName={user?.name ?? ""} />
       <div className="text-center py-20">
@@ -227,6 +227,8 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
       </div>
     </div>
   );
+
+  if (!profile) return null;
 
   const displayName = [profile?.first_name, profile?.surname].filter(Boolean).join(" ") || profile?.name || "Unknown";
   const initials = displayName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
