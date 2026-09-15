@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Camera, Upload, X, ChevronDown, ChevronUp, FileDown } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { measureFromVideo, type VideoMeasurement, type TestType } from '@/lib/super-engine';
+import { getDrillsForFlags, type RemediationDrill, type MediaPipeFlag } from '@/lib/drill-data';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -210,6 +211,17 @@ const DRILL_TO_ATTRIBUTE: Record<string, string> = {
   dribble_sprint:  'top_end_speed',
 };
 
+// Maps the flags this page generates → MediaPipeFlag values used by drill-data
+// knee_drive_low has no remediation drills (orphaned flag) → null = skip
+const FLAG_TO_MEDIAPIPE: Record<string, MediaPipeFlag | null> = {
+  bilateral_imbalance: 'bilateral_asymmetry',
+  knee_drive_low:      null,
+  forward_lean_low:    'trunk_lean_deficit',
+  landing_imbalance:   'bilateral_asymmetry',
+  knee_flexion_low:    'landing_stiffness',
+  forward_lean_issue:  'trunk_lean_deficit',
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function scoreColor(s: number) {
@@ -297,6 +309,8 @@ export default function BiometricsPage() {
   const [passportSaved,    setPassportSaved]    = useState(false);
   const [radarSaveError,   setRadarSaveError]   = useState(false);
   const [radarSavePayload, setRadarSavePayload] = useState<{ attribute_code: string; raw_value: number; unit: string } | null>(null);
+  const [playerPosition,   setPlayerPosition]   = useState('footballer');
+  const [remDrills,        setRemDrills]        = useState<RemediationDrill[]>([]);
 
   const videoRef    = useRef<HTMLVideoElement>(null);
   const mediaRef    = useRef<MediaRecorder | null>(null);
@@ -359,6 +373,15 @@ export default function BiometricsPage() {
     return stopCamera;
   }, [useCamera, startCamera, stopCamera]);
 
+  // Fetch player's position once for personalised THUTO notes
+  useEffect(() => {
+    if (!token || token === 'dev-token') return;
+    fetch(`${API_URL}/profile`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.position_primary) setPlayerPosition(data.position_primary); })
+      .catch(() => {});
+  }, [token]);
+
   // ── In-browser analysis ───────────────────────────────────────────────────
 
   const analyseLocally = async () => {
@@ -414,19 +437,46 @@ export default function BiometricsPage() {
   const fetchThutoNote = async (players: PlayerResult[]) => {
     if (!players[0]) return;
     const p = players[0];
-    const summary = `Drill: ${drill?.name}. Performance score: ${p.performance_index}. Body Safety score: ${p.resilience_index}. Flags: ${p.flags.join(', ') || 'none'}.`;
+
+    // Map page flags → MediaPipeFlag, drop orphans (knee_drive_low has no drills)
+    const mappedFlags = p.flags
+      .map(f => FLAG_TO_MEDIAPIPE[f])
+      .filter((f): f is MediaPipeFlag => f !== null && f !== undefined);
+    const drills = getDrillsForFlags(mappedFlags, 3);
+    setRemDrills(drills);
+
+    const flagText = p.flags.length > 0
+      ? `Movement flags detected: ${p.flags.map(f => f.replace(/_/g, ' ')).join(', ')}.`
+      : 'No movement flags — movement looked clean overall.';
+
+    const drillSection = drills.length > 0
+      ? drills.map(d => `${d.name} (${d.sets_reps}, ${d.frequency})`).join('; ')
+      : 'general movement and sprint drills';
+
+    const prompt = `A ${playerPosition} just completed a ${drill?.name ?? 'movement'} scan on GrassRoots Sports.
+
+Performance score: ${p.performance_index}/100. Body Safety score: ${p.resilience_index}/100. ${flagText}
+
+Write a coaching report in second person ("you"/"your"). Under 200 words. Plain English — no medical or technical terms.
+
+Cover these four things as flowing paragraphs (no bullet points, no headings):
+1. One sentence on what went well.
+2. Your biggest weakness right now and why it matters in football — explain simply in 1–2 sentences.
+3. The 3 recommended drills to fix it: ${drillSection}. Name each one and say how often to do it per week.
+4. What they should notice after 4 weeks of doing these drills consistently. Then one short, warm encouragement to close.`;
+
     try {
-      const res = await fetch('/api/ai-coach', {
+      const res = await fetch('/api/gemini-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `A 14-year-old Zimbabwean footballer just got these movement scan results. ${summary} Write exactly 3 short sentences in very simple English. Sentence 1: tell them one thing they did well. Sentence 2: explain one thing to work on, using simple words (no jargon). Sentence 3: one easy thing they can do this week to improve.`,
-          system_prompt: 'You are THUTO, a friendly AI coach for young Zimbabwean athletes. Use simple English only. No technical terms. Keep each sentence under 20 words.',
+          message: prompt,
+          system_prompt: 'You are THUTO, a warm AI coach for young Zimbabwean athletes. Write in second person. Keep it under 200 words. Simple English only — no jargon, no medical terms.',
         }),
       });
       const data = await res.json();
-      setThutoNote(data.response ?? data.answer ?? null);
-    } catch { /* silent */ }
+      setThutoNote(data.response ?? null);
+    } catch { /* silent — THUTO note is non-blocking */ }
   };
 
   // ── Physical radar write-back ─────────────────────────────────────────────
@@ -848,6 +898,32 @@ export default function BiometricsPage() {
               </div>
             )}
 
+            {/* Drill cards */}
+            {remDrills.length > 0 && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Drills to fix this</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {remDrills.map(d => (
+                    <Link
+                      key={d.id}
+                      href="/player/drills"
+                      style={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: '0.875rem 1rem', textDecoration: 'none', display: 'block' }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 700, color: '#111827' }}>{d.name}</p>
+                          <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>{d.sets_reps} · {d.frequency}</p>
+                        </div>
+                        <span style={{ backgroundColor: '#f0fdf4', color: '#15803d', borderRadius: 8, padding: '3px 8px', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          {d.timeline_weeks}w plan
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Metric breakdown */}
             <div style={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', marginBottom: '1.25rem' }}>
               <button
@@ -880,7 +956,7 @@ export default function BiometricsPage() {
             {/* Actions */}
             <div style={{ display: 'flex', gap: 10 }}>
               <button
-                onClick={() => { setStage('select'); setDrill(null); setVideoFile(null); setResults([]); setThutoNote(null); setPassportSaved(false); setRadarSaveError(false); setRadarSavePayload(null); }}
+                onClick={() => { setStage('select'); setDrill(null); setVideoFile(null); setResults([]); setThutoNote(null); setPassportSaved(false); setRadarSaveError(false); setRadarSavePayload(null); setRemDrills([]); }}
                 style={{ flex: 1, backgroundColor: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 14, padding: '0.75rem', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
               >
                 New scan
