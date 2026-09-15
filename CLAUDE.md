@@ -2,6 +2,78 @@
 
 ---
 
+## SESSION LOG — 15 September 2026
+
+### Theme — Sponsor Engagement Analytics: EngagementLogger Wired Across 3 Controllers
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. `GenerateEngagementReport.php` — EngagementLogger Added ✅
+
+**bhora-ai commit:** `5cb39fc`
+
+**File:** `app/Console/Commands/GenerateEngagementReport.php`
+
+Added `EngagementLogger::log('report_generated', ...)` at the end of `handle()` after the snapshot is saved to `engagement_report_snapshots`. Logs summary stats as metadata: `report_date`, `active_users`, `profile_views`, `video_starts`, `video_completions`, `completion_pct`, `under_18_events`, `top_regions` (count).
+
+This means every nightly run of `php artisan engagement:report` now emits its own `report_generated` event into `engagement_events`, making report generation itself part of the engagement audit trail.
+
+---
+
+#### 2. `ArenaFeedController.php` — 5 Unwired Methods Fixed ✅
+
+**bhora-ai commit:** `0cbc402`
+
+**File:** `app/Http/Controllers/Api/ArenaFeedController.php`
+
+`EngagementLogger` was already imported and already wired into 6 methods (`forYou`, `following`, `connections`, `store`, `like`, `addComment`). Five methods were missing it:
+
+| Method | Event | Key metadata |
+|---|---|---|
+| `school()` | `feed_view` | `tab: school` |
+| `videos()` | `feed_view` | `tab: videos`, province, sport |
+| `shareVideo()` | `video_share` | post_id, video_source, visibility, sport, province |
+| `recordView()` | `video_play` | post_id, updated view_count |
+| `fromWhatsapp()` | `post_create` | post_id, `from_whatsapp: true`, province |
+
+**`fromWhatsapp()` edge case:** This route has no Sanctum auth — the user is resolved from a phone-number lookup. The log call uses `$user->id` directly and passes `null` for role.
+
+**Methods deliberately skipped** (no engagement signal warranted): `destroy()`, `update()`, `updateComment()`, `destroyComment()`, `reportComment()`, `reportPost()`, `autoVideoPost()`, `autoPost()`, `generateShareToken()`, `publicPost()`, `publicVideo()`, `show()`, `comments()`.
+
+---
+
+#### 3. `ProfileViewController.php` — Confirmed Already Wired ✅
+
+**No changes made.**
+
+`EngagementLogger` was already imported and `logView()` already fires a `profile_view` event at lines 68–71, placed inside the `!$alreadyNotified && $viewerId` guard — so it only logs on new authenticated scout views, not repeat visits within 24 hours. `getViewCount()` is a read-only count endpoint with no signal to log.
+
+---
+
+#### 4. Supporting Infrastructure (from 8 September 2026 session)
+
+| Item | Detail |
+|---|---|
+| `engagement_events` migration | Already live on Render — stores individual events (event_type, user_id, user_role, entity_type, entity_id, metadata JSONB, region) |
+| `engagement_report_snapshots` migration | `2026_09_08_000001_create_engagement_report_snapshots_table.php` — date-keyed nightly snapshot table (active_users, profile_views, video_starts/completions, pct, under_18_events, by_region JSONB, by_event_type JSONB, position_demand JSONB) |
+| `console.php` scheduler | `engagement:report` runs nightly at 03:00 Harare, `withoutOverlapping()`, `runInBackground()` |
+| `EngagementLogger` service | `app/Services/EngagementLogger.php` — static `log()` call, wraps all DB writes in `try/catch(\Throwable)`, never throws, never breaks primary action |
+
+---
+
+### WHAT STILL NEEDS DOING (15 September 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GROQ_API_KEY` on Render | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
+| `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
 ## SESSION LOG — 30 August 2026
 
 ### Theme — Coach Marketplace Backend: Tables + Controller Wiring
