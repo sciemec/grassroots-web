@@ -246,8 +246,13 @@ export default function GeminiDrillsPage() {
   const [history, setHistory]       = useState<DrillResult[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [lang, setLang]             = useState<'en' | 'en-sn' | 'en-nd'>('en');
-  const [passportSaved, setPassportSaved] = useState(false);
-  const [arenaShared,   setArenaShared]   = useState(false);
+  const [passportSaved,       setPassportSaved]       = useState(false);
+  const [passportSaveError,   setPassportSaveError]   = useState(false);
+  const [passportSavePayload, setPassportSavePayload] = useState<{
+    drill_id: string; drill_name: string; sport: string;
+    scores: Record<string, number>; feedback: string; overall_score: number;
+  } | null>(null);
+  const [arenaShared, setArenaShared] = useState(false);
   const fileInputRef    = useRef<HTMLInputElement | null>(null);
   const selectedFileRef = useRef<File | null>(null);
   const [fileSelected, setFileSelected] = useState(false);
@@ -303,23 +308,29 @@ export default function GeminiDrillsPage() {
     }));
     setHistory(prev => [result, ...prev].slice(0, 20));
 
-    // Persist to backend + Arena (fire-and-forget — never blocks the UI)
+    // Persist to backend (non-blocking — shows retry banner on failure)
     // MediaPipe results skip auto-post: the user chooses via explicit buttons
     const apiToken = useAuthStore.getState().token;
     if (apiToken && apiToken !== 'dev-token' && result.engine !== 'mediapipe') {
+      const payload = {
+        drill_id:      result.drillId,
+        drill_name:    result.drillName,
+        sport:         result.sport,
+        scores:        Object.fromEntries(
+          Object.entries(result.scores).map(([k, v]) => [k, Math.round(v.score * 10)])
+        ),
+        feedback:      [result.top_strength, result.key_improvement, result.coach_note].filter(Boolean).join('. '),
+        overall_score: result.overall_score,
+      };
+      setPassportSavePayload(payload);
+      setPassportSaveError(false);
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/drills/${result.drillId}/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiToken}` },
-        body: JSON.stringify({
-          drill_name:    result.drillName,
-          sport:         result.sport,
-          scores:        Object.fromEntries(
-            Object.entries(result.scores).map(([k, v]) => [k, Math.round(v.score * 10)])
-          ),
-          feedback:      [result.top_strength, result.key_improvement, result.coach_note].filter(Boolean).join('. '),
-          overall_score: result.overall_score,
-        }),
-      }).catch(() => {});
+        body: JSON.stringify(payload),
+      })
+        .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); setPassportSaved(true); })
+        .catch(() => setPassportSaveError(true));
 
       postToArena(
         `Scored ${result.overall_score}/10 on "${result.drillName}" drill`,
@@ -337,6 +348,33 @@ export default function GeminiDrillsPage() {
       );
     }
   }, [user]);
+
+  const retryPassportSave = useCallback(async () => {
+    if (!passportSavePayload) return;
+    const apiToken = useAuthStore.getState().token;
+    if (!apiToken || apiToken === 'dev-token') return;
+    setPassportSaveError(false);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/drills/${passportSavePayload.drill_id}/analyze`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiToken}` },
+          body: JSON.stringify({
+            drill_name:    passportSavePayload.drill_name,
+            sport:         passportSavePayload.sport,
+            scores:        passportSavePayload.scores,
+            feedback:      passportSavePayload.feedback,
+            overall_score: passportSavePayload.overall_score,
+          }),
+        }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setPassportSaved(true);
+    } catch {
+      setPassportSaveError(true);
+    }
+  }, [passportSavePayload]);
 
   const handleFileSelect = useCallback((file: File) => {
     if (!file) return;
@@ -494,6 +532,8 @@ export default function GeminiDrillsPage() {
     setGateStrategy(null);
     setGatePending(false);
     setPassportSaved(false);
+    setPassportSaveError(false);
+    setPassportSavePayload(null);
     setArenaShared(false);
     setUpload({ phase: 'idle', progress: 0, result: null, error: null });
   };
@@ -851,14 +891,35 @@ export default function GeminiDrillsPage() {
 
             {upload.phase === 'done' && upload.result && (
               <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#16a34a' }}>
-                  <CheckCircle2 size={16} />
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>
-                    {upload.result.engine === 'combined'
-                      ? 'Combined pose + Gemini analysis complete — saved to your profile'
-                      : 'Analysis complete — results saved to your profile'}
-                  </span>
-                </div>
+                {passportSaved ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#16a34a' }}>
+                    <CheckCircle2 size={16} />
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>
+                      {upload.result.engine === 'combined'
+                        ? 'Combined pose + Gemini analysis complete — saved to your Talent Passport'
+                        : 'Analysis complete — saved to your Talent Passport'}
+                    </span>
+                  </div>
+                ) : passportSaveError ? (
+                  <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '0.5rem 0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <span style={{ fontSize: 13, color: '#dc2626' }}>Your result didn&apos;t save to your profile — tap to retry</span>
+                    <button
+                      onClick={retryPassportSave}
+                      style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, padding: '0.375rem 0.75rem', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#16a34a' }}>
+                    <CheckCircle2 size={16} />
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>
+                      {upload.result.engine === 'combined'
+                        ? 'Combined pose + Gemini analysis complete'
+                        : 'Analysis complete'}
+                    </span>
+                  </div>
+                )}
 
                 <ResultDisplay result={upload.result} drill={selected} />
 
