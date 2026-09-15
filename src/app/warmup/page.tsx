@@ -32,7 +32,7 @@ export default function WarmupListPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) { setLoading(false); return; }
     fetch(`${API}/warmup-programs`, {
       headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })

@@ -73,7 +73,7 @@ export default function WarmupPlayerPage() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (!token || !id) return;
+    if (!token || !id) { setLoading(false); return; }
     fetch(`${API}/warmup-programs/${id}`, {
       headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
