@@ -89,7 +89,7 @@ export default function CoachYoyoTestPage() {
   // Load squad from backend
   useEffect(() => {
     const freshToken = useAuthStore.getState().token;
-    if (!freshToken) return;
+    if (!freshToken) { setLoadingSquad(false); return; }
     fetch(`${API}/coach/squad`, {
       headers: { Authorization: `Bearer ${freshToken}` },
     })

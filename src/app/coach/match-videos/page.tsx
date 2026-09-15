@@ -665,7 +665,7 @@ export default function CoachMatchVideosPage() {
 
   useEffect(() => {
     const freshToken = useAuthStore.getState().token;
-    if (!freshToken) return;
+    if (!freshToken) { setLoading(false); return; }
     fetch(`${API}/coach/match-videos`, {
       headers: { Authorization: `Bearer ${freshToken}`, Accept: "application/json" },
     })

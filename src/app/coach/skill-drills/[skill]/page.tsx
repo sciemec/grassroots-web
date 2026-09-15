@@ -314,7 +314,7 @@ export default function CoachSkillDrillPage() {
 
   // Load squad
   useEffect(() => {
-    if (!token) return;
+    if (!token) { setSquadLoading(false); return; }
     setSquadLoading(true);
     fetch(`${API_URL}/coach/squad`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
