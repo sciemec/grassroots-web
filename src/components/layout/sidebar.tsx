@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useStreakStore } from "@/lib/streak-store";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 // ── Feature flags — set false to hide features without deleting code ────────
 const FEATURES = {
@@ -274,6 +275,7 @@ export function Sidebar() {
                   <p className="text-sm font-bold truncate">{user.name}</p>
                   <p className="text-[10px] text-white/50 capitalize">{user.role}</p>
                 </div>
+                <NotificationBell />
                 <button
                   onClick={handleLogout}
                   title="Sign out"

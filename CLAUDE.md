@@ -2,6 +2,42 @@
 
 ---
 
+## 🚫 NO SILENT REMOVAL OF WORKING FEATURES — MANDATORY (PERMANENT)
+
+This rule exists because the `NotificationBell` component (browser popup notifications) was
+silently removed during the September 2026 sidebar consolidation. It took a full debug session
+to find out the component simply wasn't being mounted anywhere.
+
+### THE RULE: Confirmed-working features must NEVER be silently removed from the app.
+
+**Claude MUST:**
+1. Before refactoring any layout, sidebar, or hub page — list every confirmed-working feature
+   currently rendered on that page (components, hooks, polling intervals, event listeners).
+2. Explicitly state: "I am keeping the following existing features: [list]"
+3. After refactoring — verify that every feature from that list is still mounted and functional.
+4. If a feature must be temporarily removed for a good reason — TELL Nigel explicitly and
+   get approval before removing it.
+
+**Claude MUST NEVER:**
+- Remove a component from a layout "to simplify" without Nigel's explicit approval
+- Assume a component is unused because it is not immediately visible in the output
+- Rebuild a layout file without first checking what the existing file renders
+- Leave polling intervals, hooks, or event listeners orphaned by removing their host component
+
+**Examples of features that must NEVER be silently removed:**
+- `NotificationBell` — browser popup notifications + bell icon with unread count
+- `ThutoChat` — THUTO AI chat circle (bottom-right)
+- `LogProfileView` — profile view tracking on public profile pages
+- `AdBanner` — ad slot banners
+- Any `useEffect` polling interval in a layout or hub component
+
+**Why this rule exists:**
+A working notification system that users rely on was silently broken by a refactor.
+The user had to manually notice and report the missing feature. This rule ensures
+Claude accounts for ALL existing functionality before touching any layout file.
+
+---
+
 ## SESSION LOG — 15 September 2026
 
 ### Theme — Sponsor Engagement Analytics: EngagementLogger Wired Across 3 Controllers
