@@ -136,18 +136,6 @@ function SubscriptionContent() {
     setPollStatus(null);
     let isPolling = false;
     try {
-      if (payMethod === "stripe") {
-        const res = await fetch("/api/payments/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: selected, user_id: user?.id, email: user?.email }),
-        });
-        const data = await res.json() as { url?: string; error?: string };
-        if (!res.ok || !data.url) throw new Error(data.error ?? "Checkout failed");
-        window.location.href = data.url;
-        return;
-      }
-
       // Mobile payments — call Laravel which uses the Paynow PHP SDK
       if (["ecocash", "innbucks", "onemoney"].includes(payMethod)) {
         const digits = phone.replace(/\D/g, "");
@@ -283,12 +271,11 @@ function SubscriptionContent() {
         {/* Payment method */}
         <div className="mb-6 rounded-xl border bg-card p-5">
           <h3 className="mb-3 font-semibold">Payment Method</h3>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-3 gap-3">
             {[
-              { id: "ecocash",  label: "EcoCash",     emoji: "📱" },
-              { id: "innbucks", label: "InnBucks",     emoji: "💛" },
-              { id: "onemoney", label: "OneMoney",     emoji: "💚" },
-              { id: "stripe",   label: "Card (Int'l)", emoji: "🌍" },
+              { id: "ecocash",  label: "EcoCash",  emoji: "📱" },
+              { id: "innbucks", label: "InnBucks",  emoji: "💛" },
+              { id: "onemoney", label: "OneMoney",  emoji: "💚" },
             ].map(({ id, label, emoji }) => (
               <button key={id} onClick={() => { setPayMethod(id); setPayError(""); }}
                 className={`rounded-xl border p-3 text-sm font-medium transition-all ${
@@ -320,11 +307,6 @@ function SubscriptionContent() {
             </div>
           )}
 
-          {payMethod === "stripe" && (
-            <p className="mt-3 text-xs text-muted-foreground">
-              Secure card payment via Stripe. You will be redirected to complete payment.
-            </p>
-          )}
         </div>
 
         {/* Paynow waiting state */}
