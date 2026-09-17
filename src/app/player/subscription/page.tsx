@@ -46,7 +46,7 @@ const PLANS = [
     popular: true,
   },
   {
-    id: "3-month",
+    id: "three_month",
     label: "3 Months",
     price: "USD $12",
     dailyRate: "13¢ / day",
