@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, useRef, use, Suspense } from "react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { UserPlus, UserCheck, MessageCircle, Eye, Heart, MessageSquare, Star, Flag, Play, ExternalLink, Zap, CheckCircle } from "lucide-react";
@@ -124,7 +124,7 @@ function ScoreBar({ value }: { value: number }) {
   );
 }
 
-export default function ArenaProfilePage({ params }: { params: Promise<{ id: string }> }) {
+function ArenaProfilePageInner({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router      = useRouter();
   const user        = useAuthStore((s) => s.user);
@@ -562,5 +562,13 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
         )}
       </div>
     </div>
+  );
+}
+
+export default function ArenaProfilePage(props: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={null}>
+      <ArenaProfilePageInner {...props} />
+    </Suspense>
   );
 }
