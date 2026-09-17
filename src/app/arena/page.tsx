@@ -1014,17 +1014,19 @@ export default function ArenaPage() {
                         {following.has(video.user_id) ? "Following" : "Follow"}
                       </button>
                       {/* Pipeline — scouts only */}
-                      <button onClick={() => handlePipeline(video.user_id, playerName)}
-                        disabled={pipedPlayers.has(video.user_id)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition"
-                        style={{
-                          borderColor: GRS_GOLD,
-                          color: pipedPlayers.has(video.user_id) ? "#aaa" : GRS_GOLD,
-                          background: pipedPlayers.has(video.user_id) ? "#faeeda" : "transparent",
-                        }}>
-                        <Users size={12} />
-                        {pipedPlayers.has(video.user_id) ? "In pipeline" : "+ Pipeline"}
-                      </button>
+                      {user?.role === "scout" && (
+                        <button onClick={() => handlePipeline(video.user_id, playerName)}
+                          disabled={pipedPlayers.has(video.user_id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition"
+                          style={{
+                            borderColor: GRS_GOLD,
+                            color: pipedPlayers.has(video.user_id) ? "#aaa" : GRS_GOLD,
+                            background: pipedPlayers.has(video.user_id) ? "#faeeda" : "transparent",
+                          }}>
+                          <Users size={12} />
+                          {pipedPlayers.has(video.user_id) ? "In pipeline" : "+ Pipeline"}
+                        </button>
+                      )}
                     </div>
                   </div>
                   );
