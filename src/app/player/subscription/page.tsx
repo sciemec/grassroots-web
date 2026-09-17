@@ -16,7 +16,6 @@ interface SubStatus {
     plan_type: string | null;
     status: string;
     starts_at: string | null;
-    ends_at: string | null;
     current_period_end: string | null;
     cancelled_at: string | null;
   } | null;
@@ -219,7 +218,7 @@ function SubscriptionContent() {
                 <div>
                   <p className="font-semibold text-green-700">Active — {sub.subscription?.plan_type?.replace("-", " ")} plan</p>
                   <p className="text-xs text-green-600">
-                    Renews: {sub.subscription?.ends_at ? new Date(sub.subscription.ends_at).toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" }) : "—"}
+                    Renews: {sub.subscription?.current_period_end ? new Date(sub.subscription.current_period_end).toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" }) : "—"}
                   </p>
                 </div>
               </div>
