@@ -127,6 +127,7 @@ function SubscriptionContent() {
     setPaying(true);
     setPayError("");
     setPollStatus(null);
+    let isPolling = false;
     try {
       if (payMethod === "stripe") {
         const res = await fetch("/api/payments/checkout", {
@@ -155,26 +156,19 @@ function SubscriptionContent() {
         });
         const pUrl = res.data.poll_url;
         if (!pUrl) throw new Error(res.data.message ?? "Could not initiate payment. Check your phone number.");
+        isPolling = true;
         setPollUrl(pUrl);
         setPollStatus("waiting");
         return; // keep paying=true while polling
       }
 
-      // Card — fallback to Laravel
-      await api.post("/subscription/subscribe", {
-        plan_type: selected,
-        payment_method: payMethod,
-        reference_number: `WEB-${Date.now()}`,
-      });
-      const res = await api.get("/subscription/status");
-      setSub(res.data);
     } catch (e: unknown) {
       const msg = e instanceof Error
         ? e.message
         : (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setPayError(msg ?? "Payment failed. Please try again.");
     } finally {
-      if (!pollUrl) setPaying(false);
+      if (!isPolling) setPaying(false);
     }
   };
 
@@ -267,12 +261,11 @@ function SubscriptionContent() {
         {/* Payment method */}
         <div className="mb-6 rounded-xl border bg-card p-5">
           <h3 className="mb-3 font-semibold">Payment Method</h3>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
               { id: "ecocash",  label: "EcoCash",     emoji: "📱" },
               { id: "innbucks", label: "InnBucks",     emoji: "💛" },
               { id: "onemoney", label: "OneMoney",     emoji: "💚" },
-              { id: "card",     label: "Visa / MC",    emoji: "💳" },
               { id: "stripe",   label: "Card (Int'l)", emoji: "🌍" },
             ].map(({ id, label, emoji }) => (
               <button key={id} onClick={() => { setPayMethod(id); setPayError(""); }}
