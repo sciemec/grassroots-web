@@ -215,9 +215,10 @@ export default function PlayerVerificationPage() {
     formData.append("document", file);          // backend expects "document"
     formData.append("selfie_image", selfieBlob, "selfie.jpg");
     try {
-      await api.post("/verification/submit", formData);
+      const res = await api.post("/verification/submit", formData);
+      const returnedStatus = (res.data.status as VerifStatus) ?? "pending";
       setSubmitted(true);
-      setVerif((v) => v ? { ...v, status: "pending", document_type: docType, created_at: new Date().toISOString() } : v);
+      setVerif((v) => v ? { ...v, status: returnedStatus, document_type: docType, created_at: new Date().toISOString() } : v);
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setSubmitError(msg ?? "Failed to submit. Please try again.");
@@ -511,9 +512,13 @@ export default function PlayerVerificationPage() {
           {submitted && (
             <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-5 text-center">
               <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-green-500" />
-              <p className="font-semibold text-green-700">Document submitted!</p>
+              <p className="font-semibold text-green-700">
+                {verif?.status === "approved" ? "Identity verified!" : "Document submitted!"}
+              </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Our team will review it within 1–2 business days. You&apos;ll receive a notification once it&apos;s processed.
+                {verif?.status === "approved"
+                  ? "Your identity has been verified. Your verified badge is now active on your profile."
+                  : "Our team will review it within 1–2 business days. You\u2019ll receive a notification once it\u2019s processed."}
               </p>
               <Link
                 href="/player/profile"
