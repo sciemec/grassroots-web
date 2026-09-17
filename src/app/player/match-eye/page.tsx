@@ -636,7 +636,7 @@ export default function PlayerMatchEyePage() {
         body: JSON.stringify({
           sport,
           analysis_type: "match_eye",
-          ai_feedback: analysis,
+          ai_feedback: JSON.stringify(analysis),
           user_question: focusQuestion || null,
         }),
       });
