@@ -440,7 +440,7 @@ export default function PlayerVerificationPage() {
                   <label className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 transition-colors hover:bg-muted/40 ${preview ? "border-primary/40" : "border-muted"}`}>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.pdf"
                       onChange={handleFile}
                       className="sr-only"
                     />
@@ -455,7 +455,7 @@ export default function PlayerVerificationPage() {
                         <Upload className="h-8 w-8 text-muted-foreground" />
                         <div className="text-center">
                           <p className="text-sm font-medium">Tap to upload a photo</p>
-                          <p className="text-xs text-muted-foreground">JPG, PNG · Max 10MB · Must be clearly readable</p>
+                          <p className="text-xs text-muted-foreground">JPG, PNG, PDF · Max 10MB · Must be clearly readable</p>
                         </div>
                       </>
                     )}
