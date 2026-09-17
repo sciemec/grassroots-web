@@ -295,6 +295,17 @@ const DRILL_TO_ATTRIBUTE: Record<string, string> = {
   shuttle_run:     'aerobic_endurance',
 };
 
+// Human-readable radar axis label for each attribute code
+const RADAR_LABEL: Record<string, string> = {
+  explosiveness_0_10m: 'Explosiveness',
+  top_end_speed:       'Top speed',
+  change_of_direction: 'Change of direction',
+  vertical_leap:       'Vertical leap',
+  functional_strength: 'Strength',
+  core_stability:      'Core stability',
+  aerobic_endurance:   'Stamina',
+};
+
 // Maps the flags this page generates → MediaPipeFlag values used by drill-data
 // knee_drive_low has no remediation drills (orphaned flag) → null = skip
 const FLAG_TO_MEDIAPIPE: Record<string, MediaPipeFlag | null> = {
@@ -713,9 +724,14 @@ Cover these four things as flowing paragraphs (no bullet points, no headings):
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <span style={{ fontSize: 26 }}>{d.emoji}</span>
-                    <div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111827' }}>{d.name}</p>
                       <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>{d.tagline}</p>
+                      {DRILL_TO_ATTRIBUTE[d.id] && (
+                        <p style={{ margin: '4px 0 0', fontSize: 11, fontWeight: 600, color: '#1a5c2a' }}>
+                          Radar: {RADAR_LABEL[DRILL_TO_ATTRIBUTE[d.id]]}
+                        </p>
+                      )}
                     </div>
                     <span style={{ marginLeft: 'auto', color: '#9ca3af', fontSize: 18 }}>›</span>
                   </div>
