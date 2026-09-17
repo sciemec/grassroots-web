@@ -1,7 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, CreditCard, Loader2, ChevronRight, Smartphone } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
@@ -15,7 +14,7 @@ interface SubStatus {
   subscription: {
     plan_type: string | null;
     status: string;
-    starts_at: string | null;
+    started_at: string | null;
     current_period_end: string | null;
     cancelled_at: string | null;
   } | null;
@@ -59,7 +58,6 @@ const PLANS = [
 ];
 
 function SubscriptionContent() {
-  const searchParams = useSearchParams();
   const user = useAuthStore((s) => s.user);
   const { requireAuth } = useGuestGate();
   const [sub, setSub] = useState<SubStatus | null>(null);
@@ -70,10 +68,8 @@ function SubscriptionContent() {
   const [paying, setPaying] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [payError, setPayError] = useState("");
-  const [stripeSuccess, setStripeSuccess] = useState(false);
   const [pollUrl, setPollUrl] = useState<string | null>(null);
   const [pollStatus, setPollStatus] = useState<"waiting" | "paid" | "failed" | null>(null);
-  const emailSentRef = useRef(false);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; } // guests see pricing without sub status
@@ -82,28 +78,11 @@ function SubscriptionContent() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  // Stripe redirect back — send confirmation email once
-  useEffect(() => {
-    if (searchParams?.get("success") === "1" && user?.email && !emailSentRef.current) {
-      emailSentRef.current = true;
-      setStripeSuccess(true);
-      const plan = searchParams?.get("plan") ?? "monthly";
-      fetch("/api/email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: user.email,
-          template: "subscription_confirmed",
-          name: user.name ?? user.email,
-          plan,
-        }),
-      }).catch(() => null); // fire-and-forget — don't block UI on email failure
-    }
-  }, [searchParams, user]);
-
-  // Poll Paynow every 3 seconds after initiating a mobile payment
+  // Poll Paynow every 3 seconds after initiating a mobile payment.
+  // Auto-cancel after 2 minutes — Paynow USSD prompts expire around 90 seconds.
   useEffect(() => {
     if (!pollUrl) return;
+
     const interval = setInterval(async () => {
       try {
         const res  = await api.post<{ paid: boolean; status: string }>("/subscription/poll-status", { poll_url: pollUrl });
@@ -125,8 +104,21 @@ function SubscriptionContent() {
         }
       } catch { /* keep polling */ }
     }, 3000);
-    return () => clearInterval(interval);
-  }, [pollUrl, selected, payMethod]);
+
+    // Stop polling after 2 minutes — USSD prompt has expired by then
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      setPollUrl(null);
+      setPollStatus("failed");
+      setPayError("Payment timed out — the USSD prompt expired. Please try again.");
+      setPaying(false);
+    }, 120_000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [pollUrl]);
 
   const subscribe = async () => {
     if (!user) { requireAuth("subscribe to a plan"); return; }
@@ -197,17 +189,6 @@ function SubscriptionContent() {
             <p className="text-sm text-muted-foreground">Unlock premium features</p>
           </div>
         </div>
-
-        {/* Stripe payment success banner */}
-        {stripeSuccess && (
-          <div className="mb-6 rounded-xl border border-green-500/40 bg-green-500/10 px-5 py-4 flex items-center gap-3">
-            <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-            <div>
-              <p className="font-semibold text-green-700">Payment successful!</p>
-              <p className="text-xs text-green-600">Your subscription is now active. A confirmation has been sent to {user?.email}.</p>
-            </div>
-          </div>
-        )}
 
         {/* Current status */}
         {!loading && sub?.is_premium && (
