@@ -80,7 +80,7 @@ const PROVINCES = [
   "Matabeleland North", "Matabeleland South", "Midlands",
 ];
 
-const AGE_GROUPS = ["u13", "u17", "u20", "senior"];
+const AGE_GROUPS = ["under_13", "13_17", "18_25", "26_plus"];
 const PREFERRED_FEET = ["right", "left", "both"];
 
 const schema = z.object({
@@ -969,7 +969,11 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                       <select {...register("age_group")}
                         className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring uppercase">
                         <option value="">Select…</option>
-                        {AGE_GROUPS.map((ag) => <option key={ag} value={ag}>{ag.toUpperCase()}</option>)}
+                        {AGE_GROUPS.map((ag) => (
+                          <option key={ag} value={ag}>
+                            {ag === "under_13" ? "Under 13" : ag === "13_17" ? "13–17" : ag === "18_25" ? "18–25" : "26+"}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div>
@@ -1145,7 +1149,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
 
           {/* ── PLAYS LIKE ────────────────────────────────────────────────── */}
           {(() => {
-            const comparisons = getComparisons(profile?.position ?? "", profile?.sport ?? "football");
+            const comparisons = getComparisons(watchedValues.position ?? "", profile?.sport ?? "football");
             if (!comparisons.length) return null;
             return (
               <div className="rounded-2xl border border-white/10 bg-card overflow-hidden">
