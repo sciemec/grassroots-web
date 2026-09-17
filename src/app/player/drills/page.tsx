@@ -483,7 +483,6 @@ export default function FootballDrillsLabPage() {
   const tierCfg        = TIER_CONFIG[tierProgress?.currentTier ?? 1];
   const gender         = typeof window !== "undefined" ? localStorage.getItem("player_gender") ?? "male" : "male";
   const coachName      = gender === "female" ? "Amara" : "THUTO";
-  const isPremiumUser  = user?.role === "admin" || (user as { subscription_tier?: string } | null)?.subscription_tier === "pro";
   const activeFilterCount = (filterCategory !== "all" ? 1 : 0) + (filterEquipment !== "all" ? 1 : 0) + (filterDifficulty !== "all" ? 1 : 0);
 
   // useMemo MUST be before any early return (Rules of Hooks)
@@ -521,7 +520,6 @@ export default function FootballDrillsLabPage() {
         index={i}
         isDone={completedDrills.includes(drill.id)}
         isExpanded={expandedDrill === drill.id}
-        isPremiumUser={isPremiumUser}
         onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
         onMarkDone={toggleDrillCompletion}
         ageGroup={ageGroup}
@@ -923,17 +921,6 @@ export default function FootballDrillsLabPage() {
                               <div className="flex-1 h-px" style={{ background: "#ede9fe" }} />
                               <span className="text-[9px]" style={{ color: "#7c3aed" }}>{proDrills.length} drills</span>
                             </div>
-                            {!isPremiumUser && (
-                              <div className="flex items-center justify-between px-4 py-3 rounded-xl border"
-                                style={{ background: "#faf7ff", borderColor: "#e9d5ff" }}>
-                                <p className="text-xs text-gray-600">Unlock all Advanced drills + Gemini AI feedback</p>
-                                <Link href="/player/subscription"
-                                  className="text-[10px] font-black px-3 py-1.5 rounded-lg text-white flex-shrink-0 ml-3"
-                                  style={{ background: "#7c3aed" }}>
-                                  Upgrade →
-                                </Link>
-                              </div>
-                            )}
                             {proDrills.map((drill) =>
                               drillCard(drill, filteredDrills.indexOf(drill))
                             )}

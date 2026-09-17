@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Play, Video, Lock, ChevronDown, ChevronUp, Clock, MapPin } from "lucide-react";
+import { CheckCircle2, Play, Video, ChevronDown, ChevronUp, Clock, MapPin } from "lucide-react";
 import type { DrillData, AgeGroup } from "@/lib/drill-data";
 
 const DIFFICULTY_CONFIG = {
@@ -27,7 +27,6 @@ interface DrillCardProps {
   index:          number;
   isDone:         boolean;
   isExpanded:     boolean;
-  isPremiumUser:  boolean;
   onToggleExpand: (id: string) => void;
   onMarkDone:     (id: string) => void;
   ageGroup?:      AgeGroup;
@@ -40,7 +39,6 @@ export default function DrillCard({
   index,
   isDone,
   isExpanded,
-  isPremiumUser,
   onToggleExpand,
   onMarkDone,
   ageGroup,
@@ -65,16 +63,12 @@ export default function DrillCard({
     masteryCount >= 1 ? "#fef3c7" :
     "#f3f4f6";
 
-  const isLocked = drill.is_premium && !isPremiumUser;
-
   return (
     <div
       className="border rounded-2xl overflow-hidden transition-all shadow-sm"
       style={
         isHighlighted
           ? { background: "#f0fdf4", borderColor: "#15803d", borderWidth: 2 }
-          : isLocked
-          ? { background: "#faf7ff", borderColor: "#e9d5ff" }
           : isDone
           ? { background: "rgba(240,253,244,0.5)", borderColor: "#bbf7d0" }
           : { background: "#fff", borderColor: "#e5e7eb" }
@@ -98,14 +92,12 @@ export default function DrillCard({
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black"
           style={
-            isLocked
-              ? { background: "#ede9fe", color: "#7c3aed" }
-              : isDone
+            isDone
               ? { background: "#059669", color: "#fff" }
               : { background: "#f3f4f6", color: "#374151" }
           }
         >
-          {isDone ? <CheckCircle2 size={14} /> : isLocked ? <Lock size={13} /> : index + 1}
+          {isDone ? <CheckCircle2 size={14} /> : index + 1}
         </div>
 
         <div className="flex-1 min-w-0 space-y-1">
@@ -114,14 +106,7 @@ export default function DrillCard({
             <span className="bg-gray-100 text-gray-700 font-mono font-bold text-[9px] px-1.5 py-0.5 rounded">
               {drill.duration}
             </span>
-            {/* PRO badge — visible on collapsed header for locked drills */}
-            {isLocked && (
-              <span className="flex items-center gap-0.5 text-[9px] font-black px-2 py-0.5 rounded"
-                style={{ background: "#7c3aed", color: "#fff" }}>
-                <Lock size={8} /> PRO
-              </span>
-            )}
-            {masteryCount > 0 && !isLocked && (
+            {masteryCount > 0 && (
               <span
                 className="text-[9px] font-black px-2 py-0.5 rounded"
                 style={{ color: masteryColor, background: masteryBg }}
@@ -152,8 +137,7 @@ export default function DrillCard({
           <h3
             className="text-sm font-black uppercase tracking-wide"
             style={
-              isLocked ? { color: "#6b7280" } :
-              isDone   ? { color: "#059669", textDecoration: "line-through", opacity: 0.7 } :
+              isDone ? { color: "#059669", textDecoration: "line-through", opacity: 0.7 } :
               { color: "#111827" }
             }
           >
@@ -161,7 +145,7 @@ export default function DrillCard({
           </h3>
         </div>
 
-        <span className="flex-shrink-0" style={{ color: isLocked ? "#c4b5fd" : "#d1d5db" }}>
+        <span className="flex-shrink-0" style={{ color: "#d1d5db" }}>
           {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </span>
       </button>
@@ -170,26 +154,6 @@ export default function DrillCard({
       {isExpanded && (
         <div className="border-t border-gray-100 px-5 py-5 space-y-5">
 
-          {/* PAYWALL — Advanced drills locked for free users */}
-          {drill.is_premium && !isPremiumUser ? (
-            <div className="text-center space-y-3 py-4">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-                <Lock size={22} className="text-gray-400" />
-              </div>
-              <p className="text-sm font-black text-gray-800">Pro Drill</p>
-              <p className="text-xs text-gray-500 leading-relaxed max-w-xs mx-auto">
-                This Advanced drill is unlocked with a Pro subscription — along with Gemini AI video feedback.
-              </p>
-              <Link
-                href="/player/subscription"
-                className="inline-block text-xs font-black px-5 py-2.5 rounded-xl text-white"
-                style={{ background: "#1a5c2a" }}
-              >
-                Upgrade to Pro →
-              </Link>
-              <p className="text-[10px] text-gray-400">From $10/month · Cancel anytime</p>
-            </div>
-          ) : (
           <>
 
           {/* ① WHY THIS DRILL */}
@@ -271,40 +235,24 @@ export default function DrillCard({
           {/* ⑥ GEMINI WILL SCORE */}
           <div
             className="border rounded-xl p-4"
-            style={{ background: isPremiumUser ? "#faf5ff" : "#f3f4f6", borderColor: isPremiumUser ? "#d8b4fe" : "#e5e7eb" }}
+            style={{ background: "#faf5ff", borderColor: "#d8b4fe" }}
           >
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-[10px] font-black uppercase tracking-widest" style={{ color: isPremiumUser ? "#7e22ce" : "#6b7280" }}>
+              <h4 className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#7e22ce" }}>
                 Gemini will score
               </h4>
-              {!isPremiumUser && (
-                <span className="flex items-center gap-1 bg-gray-200 text-gray-500 text-[9px] font-black px-2 py-0.5 rounded-full">
-                  <Lock size={9} /> Pro only
-                </span>
-              )}
             </div>
             <div className="flex flex-wrap gap-2">
               {drill.gemini_scores.map((attr, i) => (
                 <span
                   key={i}
                   className="text-[10px] font-bold px-2.5 py-1 rounded-full"
-                  style={{
-                    background: isPremiumUser ? "#ede9fe" : "#f3f4f6",
-                    color:      isPremiumUser ? "#5b21b6" : "#9ca3af",
-                  }}
+                  style={{ background: "#ede9fe", color: "#5b21b6" }}
                 >
-                  {isPremiumUser ? "✓" : <Lock size={9} className="inline mr-0.5" />} {attr}
+                  ✓ {attr}
                 </span>
               ))}
             </div>
-            {!isPremiumUser && (
-              <p className="text-[10px] text-gray-400 mt-2">
-                Upload your drill video and Gemini AI will score these specific attributes.{" "}
-                <Link href="/player/subscription" className="text-purple-600 underline font-bold">
-                  Upgrade to Pro →
-                </Link>
-              </p>
-            )}
           </div>
 
           {/* ⑦ META GRID */}
@@ -324,25 +272,14 @@ export default function DrillCard({
 
           {/* ⑧ ACTION BUTTONS */}
           <div className="flex flex-wrap gap-2 pt-1">
-            {isPremiumUser ? (
-              <Link
-                href={`/player/drill-analyse?drill_type=${drill.mediapipe_drill_type ?? "ball_mastery"}&name=${encodeURIComponent(drill.name)}`}
-                className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all"
-                style={{ background: "#7e22ce", color: "#fff", border: "1px solid #7e22ce" }}
-              >
-                <Video size={13} />
-                Record &amp; Get AI Feedback
-              </Link>
-            ) : (
-              <Link
-                href="/player/subscription"
-                className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all"
-                style={{ background: "#f3f4f6", color: "#9ca3af", border: "1px solid #e5e7eb" }}
-              >
-                <Lock size={13} />
-                Record &amp; Get AI Feedback
-              </Link>
-            )}
+            <Link
+              href={`/player/drill-analyse?drill_type=${drill.mediapipe_drill_type ?? "ball_mastery"}&name=${encodeURIComponent(drill.name)}`}
+              className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all"
+              style={{ background: "#7e22ce", color: "#fff", border: "1px solid #7e22ce" }}
+            >
+              <Video size={13} />
+              Record &amp; Get AI Feedback
+            </Link>
 
             <button
               onClick={() => onMarkDone(drill.id)}
