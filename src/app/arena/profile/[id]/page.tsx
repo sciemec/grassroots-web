@@ -151,11 +151,13 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
     fetch(`${API}/arena/profile/${id}`, {
       headers: token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {},
     })
-      .then((r) => { if (r.status === 404) { setNotFound(true); return null; } return r.json(); })
+      .then((r) => { if (r.status === 404) { setNotFound(true); setLoading(false); return null; } return r.json(); })
       .then((json) => {
         if (!json) return;
         const userData = json.user ?? json.data ?? json;
-        // Players have a dedicated Talent Passport — send scouts/visitors there directly
+        // Players have a dedicated Talent Passport — send scouts/visitors there directly.
+        // Return WITHOUT calling setLoading(false) so the skeleton stays visible during
+        // the redirect — prevents a flash of "Profile not found" before navigation lands.
         if (userData.role === "player") {
           router.replace(`/player/public/${id}`);
           return;
@@ -166,9 +168,9 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
         setScoutViews(json.scout_views ?? 0);
         setIsFollowing(userData.is_following ?? false);
         setConnStatus(userData.connection_status ?? "none");
+        setLoading(false);
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => setLoading(false));
   }, [id, hasHydrated, token]);
 
   // Auto-scroll to the ?play= video once data has loaded
