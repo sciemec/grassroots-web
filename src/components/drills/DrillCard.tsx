@@ -154,8 +154,6 @@ export default function DrillCard({
       {isExpanded && (
         <div className="border-t border-gray-100 px-5 py-5 space-y-5">
 
-          <>
-
           {/* ① WHY THIS DRILL */}
           <div>
             <h4 className="text-[10px] font-black uppercase tracking-widest text-[#1a5c2a] mb-1.5">
@@ -298,8 +296,6 @@ export default function DrillCard({
             Gemini cannot measure match intelligence, composure, or decision-making under pressure —
             those require a real coach watching you play. AI feedback scores technique only.
           </p>
-          </>
-          )}
         </div>
       )}
     </div>
