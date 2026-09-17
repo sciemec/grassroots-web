@@ -198,6 +198,87 @@ const DRILLS: Drill[] = [
       { label: 'Side difference', simple: 'Is your running action balanced on both sides?' },
     ],
   },
+  {
+    id: 'squat_jump',
+    name: 'Squat Jump',
+    emoji: '💪',
+    tagline: 'Squat down and jump as high as you can',
+    cameraAngle: 'Front view — phone at hip height, 3–4 metres directly in front of you. Your full body from feet to head must be visible in frame.',
+    howToDo: [
+      'Stand with your feet shoulder-width apart, toes pointing slightly outward.',
+      'Place your phone 3–4 metres away facing you directly at hip height. Check your whole body is in frame.',
+      'Bend your knees and hips together until your thighs are roughly parallel to the ground — hold for 1 second.',
+      'Drive hard through your feet, swing your arms upward, and jump as high as you can.',
+      'Land with bent knees on both feet at the same time — do not land on one leg.',
+      'Reset and repeat 3 times in the same continuous clip.',
+    ],
+    commonMistakes: [
+      'Barely bending the knees — go all the way down until your thighs are level with the floor.',
+      'Letting your knees cave inward on the way up or on landing — push them out over your toes.',
+      'Landing with straight legs — always absorb the landing with a soft bend.',
+      'Only doing one jump — do 3 so the AI can average your power across multiple efforts.',
+    ],
+    noEquipment: 'No equipment needed at all — just flat ground and enough space to jump without hitting anything above you.',
+    whatWeCheck: [
+      { label: 'Squat depth', simple: 'Are your thighs reaching parallel to the ground? Shallow squats reduce jump power.' },
+      { label: 'Knee alignment', simple: 'Do your knees stay over your toes as you push up? Caving inward is a warning sign.' },
+      { label: 'Landing control', simple: 'Are you absorbing the landing softly with bent knees, or crashing down hard?' },
+    ],
+  },
+  {
+    id: 'single_leg_hold',
+    name: 'Single-Leg Hold',
+    emoji: '🧘',
+    tagline: 'Balance on one leg with your eyes closed',
+    cameraAngle: 'Front view — phone at hip height, 3 metres directly in front of you. Your full body from feet to head must be visible so the AI can see any wobble.',
+    howToDo: [
+      'Stand on a flat, firm surface with both feet together.',
+      'Place your phone 3 metres away facing you at hip height. Check your whole body from feet to head is in frame.',
+      'Lift one foot off the ground and balance on the standing leg — knee slightly bent, not locked straight.',
+      'Close your eyes and hold as still as possible for 10 seconds.',
+      'Open your eyes, put your foot down, then immediately repeat on the other leg.',
+      'Do 2 holds per leg — 4 holds total — in the same continuous clip.',
+    ],
+    commonMistakes: [
+      'Keeping your eyes open — the drill must be done with eyes closed to test true core stability.',
+      'Locking the standing knee completely straight — keep a slight bend at all times.',
+      'Holding your arms out wide to balance — arms should stay by your sides naturally.',
+      'Standing too close to a wall and touching it — keep clear space around you.',
+    ],
+    noEquipment: 'No equipment needed. Any flat hard surface works — indoor floor, road, or firm ground. Avoid soft grass or sand.',
+    whatWeCheck: [
+      { label: 'Sway amount', simple: 'How much does your body wobble during the hold? Less sway = stronger core.' },
+      { label: 'Side difference', simple: 'Are you steadier on one leg than the other? Big differences matter for injury risk.' },
+      { label: 'Hold duration', simple: 'How long can you hold steady before your balance breaks?' },
+    ],
+  },
+  {
+    id: 'shuttle_run',
+    name: 'Shuttle Run',
+    emoji: '🏃',
+    tagline: 'Sprint back and forth between two points as many times as possible',
+    cameraAngle: 'Side view — phone at hip height, 5 metres from your run line. The lens must face sideways along the run, not toward you.',
+    howToDo: [
+      'Mark two points exactly 10 big walking steps apart in a straight line.',
+      'Place your phone 5 metres to the side of the run line at hip height — lens facing along the line, not toward you.',
+      'Hit record, sprint from one marker to the other, touch the ground at the marker, sprint back.',
+      'Repeat continuously for 30 full seconds — as many shuttles as possible without stopping.',
+      'Touch the ground at each marker with your hand before turning — this counts as a proper turn.',
+      'Stop the recording when the 30 seconds is up.',
+    ],
+    commonMistakes: [
+      'Jogging instead of sprinting — every shuttle must be at maximum effort.',
+      'Not touching the ground at each marker — you must touch before turning.',
+      'Stopping to rest mid-drill — keep moving for the full 30 seconds even if you slow down.',
+      'Camera facing toward you — it must be on the SIDE along your run line to capture your stride properly.',
+    ],
+    noEquipment: 'Use stones, sticks, chalk, or items of clothing as markers. Any firm flat surface works — road, court, or field.',
+    whatWeCheck: [
+      { label: 'Sprint pace', simple: 'How fast are your individual sprints? Speed drops as fatigue sets in — we track that.' },
+      { label: 'Body lean', simple: 'Are you leaning forward efficiently on every run, or losing form as you tire?' },
+      { label: 'Turn speed', simple: 'How quickly do you decelerate, touch, and accelerate again at each marker?' },
+    ],
+  },
 ];
 
 // ── Drill → Physical radar axis mapping ──────────────────────────────────────
@@ -209,6 +290,9 @@ const DRILL_TO_ATTRIBUTE: Record<string, string> = {
   dynamic_header:  'vertical_leap',
   lateral_shuffle: 'change_of_direction',
   dribble_sprint:  'top_end_speed',
+  squat_jump:      'functional_strength',
+  single_leg_hold: 'core_stability',
+  shuttle_run:     'aerobic_endurance',
 };
 
 // Maps the flags this page generates → MediaPipeFlag values used by drill-data
@@ -238,7 +322,7 @@ function scoreLabel(s: number) {
 
 // Map VideoMeasurement → PlayerResult format per drill type
 function vmToPlayerResult(vm: VideoMeasurement, drillId: string): PlayerResult {
-  const isJump = drillId === 'drop_jump' || drillId === 'dynamic_header';
+  const isJump = drillId === 'drop_jump' || drillId === 'dynamic_header' || drillId === 'squat_jump' || drillId === 'single_leg_hold';
 
   const tl = vm.sprintTrunkLean ?? 50;
   const kd = vm.sprintKneeDrive ?? 50;
@@ -404,7 +488,7 @@ export default function BiometricsPage() {
     setErrorMsg('');
 
     try {
-      const testType: TestType = (['drop_jump', 'dynamic_header'] as string[]).includes(drill.id)
+      const testType: TestType = (['drop_jump', 'dynamic_header', 'squat_jump', 'single_leg_hold'] as string[]).includes(drill.id)
         ? 'jump'
         : 'sprint';
 
