@@ -13,7 +13,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import api from "@/lib/api";
 
-type VerifStatus = "not_submitted" | "pending" | "approved" | "rejected";
+type VerifStatus = "not_submitted" | "pending" | "flagged" | "approved" | "rejected";
 
 interface VerificationData {
   status: VerifStatus;
@@ -34,6 +34,13 @@ const STATUS_CONFIG: Record<VerifStatus, { icon: typeof ShieldCheck; label: stri
     desc: "Submit a selfie and valid ID document to become a verified player. Verification increases trust with scouts.",
   },
   pending: {
+    icon: Clock,
+    label: "Under review",
+    color: "text-yellow-600",
+    bg: "bg-yellow-500/10",
+    desc: "Your document has been submitted and is being reviewed by our team. This usually takes 1–2 business days.",
+  },
+  flagged: {
     icon: Clock,
     label: "Under review",
     color: "text-yellow-600",
@@ -518,6 +525,8 @@ export default function PlayerVerificationPage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {verif?.status === "approved"
                   ? "Your identity has been verified. Your verified badge is now active on your profile."
+                  : verif?.status === "flagged"
+                  ? "Our team will review your document manually. This usually takes 1–2 business days."
                   : "Our team will review it within 1–2 business days. You\u2019ll receive a notification once it\u2019s processed."}
               </p>
               <Link
