@@ -10,11 +10,17 @@ import { useGuestGate } from "@/components/ui/register-modal";
 import api from "@/lib/api";
 
 interface SubStatus {
-  plan_type: string | null;
-  status: string;
-  starts_at: string | null;
-  ends_at: string | null;
-  is_active: boolean;
+  is_premium: boolean;
+  is_community: boolean;
+  subscription: {
+    plan_type: string | null;
+    status: string;
+    starts_at: string | null;
+    ends_at: string | null;
+    current_period_end: string | null;
+    cancelled_at: string | null;
+  } | null;
+  plan_prices: Record<string, unknown>;
 }
 
 const PLANS = [
@@ -63,6 +69,7 @@ function SubscriptionContent() {
   const [payMethod, setPayMethod] = useState("ecocash");
   const [phone, setPhone] = useState("");
   const [paying, setPaying] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [payError, setPayError] = useState("");
   const [stripeSuccess, setStripeSuccess] = useState(false);
   const [pollUrl, setPollUrl] = useState<string | null>(null);
@@ -174,11 +181,20 @@ function SubscriptionContent() {
 
   const cancel = async () => {
     if (!confirm("Cancel your subscription?")) return;
+    setCancelling(true);
+    setPayError("");
     try {
       await api.post("/subscription/cancel");
       const res = await api.get("/subscription/status");
       setSub(res.data);
-    } catch {}
+    } catch (e: unknown) {
+      const msg = e instanceof Error
+        ? e.message
+        : (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setPayError(msg ?? "Could not cancel subscription. Please try again.");
+    } finally {
+      setCancelling(false);
+    }
   };
 
   return (
@@ -207,19 +223,25 @@ function SubscriptionContent() {
         )}
 
         {/* Current status */}
-        {!loading && sub?.is_active && (
+        {!loading && sub?.is_premium && (
           <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/10 p-5">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
                 <div>
-                  <p className="font-semibold text-green-700">Active — {sub.plan_type?.replace("-", " ")} plan</p>
+                  <p className="font-semibold text-green-700">Active — {sub.subscription?.plan_type?.replace("-", " ")} plan</p>
                   <p className="text-xs text-green-600">
-                    Renews: {sub.ends_at ? new Date(sub.ends_at).toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" }) : "—"}
+                    Renews: {sub.subscription?.ends_at ? new Date(sub.subscription.ends_at).toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" }) : "—"}
                   </p>
                 </div>
               </div>
-              <button onClick={cancel} className="text-xs text-muted-foreground hover:text-destructive underline">Cancel</button>
+              <button
+                onClick={cancel}
+                disabled={cancelling}
+                className="text-xs text-muted-foreground hover:text-destructive underline disabled:opacity-50"
+              >
+                {cancelling ? "Cancelling…" : "Cancel"}
+              </button>
             </div>
           </div>
         )}
@@ -335,11 +357,11 @@ function SubscriptionContent() {
           <div className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{payError}</div>
         )}
 
-        <button onClick={subscribe} disabled={paying || sub?.is_active || pollStatus === "waiting"}
+        <button onClick={subscribe} disabled={paying || sub?.is_premium || pollStatus === "waiting"}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
           {paying ? (
             <><Loader2 className="h-4 w-4 animate-spin" /> Processing payment…</>
-          ) : sub?.is_active ? (
+          ) : sub?.is_premium ? (
             <><CheckCircle2 className="h-4 w-4" /> Already subscribed</>
           ) : (
             <><CreditCard className="h-4 w-4" /> Subscribe with {payMethod}</>
