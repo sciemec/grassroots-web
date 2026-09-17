@@ -225,7 +225,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
       <ArenaNav userName={user?.name ?? ""} />
       <div className="text-center py-20">
         <p className="text-gray-400">Profile not found</p>
-        <Link href="/arena/discover" className="text-sm font-medium mt-3 inline-block hover:underline" style={{ color: GRS_GREEN }}>Discover Athletes</Link>
+        <Link href="/arena/network" className="text-sm font-medium mt-3 inline-block hover:underline" style={{ color: GRS_GREEN }}>Discover Athletes</Link>
       </div>
     </div>
   );
@@ -254,12 +254,8 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
         {/* Profile header */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 relative">
           {/* View Profile — top-right corner */}
-          {(profile?.role === "player" || profile?.role === "coach" || profile?.role === "scout") && (
-            <Link href={
-              profile.role === "player" ? `/player/public/${id}` :
-              profile.role === "coach"  ? `/arena/coach/${id}` :
-                                          `/arena/scout/${id}`
-            }
+          {profile?.role === "player" && (
+            <Link href={`/player/public/${id}`}
               className="absolute top-4 right-4 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
               <ExternalLink size={12} /> View Profile
             </Link>
