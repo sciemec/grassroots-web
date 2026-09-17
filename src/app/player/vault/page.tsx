@@ -667,8 +667,11 @@ function VideoCard({
     try {
       await api.delete(`/media/${video.id}`);
       onDelete(video.id);
-    } catch {
-      onDelete(video.id);
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status !== 404) {
+        onDelete(video.id);
+      }
     }
   }
 
@@ -1055,7 +1058,8 @@ export default function PlayerVaultPage() {
       const vids: PlayerVideo[] = arr.map((m: Record<string, unknown>) => adaptMediaToVideo(m));
       const usedBytes = arr.reduce((sum: number, m: Record<string, unknown>) => sum + Number(m.size_bytes ?? 0), 0);
       setVideos(vids);
-      setStorage({ used_mb: Math.round((usedBytes / (1024 * 1024)) * 10) / 10, limit_mb: 500 });
+      const limitMb = (user as { has_premium?: boolean })?.has_premium ? 5120 : 500;
+      setStorage({ used_mb: Math.round((usedBytes / (1024 * 1024)) * 10) / 10, limit_mb: limitMb });
       setLocalMode(false);
     } catch {
       // Fall back to legacy /player/vault endpoint
@@ -1132,7 +1136,7 @@ export default function PlayerVaultPage() {
             Highlight Vault
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Upload, manage and share your best football moments with scouts
+            Upload, manage and share your best sports highlights with scouts
           </p>
         </div>
 
