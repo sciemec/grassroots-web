@@ -15,7 +15,6 @@ import {
   Loader2, Info, History, ChevronDown, ChevronRight, Download, Upload,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
-import { useSubscription } from '@/lib/use-subscription';
 import { postToArena } from '@/lib/arena-poster';
 import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from '@/lib/upload-chunks';
 import { getUploadStrategy, type UploadStrategyResult } from '@/lib/use-upload-strategy';
@@ -228,7 +227,6 @@ function scoreLabelBg(score: number): string {
 export default function GeminiDrillsPage() {
   const user      = useAuthStore((s) => s.user);
   const hydrated  = useAuthStore((s) => s._hasHydrated);
-  const { isPro } = useSubscription();
 
   const [sport, setSport]         = useState<string>('football');
 
@@ -743,16 +741,6 @@ export default function GeminiDrillsPage() {
             {/* Upload flow — file picker */}
             {upload.phase === 'idle' && !fileSelected && (
               <>
-                {!isPro && (
-                  <div style={{ background: '#fffbeb', border: '1px solid #f0b429', borderRadius: 12, padding: '14px 16px', marginBottom: 4 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', marginBottom: 4 }}>🔒 Premium Feature</div>
-                    <div style={{ fontSize: 12, color: '#92400e', marginBottom: 10 }}>Subscribe to upload videos and get AI coaching scores.</div>
-                    <Link href="/player/subscription" style={{ display: 'inline-block', padding: '8px 18px', background: '#c8962a', color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-                      View plans →
-                    </Link>
-                  </div>
-                )}
-
                 {selected.mediapipe_drill_type && (
                   <div style={{ background: '#eff6ff', borderRadius: 12, padding: '10px 14px', border: '1px solid #bfdbfe' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', marginBottom: 2 }}>Pose + Gemini combined</div>
@@ -775,18 +763,16 @@ export default function GeminiDrillsPage() {
                 />
 
                 <button
-                  onClick={() => isPro && fileInputRef.current?.click()}
+                  onClick={() => fileInputRef.current?.click()}
                   style={{
                     width: '100%', padding: '18px', borderRadius: 14,
-                    background: isPro ? GRS_GREEN : '#9ca3af', color: '#fff', fontWeight: 700, fontSize: 15,
-                    border: 'none', cursor: isPro ? 'pointer' : 'not-allowed',
+                    background: GRS_GREEN, color: '#fff', fontWeight: 700, fontSize: 15,
+                    border: 'none', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                    opacity: isPro ? 1 : 0.6,
                   }}
-                  disabled={!isPro}
                 >
                   <Upload size={18} />
-                  {isPro ? 'Choose video to upload' : '🔒 Unlock to upload videos'}
+                  Choose video to upload
                 </button>
                 <div style={{ textAlign: 'center', fontSize: 11, color: '#aaa' }}>
                   {selected.mediapipe_drill_type
