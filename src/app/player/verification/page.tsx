@@ -185,8 +185,8 @@ export default function PlayerVerificationPage() {
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (f.size > 5 * 1024 * 1024) {
-      setSubmitError("File is too large. Maximum size is 5MB. Please use a smaller image.");
+    if (f.size > 10 * 1024 * 1024) {
+      setSubmitError("File is too large. Maximum size is 10MB. Please use a smaller image.");
       return;
     }
     setSubmitError("");
@@ -454,7 +454,7 @@ export default function PlayerVerificationPage() {
                         <Upload className="h-8 w-8 text-muted-foreground" />
                         <div className="text-center">
                           <p className="text-sm font-medium">Tap to upload a photo</p>
-                          <p className="text-xs text-muted-foreground">JPG, PNG · Max 5MB · Must be clearly readable</p>
+                          <p className="text-xs text-muted-foreground">JPG, PNG · Max 10MB · Must be clearly readable</p>
                         </div>
                       </>
                     )}
