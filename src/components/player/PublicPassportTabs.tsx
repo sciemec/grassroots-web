@@ -41,13 +41,13 @@ const EMPTY_F = 0.03; // null axes collapse near centre, not at dead-zero
 const CX = 180, CY = 148, R = 100; // radar geometry
 
 const PHYSICAL_DEFAULTS = [
-  { code: "explosiveness_0_10m", label: "Explosiveness"        },
-  { code: "top_end_speed",       label: "Top speed"            },
-  { code: "change_of_direction", label: "Change of\ndirection" },
-  { code: "vertical_leap",       label: "Vertical leap"        },
-  { code: "functional_strength", label: "Strength"             },
-  { code: "core_stability",      label: "Core\nstability"      },
-  { code: "aerobic_endurance",   label: "Stamina"              },
+  { code: "explosiveness_0_10m", label: "Short\nSprint"   },
+  { code: "top_end_speed",       label: "Sprint\nDribble" },
+  { code: "change_of_direction", label: "Quick\nTurn"     },
+  { code: "vertical_leap",       label: "Jump\nHeight"    },
+  { code: "functional_strength", label: "Squat\nJump"     },
+  { code: "core_stability",      label: "Balance\nHold"   },
+  { code: "aerobic_endurance",   label: "Shuttle\nRun"    },
 ];
 
 const AXES_BY_SPORT: Record<string, { label: string; matchPrefix: string }[]> = {
