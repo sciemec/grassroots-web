@@ -129,6 +129,7 @@ export default function PlayerProfilePage() {
   const [loading, setLoading]           = useState(true);
   const [saved, setSaved]               = useState(false);
   const [error, setError]               = useState("");
+  const [loadError, setLoadError]       = useState("");
   const [togglingVisibility, setTogglingVisibility] = useState(false);
   const [aiNarrative, setAiNarrative]           = useState("");
   const [generatingNarrative, setGeneratingNarrative] = useState(false);
@@ -205,7 +206,7 @@ export default function PlayerProfilePage() {
           date_of_birth:  res.data.profile?.date_of_birth    ?? "",
         });
       })
-      .catch(() => {})
+      .catch(() => setLoadError("Unable to load your profile. Please try refreshing the page."))
       .finally(() => setLoading(false));
   }, [user, reset]);
 
@@ -213,7 +214,7 @@ export default function PlayerProfilePage() {
     if (!user) return;
     api.get("/player/passport-data")
       .then((res) => setPassportData(res.data))
-      .catch(() => {});
+      .catch((e: unknown) => console.error("[Profile] passport-data:", e));
   }, [user]);
 
   useEffect(() => {
@@ -229,7 +230,7 @@ export default function PlayerProfilePage() {
             .map((r) => ({ skill: r.skill_code, score: r.rating }))
         );
       })
-      .catch(() => {});
+      .catch((e: unknown) => console.error("[Profile] skill-ratings:", e));
   }, [user]);
 
   const onSubmit = async (data: FormData) => {
@@ -520,6 +521,27 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 className="block w-full rounded-xl border border-white/20 py-3 text-sm font-bold text-white/70 hover:text-white text-center transition-colors">
                 Create free account →
               </a>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex h-screen bg-[#f4f2ee]" style={lightTheme}>
+        <Sidebar />
+        <main className="flex-1 overflow-auto p-6">
+          <div className="mx-auto max-w-2xl mt-16">
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
+              <p className="text-sm font-semibold text-red-700 mb-3">{loadError}</p>
+              <button
+                onClick={() => { setLoadError(""); setLoading(true); window.location.reload(); }}
+                className="rounded-xl bg-[#1a5c2a] px-5 py-2 text-sm font-bold text-white"
+              >
+                Refresh
+              </button>
             </div>
           </div>
         </main>
