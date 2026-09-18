@@ -261,7 +261,11 @@ export default function PlayerProfilePage() {
       const ubuntuRes    = await api.get("/ubuntu/connections").catch(() => null);
       const partnerCount = ((ubuntuRes?.data?.data ?? []) as unknown[]).length;
       const sessionsLed  = (ubuntuRes?.data?.sessions_led ?? 0) as number;
-      const leaderScore  = profile.leadership_score ?? 0;
+      // leadership_score and joy_score live in the nested player_profiles row
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const nestedProfile = (profile as any).profile as { leadership_score?: number; joy_score?: number } | undefined;
+      const leaderScore   = nestedProfile?.leadership_score ?? 0;
+      const joyScore      = nestedProfile?.joy_score ?? 0;
 
       const ubuntuFlair = leaderScore > 0
         ? ` This player has a leadership score of ${leaderScore} on the Ubuntu Network.` +
@@ -271,8 +275,8 @@ export default function PlayerProfilePage() {
           ` their character as a professional. Frame it as a strength scouts value.`
         : "";
 
-      const joyFlair = (profile.joy_score ?? 0) > 0
-        ? ` This player has a Beautiful Game Score of ${profile.joy_score}/100, reflecting ${profile.joy_score} joyful training experiences logged on the platform. Include one sentence about their evident passion for the game and what that character trait means at professional level.`
+      const joyFlair = joyScore > 0
+        ? ` This player has a Beautiful Game Score of ${joyScore}/100, reflecting ${joyScore} joyful training experiences logged on the platform. Include one sentence about their evident passion for the game and what that character trait means at professional level.`
         : "";
 
       const prompt = `Generate a 3-sentence professional scouting profile narrative (third person) for this player:
