@@ -547,7 +547,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     doc.text(user?.name ?? "Player", 14, 46);
 
     // Sub-line chips
-    const chips = [profile?.sport, profile?.position, profile?.province].filter(Boolean).join("  ·  ");
+    const chips = [watchedValues.sport, watchedValues.position, watchedValues.province].filter(Boolean).join("  ·  ");
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(80, 80, 80);
@@ -561,15 +561,15 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     // Fields
     let y = 67;
     const rows: [string, string][] = [
-      ["Age Group",      profile?.age_group?.toUpperCase() ?? "—"],
-      ["Gender",         profile?.gender ?? "—"],
-      ["Preferred Foot", profile?.preferred_foot ?? "—"],
-      ["Height",         profile?.height_cm ? `${profile.height_cm} cm` : "—"],
-      ["Weight",         profile?.weight_kg ? `${profile.weight_kg} kg` : "—"],
-      ["Club",           profile?.club ?? "—"],
-      ["School",         profile?.school ?? "—"],
-      ["Province",       profile?.province ?? "—"],
-      ["Area",           profile?.area ?? "—"],
+      ["Age Group",      watchedValues.age_group ? watchedValues.age_group.toUpperCase() : "—"],
+      ["Gender",         watchedValues.gender        || "—"],
+      ["Preferred Foot", watchedValues.preferred_foot || "—"],
+      ["Height",         watchedValues.height_cm     ? `${watchedValues.height_cm} cm` : "—"],
+      ["Weight",         watchedValues.weight_kg     ? `${watchedValues.weight_kg} kg` : "—"],
+      ["Club",           watchedValues.club          || "—"],
+      ["School",         watchedValues.school        || "—"],
+      ["Province",       watchedValues.province      || "—"],
+      ["Area",           watchedValues.area          || "—"],
     ];
     rows.forEach(([label, val]) => {
       doc.setFont("helvetica", "bold");
@@ -583,7 +583,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     });
 
     // Bio
-    if (profile?.bio) {
+    if (watchedValues.bio) {
       y += 4;
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.2);
@@ -595,7 +595,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
       y += 6;
       doc.setFont("helvetica", "normal");
       doc.setTextColor(60, 60, 60);
-      const bioLines = doc.splitTextToSize(profile.bio, 178);
+      const bioLines = doc.splitTextToSize(watchedValues.bio, 178);
       doc.text(bioLines, 14, y);
       y += bioLines.length * 5 + 4;
     }
