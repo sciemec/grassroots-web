@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import Link from "next/link";
 import {
   User,
@@ -122,7 +122,7 @@ function calcCompletion(data: Partial<FormData>): { count: number; total: number
   return { count, total, pct: Math.round((count / total) * 100) };
 }
 
-export default function PlayerProfilePage() {
+function PlayerProfilePage() {
   const searchParams = useSearchParams();
   const user = useAuthStore((s) => s.user);
   const [profile, setProfile]           = useState<Profile | null>(null);
@@ -1280,5 +1280,13 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
         </div>
       </main>
     </div>
+  );
+}
+
+export default function PlayerProfilePageWrapper() {
+  return (
+    <Suspense>
+      <PlayerProfilePage />
+    </Suspense>
   );
 }
