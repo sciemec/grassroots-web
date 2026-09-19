@@ -1285,7 +1285,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
 
 export default function PlayerProfilePageWrapper() {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
       <PlayerProfilePage />
     </Suspense>
   );

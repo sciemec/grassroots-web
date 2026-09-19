@@ -521,8 +521,12 @@ export default function BiometricsPage() {
       fetchThutoNote([player]);
       saveToPassport([player]);
       saveToPhysicalRadar([player]);
-    } catch {
-      setErrorMsg('Analysis failed. Please try again with a shorter, clearer clip.');
+    } catch (err) {
+      console.error('[biomechanics] analyseLocally error:', err);
+      const msg = err instanceof Error
+        ? err.message
+        : 'Analysis failed. Please try again with a shorter, clearer clip.';
+      setErrorMsg(msg);
       setStage('error');
     }
   };
