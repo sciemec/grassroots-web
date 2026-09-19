@@ -56,14 +56,16 @@ export async function POST(req: Request) {
     // Wait for Gemini to finish processing the uploaded file (3 min timeout)
     await waitForGeminiFile(fileName, googleKey, 3);
 
-    // Run the drill-specific Gemini prompt
+    // Run the drill-specific Gemini prompt.
+    // 2048 tokens: drill schemas have 4+ score objects with observation sentences
+    // plus 4 top-level text fields — 1024 was tight enough to cause mid-JSON truncation.
     const rawText = await callGemini(
       googleKey,
       [
         { file_data: { mime_type: 'video/mp4', file_uri: fileUri } },
         { text: drill.geminiPrompt },
       ],
-      { temperature: 0.3, maxOutputTokens: 1024 }
+      { temperature: 0.3, maxOutputTokens: 2048 }
     );
 
     // Clean up the uploaded file (fire and forget)
@@ -71,8 +73,23 @@ export async function POST(req: Request) {
 
     const parsed = extractJson(rawText);
     if (!parsed) {
+      // Distinguish the two failure modes so Render logs show which one fired:
+      // - Empty string → Gemini refused (safety filter / video quality / content policy)
+      // - Non-empty but unparseable → truncated or malformed JSON (token limit or retry)
+      const isEmpty = rawText.trim() === '';
+      const failureMode = isEmpty ? 'safety_refusal' : 'malformed_json';
+      console.error(
+        `[gemini-drill] parse failed — mode: ${failureMode}, drill: ${drillId}`,
+        isEmpty ? '(empty response)' : `raw (first 500 chars): ${rawText.slice(0, 500)}`
+      );
       return NextResponse.json(
-        { error: 'Could not parse Gemini response', raw: rawText },
+        {
+          error: isEmpty
+            ? "Gemini couldn't analyse this clip — try a clearer angle or shorter video"
+            : 'Could not parse Gemini response',
+          failureMode,
+          raw: rawText,
+        },
         { status: 502 }
       );
     }
