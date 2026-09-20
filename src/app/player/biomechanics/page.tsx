@@ -494,6 +494,36 @@ export default function BiometricsPage() {
       return;
     }
 
+    // HEVC / H.265 check — Android phones record in HEVC by default but
+    // MediaPipe WASM only decodes H.264. Catch this before wasting 30+ seconds.
+    const HEVC_MSG =
+      "Your phone recorded in a format our AI cannot read. " +
+      "Please open your camera settings and switch video format to \u2018High Efficiency\u2019 OFF " +
+      "or \u2018Most Compatible\u2019, then record again.";
+
+    // 1a. canPlayType check — does the browser understand this MIME type at all?
+    const probeEl = document.createElement('video');
+    const mimeType = videoFile.type || 'video/mp4';
+    const canPlayResult = probeEl.canPlayType(mimeType);
+
+    // 1b. Actually try to load video metadata — catches HEVC inside .mp4 containers
+    //     where the MIME type is "video/mp4" regardless of codec.
+    const decodable = await new Promise<boolean>((resolve) => {
+      const vid = document.createElement('video');
+      const url = URL.createObjectURL(videoFile);
+      vid.preload = 'metadata';
+      vid.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(true); };
+      vid.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
+      vid.src = url;
+      setTimeout(() => { URL.revokeObjectURL(url); resolve(false); }, 5000);
+    });
+
+    if (canPlayResult === '' || !decodable) {
+      setErrorMsg(HEVC_MSG);
+      setStage('error');
+      return;
+    }
+
     setStage('processing');
     setUploadPct(0);
     setErrorMsg('');
@@ -523,9 +553,17 @@ export default function BiometricsPage() {
       saveToPhysicalRadar([player]);
     } catch (err) {
       console.error('[biomechanics] analyseLocally error:', err);
-      const msg = err instanceof Error
-        ? err.message
-        : 'Analysis failed. Please try again with a shorter, clearer clip.';
+      const raw = err instanceof Error ? err.message : '';
+      const isDecodeError =
+        raw.toLowerCase().includes('decode') ||
+        raw.toLowerCase().includes('could not') ||
+        raw.toLowerCase().includes('format error') ||
+        raw.toLowerCase().includes('demuxer');
+      const msg = isDecodeError
+        ? "Your phone recorded in a format our AI cannot read. " +
+          "Please open your camera settings and switch video format to \u2018High Efficiency\u2019 OFF " +
+          "or \u2018Most Compatible\u2019, then record again."
+        : (raw || 'Analysis failed. Please try again with a shorter, clearer clip.');
       setErrorMsg(msg);
       setStage('error');
     }
@@ -875,6 +913,14 @@ Cover these four things as flowing paragraphs (no bullet points, no headings):
                 </p>
                 <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9ca3af' }}>MP4, MOV, WebM</p>
                 <input id="bio-file" type="file" accept="video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) setVideoFile(f); }} />
+              </div>
+
+              {/* Android HEVC compatibility tip */}
+              <div style={{ backgroundColor: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 12, padding: '0.75rem', marginTop: '0.75rem' }}>
+                <p style={{ margin: '0 0 3px', fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em' }}>For best results on Android</p>
+                <p style={{ margin: 0, fontSize: 13, color: '#78350f' }}>
+                  Go to Camera settings &rarr; Video Format &rarr; select <strong>Most Compatible</strong> before recording.
+                </p>
               </div>
             )}
 
