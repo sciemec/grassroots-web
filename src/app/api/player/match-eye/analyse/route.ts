@@ -115,6 +115,14 @@ export async function POST(req: NextRequest) {
       ? `\n\nCoach focus: "${focusQuestion}" — pay particular attention to this.`
       : "";
 
+    const isFootball = sportLabel.toLowerCase() === "football";
+    const drillInstructions = isFootball
+      ? "Pick the BEST matching drill from the DRILL CATALOG below by ID. Set drill_id to that ID and drill to that drill's name. If no catalog drill fits the weakness, set drill_id to null and invent a suitable drill name."
+      : `No drill catalog exists for ${sportLabel} — set drill_id to null for all recommendations and invent ${sportLabel}-specific drill names based on the weaknesses you observe.`;
+    const drillCatalogSection = isFootball
+      ? `DRILL CATALOG — match weaknesses to these drills by ID:\n${JSON.stringify(DRILL_CATALOG)}\n`
+      : "";
+
     const systemPrompt = `You are an expert ${sportLabel} coach reviewing footage of an individual player.
 Player: ${positionLabel}${jerseyLabel}${focusLabel}
 
@@ -162,14 +170,11 @@ Return ONLY a valid JSON object — no markdown, no explanation — with this ex
 overall_rating: 1 (very poor) to 10 (exceptional). Be honest — most grassroots players are 4-7.
 key_moments: include 3-6 moments with accurate timestamps.
 technical_strengths and areas_to_improve: 3-5 items each — specific to THIS player in THIS video.
-drill_recommendations: 2-4 drills. For each weakness you identify, pick the BEST matching drill from the catalog below by ID. Set drill_id to that ID and drill to that drill's name. If no catalog drill fits the weakness, set drill_id to null and invent a suitable drill name.
+drill_recommendations: 2-4 drills specific to ${sportLabel}. ${drillInstructions}
 turnover_moments: identify 0-3 moments where a poor decision directly caused a loss of possession. For each, describe the exact decision and its consequence, then pick the MOST relevant principle from the TACTICS CATALOG by ID. Set safety_flag to true only when the player was dispossessed under heavy physical pressure in a tight area (collision risk). If no clear turnovers are visible, return an empty array [].
 Base everything on what you actually see in the video.
 
-DRILL CATALOG — match weaknesses to these drills by ID:
-${JSON.stringify(DRILL_CATALOG)}
-
-TACTICS CATALOG — match turnover decisions to these principles by ID:
+${drillCatalogSection}TACTICS CATALOG — match turnover decisions to these principles by ID:
 ${JSON.stringify(TACTICS_CATALOG)}`;
 
     const geminiText = await callGemini(
