@@ -206,3 +206,82 @@ export async function generateThumbnail(videoFile: File): Promise<Blob> {
 
   return blob;
 }
+
+/**
+ * Transcode any video (e.g. HEVC/H.265 from Android cameras) to H.264 MP4.
+ *
+ * Settings chosen for maximum compatibility and speed on low-end devices:
+ *   - ultrafast preset  — fastest encode, largest file, but still playable
+ *   - CRF 30            — slightly lower quality for smaller output
+ *   - scale 640px wide  — sufficient for MediaPipe analysis; reduces pixels ~56%
+ *   - 15 fps            — biomechanics analysis does not need 30fps
+ *   - AAC 64k           — adequate audio quality, minimal overhead
+ *
+ * @param videoFile  Source File (any container/codec ffmpeg can decode)
+ * @param onProgress Callback receives (pct 0–99, elapsedSeconds)
+ * @returns          H.264 MP4 as a Blob
+ */
+export async function transcodeToH264(
+  videoFile: File,
+  onProgress?: (pct: number, elapsed: number) => void,
+): Promise<Blob> {
+  const ff = await getFFmpeg();
+  const inputName  = "tc_in.mp4";
+  const outputName = "tc_out.mp4";
+
+  await ff.writeFile(inputName, await fetchFile(videoFile));
+
+  let totalDuration = 0;
+  const startMs = Date.now();
+
+  const logHandler = ({ message }: { message: string }) => {
+    // Parse total duration from the metadata header (first pass)
+    if (!totalDuration) {
+      const dm = message.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
+      if (dm) {
+        totalDuration =
+          parseInt(dm[1]) * 3600 +
+          parseInt(dm[2]) * 60 +
+          parseFloat(dm[3]);
+      }
+    }
+    // Parse encode progress: time=HH:MM:SS.SS
+    if (onProgress && totalDuration > 0) {
+      const tm = message.match(/time=(\d+):(\d+):([\d.]+)/);
+      if (tm) {
+        const encoded =
+          parseInt(tm[1]) * 3600 +
+          parseInt(tm[2]) * 60 +
+          parseFloat(tm[3]);
+        const pct = Math.min(99, Math.round((encoded / totalDuration) * 100));
+        onProgress(pct, Math.round((Date.now() - startMs) / 1000));
+      }
+    }
+  };
+
+  ff.on("log", logHandler);
+  try {
+    await ff.exec([
+      "-i", inputName,
+      "-c:v", "libx264",
+      "-preset", "ultrafast",
+      "-crf", "30",
+      "-vf", "scale='min(640,iw)':-2",
+      "-r", "15",
+      "-c:a", "aac",
+      "-b:a", "64k",
+      "-movflags", "+faststart",
+      outputName,
+    ]);
+  } finally {
+    ff.off("log", logHandler);
+  }
+
+  const data = await ff.readFile(outputName);
+  const blob = new Blob([toBuffer(data)], { type: "video/mp4" });
+
+  await ff.deleteFile(inputName);
+  await ff.deleteFile(outputName);
+
+  return blob;
+}

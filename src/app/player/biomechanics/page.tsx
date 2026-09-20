@@ -6,12 +6,13 @@ import { ArrowLeft, Camera, Upload, X, ChevronDown, ChevronUp, FileDown } from '
 import { useAuthStore } from '@/lib/auth-store';
 import { measureFromVideo, type VideoMeasurement, type TestType } from '@/lib/super-engine';
 import { getDrillsForFlags, type RemediationDrill, type MediaPipeFlag } from '@/lib/drill-data';
+import { transcodeToH264 } from '@/lib/ffmpeg-processor';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type Stage = 'select' | 'guide' | 'upload' | 'processing' | 'results' | 'error';
+type Stage = 'select' | 'guide' | 'upload' | 'converting' | 'processing' | 'results' | 'error';
 
 interface Drill {
   id: string;
@@ -406,12 +407,16 @@ export default function BiometricsPage() {
   const [radarSavePayload, setRadarSavePayload] = useState<{ attribute_code: string; raw_value: number; unit: string } | null>(null);
   const [playerPosition,   setPlayerPosition]   = useState('footballer');
   const [remDrills,        setRemDrills]        = useState<RemediationDrill[]>([]);
+  const [convertPct,       setConvertPct]       = useState(0);
+  const [convertElapsed,   setConvertElapsed]   = useState(0);
+  const [convertSoftWarn,  setConvertSoftWarn]  = useState(false);
 
-  const videoRef    = useRef<HTMLVideoElement>(null);
-  const mediaRef    = useRef<MediaRecorder | null>(null);
-  const chunksRef   = useRef<Blob[]>([]);
-  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
-  const streamRef   = useRef<MediaStream | null>(null);
+  const videoRef         = useRef<HTMLVideoElement>(null);
+  const mediaRef         = useRef<MediaRecorder | null>(null);
+  const chunksRef        = useRef<Blob[]>([]);
+  const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null);
+  const streamRef        = useRef<MediaStream | null>(null);
+  const convertCancelRef = useRef<(() => void) | null>(null);
 
   // ── Camera helpers ────────────────────────────────────────────────────────
 
@@ -479,8 +484,9 @@ export default function BiometricsPage() {
 
   // ── In-browser analysis ───────────────────────────────────────────────────
 
-  const analyseLocally = async () => {
-    if (!videoFile || !drill) return;
+  const analyseLocally = async (convertedFile?: File) => {
+    const source = convertedFile ?? videoFile;
+    if (!source || !drill) return;
 
     // WebGL check — MediaPipe needs GPU delegate; show a clear message if unavailable
     const testCanvas = document.createElement('canvas');
@@ -494,34 +500,29 @@ export default function BiometricsPage() {
       return;
     }
 
-    // HEVC / H.265 check — Android phones record in HEVC by default but
-    // MediaPipe WASM only decodes H.264. Catch this before wasting 30+ seconds.
-    const HEVC_MSG =
-      "Your phone recorded in a format our AI cannot read. " +
-      "Please open your camera settings and switch video format to \u2018High Efficiency\u2019 OFF " +
-      "or \u2018Most Compatible\u2019, then record again.";
+    // HEVC / H.265 check — only run when we haven't already transcoded
+    if (!convertedFile) {
+      // 1a. canPlayType — does the browser understand this MIME type at all?
+      const probeEl = document.createElement('video');
+      const mimeType = source.type || 'video/mp4';
+      const canPlayResult = probeEl.canPlayType(mimeType);
 
-    // 1a. canPlayType check — does the browser understand this MIME type at all?
-    const probeEl = document.createElement('video');
-    const mimeType = videoFile.type || 'video/mp4';
-    const canPlayResult = probeEl.canPlayType(mimeType);
+      // 1b. Metadata load probe — catches HEVC inside .mp4 containers
+      const decodable = await new Promise<boolean>((resolve) => {
+        const vid = document.createElement('video');
+        const url = URL.createObjectURL(source);
+        vid.preload = 'metadata';
+        vid.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(true); };
+        vid.onerror         = () => { URL.revokeObjectURL(url); resolve(false); };
+        vid.src = url;
+        setTimeout(() => { URL.revokeObjectURL(url); resolve(false); }, 5000);
+      });
 
-    // 1b. Actually try to load video metadata — catches HEVC inside .mp4 containers
-    //     where the MIME type is "video/mp4" regardless of codec.
-    const decodable = await new Promise<boolean>((resolve) => {
-      const vid = document.createElement('video');
-      const url = URL.createObjectURL(videoFile);
-      vid.preload = 'metadata';
-      vid.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(true); };
-      vid.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
-      vid.src = url;
-      setTimeout(() => { URL.revokeObjectURL(url); resolve(false); }, 5000);
-    });
-
-    if (canPlayResult === '' || !decodable) {
-      setErrorMsg(HEVC_MSG);
-      setStage('error');
-      return;
+      if (canPlayResult === '' || !decodable) {
+        // Auto-transcode instead of erroring
+        convertAndAnalyse();
+        return;
+      }
     }
 
     setStage('processing');
@@ -534,7 +535,7 @@ export default function BiometricsPage() {
         : 'sprint';
 
       const vm = await measureFromVideo(
-        videoFile,
+        source,
         testType,
         (pct) => setUploadPct(pct),
       );
@@ -554,18 +555,80 @@ export default function BiometricsPage() {
     } catch (err) {
       console.error('[biomechanics] analyseLocally error:', err);
       const raw = err instanceof Error ? err.message : '';
-      const isDecodeError =
-        raw.toLowerCase().includes('decode') ||
-        raw.toLowerCase().includes('could not') ||
-        raw.toLowerCase().includes('format error') ||
-        raw.toLowerCase().includes('demuxer');
-      const msg = isDecodeError
-        ? "Your phone recorded in a format our AI cannot read. " +
-          "Please open your camera settings and switch video format to \u2018High Efficiency\u2019 OFF " +
-          "or \u2018Most Compatible\u2019, then record again."
-        : (raw || 'Analysis failed. Please try again with a shorter, clearer clip.');
-      setErrorMsg(msg);
+      setErrorMsg(raw || 'Analysis failed. Please try again with a shorter, clearer clip.');
       setStage('error');
+    }
+  };
+
+  // Transcode HEVC → H.264, then re-run analysis.
+  // Soft warn at 90 s (user can choose to wait or cancel).
+  // Hard cutoff at 180 s.
+  const convertAndAnalyse = async () => {
+    if (!videoFile) return;
+
+    setConvertPct(0);
+    setConvertElapsed(0);
+    setConvertSoftWarn(false);
+    setStage('converting');
+
+    let cancelled = false;
+    let softWarnTimer: ReturnType<typeof setTimeout> | null = null;
+    let hardCutoffTimer: ReturnType<typeof setTimeout> | null = null;
+    let rejectFn: ((reason: unknown) => void) | null = null;
+
+    const cancelPromise = new Promise<never>((_, reject) => {
+      rejectFn = reject;
+    });
+    convertCancelRef.current = () => {
+      cancelled = true;
+      if (softWarnTimer)  clearTimeout(softWarnTimer);
+      if (hardCutoffTimer) clearTimeout(hardCutoffTimer);
+      rejectFn?.(new Error('cancelled'));
+    };
+
+    // Soft warn at 90 s — show overlay but keep going
+    softWarnTimer = setTimeout(() => {
+      if (!cancelled) setConvertSoftWarn(true);
+    }, 90_000);
+
+    // Hard cutoff at 180 s
+    hardCutoffTimer = setTimeout(() => {
+      rejectFn?.(new Error('timeout'));
+    }, 180_000);
+
+    try {
+      const blob = await Promise.race([
+        transcodeToH264(videoFile, (pct, elapsed) => {
+          setConvertPct(pct);
+          setConvertElapsed(elapsed);
+        }),
+        cancelPromise,
+      ]);
+
+      if (softWarnTimer)  clearTimeout(softWarnTimer);
+      if (hardCutoffTimer) clearTimeout(hardCutoffTimer);
+
+      const converted = new File([blob], videoFile.name.replace(/\.[^.]+$/, '.mp4'), { type: 'video/mp4' });
+      analyseLocally(converted);
+    } catch (err) {
+      if (softWarnTimer)  clearTimeout(softWarnTimer);
+      if (hardCutoffTimer) clearTimeout(hardCutoffTimer);
+
+      const reason = err instanceof Error ? err.message : '';
+      if (reason === 'cancelled') {
+        setStage('upload');
+        return;
+      }
+      if (reason === 'timeout') {
+        setErrorMsg(
+          'This video is taking a while to process on your device — you can wait a bit longer, ' +
+          'or switch your camera to \u2018Most Compatible\u2019 mode for faster results next time.'
+        );
+        setStage('error');
+        return;
+      }
+      // Unexpected ffmpeg error — fall back to original file
+      analyseLocally(videoFile);
     }
   };
 
@@ -900,7 +963,7 @@ Cover these four things as flowing paragraphs (no bullet points, no headings):
             )}
 
             {/* File upload */}
-            {!useCamera && (
+            {!useCamera && (<>
               <div
                 onClick={() => document.getElementById('bio-file')?.click()}
                 onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setVideoFile(f); }}
@@ -917,12 +980,12 @@ Cover these four things as flowing paragraphs (no bullet points, no headings):
 
               {/* Android HEVC compatibility tip */}
               <div style={{ backgroundColor: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 12, padding: '0.75rem', marginTop: '0.75rem' }}>
-                <p style={{ margin: '0 0 3px', fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em' }}>For best results on Android</p>
+                <p style={{ margin: '0 0 3px', fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tip for Android users</p>
                 <p style={{ margin: 0, fontSize: 13, color: '#78350f' }}>
-                  Go to Camera settings &rarr; Video Format &rarr; select <strong>Most Compatible</strong> before recording.
+                  If your video takes a while to process, go to Camera settings → Video Format → <strong>Most Compatible</strong> — this skips the conversion step.
                 </p>
               </div>
-            )}
+            </>)}
 
             {videoFile && (
               <div style={{ marginBottom: '1rem', padding: '0.625rem 1rem', backgroundColor: '#f0fdf4', borderRadius: 12, border: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -932,7 +995,7 @@ Cover these four things as flowing paragraphs (no bullet points, no headings):
             )}
 
             <button
-              onClick={analyseLocally}
+              onClick={() => analyseLocally()}
               disabled={!videoFile}
               style={{ width: '100%', backgroundColor: videoFile ? '#1a5c2a' : '#d1d5db', color: videoFile ? '#fff' : '#9ca3af', border: 'none', borderRadius: 14, padding: '0.875rem', fontSize: 15, fontWeight: 700, cursor: videoFile ? 'pointer' : 'not-allowed' }}
             >
@@ -942,6 +1005,54 @@ Cover these four things as flowing paragraphs (no bullet points, no headings):
             <p style={{ marginTop: 10, textAlign: 'center', fontSize: 12, color: '#9ca3af' }}>
               Your clip is sent securely to the GrassRoots AI and deleted after analysis.
             </p>
+          </>
+        )}
+
+        {/* ── CONVERTING ─────────────────────────────────────────────────────── */}
+        {stage === 'converting' && (
+          <>
+            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+            <div style={{ textAlign: 'center', padding: '3rem 0', position: 'relative' }}>
+              <div style={{ width: 64, height: 64, borderRadius: '50%', border: '4px solid #e5e7eb', borderTop: '4px solid #f59e0b', animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem' }} />
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 8 }}>Converting video…</h2>
+              <p style={{ fontSize: 14, color: '#6b7280', marginBottom: '1.5rem' }}>
+                Your phone recorded in HEVC format — converting to H.264 so the AI can read it.
+              </p>
+
+              {/* Progress bar */}
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, color: '#6b7280' }}>{convertElapsed}s elapsed</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>{convertPct}%</span>
+                </div>
+                <div style={{ height: 6, backgroundColor: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: 6, backgroundColor: '#f59e0b', width: `${convertPct}%`, borderRadius: 3, transition: 'width 0.4s' }} />
+                </div>
+              </div>
+
+              {/* Soft-warn overlay — shown after 90 s */}
+              {convertSoftWarn && (
+                <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: '1rem', marginTop: '1rem' }}>
+                  <p style={{ margin: '0 0 0.75rem', fontSize: 14, color: '#92400e' }}>
+                    This is taking a while on your device. You can keep waiting or cancel and try a shorter clip.
+                  </p>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                    <button
+                      onClick={() => setConvertSoftWarn(false)}
+                      style={{ flex: 1, backgroundColor: '#f59e0b', color: '#fff', border: 'none', borderRadius: 10, padding: '0.625rem', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Keep waiting
+                    </button>
+                    <button
+                      onClick={() => { convertCancelRef.current?.(); setStage('upload'); }}
+                      style={{ flex: 1, backgroundColor: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: 10, padding: '0.625rem', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -1133,7 +1244,7 @@ Cover these four things as flowing paragraphs (no bullet points, no headings):
             {/* Primary: retry with the same clip — does not clear videoFile */}
             {videoFile && (
               <button
-                onClick={analyseLocally}
+                onClick={() => analyseLocally()}
                 style={{ backgroundColor: '#1a5c2a', color: '#fff', border: 'none', borderRadius: 12, padding: '0.75rem 1.5rem', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10, display: 'block', width: '100%' }}
               >
                 Tap to retry

@@ -12,7 +12,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { extractApiError } from "@/lib/api-error";
 import { SPORTS, ANALYSIS_TYPES, getSportAnalysisPrompt, type SportKey, type AnalysisType } from "@/config/sports";
 import { useFileSystem } from "@/hooks/use-file-system";
-import { extractFrames, trimVideo } from "@/lib/ffmpeg-processor";
+import { extractFrames, trimVideo, transcodeToH264 } from "@/lib/ffmpeg-processor";
 import { PlayerTracker } from "@/components/video/player-tracker";
 import { PoseCamera } from "@/components/video/pose-camera";
 import { PossessionHeatmap } from "@/components/video/possession-heatmap";
@@ -76,6 +76,39 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
+/** Returns true when the file is HEVC that the browser cannot decode natively. */
+function probeHevc(file: File): Promise<boolean> {
+  // If the browser advertises native HEVC support, no transcode needed
+  const vid = document.createElement("video");
+  const supportsHevc =
+    vid.canPlayType('video/mp4; codecs="hvc1"') !== "" ||
+    vid.canPlayType('video/mp4; codecs="hev1"') !== "";
+  if (supportsHevc) return Promise.resolve(false);
+
+  // Only worth probing MP4/MOV containers — other containers don't carry HEVC
+  if (!file.type.includes("mp4") && !file.type.includes("quicktime")) {
+    return Promise.resolve(false);
+  }
+
+  return new Promise((resolve) => {
+    const probeVid = document.createElement("video");
+    const url = URL.createObjectURL(file);
+    let settled = false;
+    const done = (isHevc: boolean) => {
+      if (settled) return;
+      settled = true;
+      URL.revokeObjectURL(url);
+      probeVid.src = "";
+      resolve(isHevc);
+    };
+    probeVid.preload = "metadata";
+    probeVid.onloadedmetadata = () => done(false); // loaded fine → not HEVC
+    probeVid.onerror        = () => done(true);    // decode error → likely HEVC
+    probeVid.src = url;
+    setTimeout(() => done(false), 3000); // safety timeout
+  });
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function StepBadge({ n, active, done }: { n: number; active: boolean; done: boolean }) {
@@ -126,6 +159,9 @@ export default function VideoStudioPage() {
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "done" | "failed">("idle");
   const [uploadError, setUploadError] = useState("");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
+  const [convertPct, setConvertPct]     = useState(0);
+  const convertAbortRef = useRef<{ cancelled: boolean }>({ cancelled: false });
 
   const queryClient = useQueryClient();
 
@@ -210,13 +246,45 @@ export default function VideoStudioPage() {
     }
   };
 
-  const acceptFile = (f: File) => {
+  const acceptFile = async (f: File) => {
     if (!VIDEO_TYPES.includes(f.type)) { setErrorMsg("Unsupported file type. Please upload MP4, MOV, AVI, MKV or WebM."); return; }
     if (f.size > MAX_SIZE_MB * 1024 * 1024) { setErrorMsg(`File too large. Max ${MAX_SIZE_MB} MB.`); return; }
-    setErrorMsg(""); setFile(f); setPreviewUrl(URL.createObjectURL(f)); setResult(null); setStage("idle"); setFrames([]);
-    setVideoUrl(null); setUploadStatus("idle"); setUploadProgress(0);
-    // Start background upload immediately — runs in parallel while user fills the form
-    uploadToR2(f);
+
+    // Cancel any conversion that was already in flight for a previous file pick
+    convertAbortRef.current.cancelled = true;
+    const thisAbort = { cancelled: false };
+    convertAbortRef.current = thisAbort;
+
+    setErrorMsg(""); setFile(f); setPreviewUrl(URL.createObjectURL(f)); setResult(null);
+    setStage("idle"); setFrames([]); setVideoUrl(null);
+    setUploadStatus("idle"); setUploadProgress(0);
+    setIsConverting(false); setConvertPct(0);
+
+    const isHevc = await probeHevc(f);
+    if (thisAbort.cancelled) return;
+
+    if (isHevc) {
+      setIsConverting(true);
+      setConvertPct(0);
+      try {
+        const h264Blob = await transcodeToH264(f, (pct) => {
+          if (!thisAbort.cancelled) setConvertPct(pct);
+        });
+        if (thisAbort.cancelled) return;
+        const h264File = new File([h264Blob], f.name.replace(/\.[^.]+$/, ".mp4"), { type: "video/mp4" });
+        setFile(h264File);
+        setIsConverting(false);
+        uploadToR2(h264File);
+      } catch {
+        if (thisAbort.cancelled) return;
+        // Transcode failed — upload original anyway and let analyse step handle it
+        setIsConverting(false);
+        uploadToR2(f);
+      }
+    } else {
+      // Start background upload immediately — runs in parallel while user fills the form
+      uploadToR2(f);
+    }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if (f) acceptFile(f); };
@@ -224,6 +292,8 @@ export default function VideoStudioPage() {
   const handleFsPick = async () => { const f = await pickVideoFile(); if (f) acceptFile(f); };
 
   const clearFile = () => {
+    convertAbortRef.current.cancelled = true;
+    setIsConverting(false); setConvertPct(0);
     setFile(null); setPreviewUrl(null); setResult(null); setStage("idle");
     setErrorMsg(""); setFrames([]); setVideoUrl(null); setUploadStatus("idle"); setUploadProgress(0);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -342,7 +412,7 @@ export default function VideoStudioPage() {
 
   const selectedSport = SPORTS.find((s) => s.key === sport);
   const step1Done = !!sport; const step2Done = !!analysisType; const step3Done = !!file;
-  const canAnalyse = step1Done && step2Done && step3Done && stage !== "processing" && stage !== "analysing";
+  const canAnalyse = step1Done && step2Done && step3Done && !isConverting && stage !== "processing" && stage !== "analysing";
 
   return (
     <div className="flex h-screen bg-background">
@@ -409,8 +479,24 @@ export default function VideoStudioPage() {
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10"><Play className="h-5 w-5 text-primary" /></div>
                   <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{file.name}</p><p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p></div>
-                  {(stage === "idle" || stage === "error") && <button onClick={clearFile} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted transition-colors"><X className="h-4 w-4" /></button>}
+                  {!isConverting && (stage === "idle" || stage === "error") && <button onClick={clearFile} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted transition-colors"><X className="h-4 w-4" /></button>}
                 </div>
+              </div>
+            )}
+
+            {/* HEVC transcode progress */}
+            {isConverting && (
+              <div className="mt-3 space-y-1.5">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Converting to compatible format…
+                  </span>
+                  <span>{convertPct}%</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-amber-500 transition-all duration-300" style={{ width: `${convertPct}%` }} />
+                </div>
+                <p className="text-[11px] text-muted-foreground">Your video uses HEVC — converting to H.264 for compatibility</p>
               </div>
             )}
 
