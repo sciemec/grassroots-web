@@ -553,9 +553,13 @@ export default function BiometricsPage() {
       saveToPassport([player]);
       saveToPhysicalRadar([player]);
     } catch (err) {
-      console.error('[biomechanics] analyseLocally error:', err);
-      const raw = err instanceof Error ? err.message : '';
-      setErrorMsg(raw || 'Analysis failed. Please try again with a shorter, clearer clip.');
+      const raw = err instanceof Error ? err.message : String(err);
+      console.error('[biomechanics] analyseLocally error:', raw, err);
+      setErrorMsg(
+        raw
+          ? `Analysis failed: ${raw}`
+          : 'Analysis failed. Please try again with a shorter, clearer clip.'
+      );
       setStage('error');
     }
   };
@@ -1003,7 +1007,7 @@ Cover these four things as flowing paragraphs (no bullet points, no headings):
             </button>
 
             <p style={{ marginTop: 10, textAlign: 'center', fontSize: 12, color: '#9ca3af' }}>
-              Your clip is sent securely to the GrassRoots AI and deleted after analysis.
+              Your clip is processed entirely on your device — nothing is uploaded.
             </p>
           </>
         )}
