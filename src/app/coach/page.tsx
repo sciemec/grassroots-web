@@ -173,7 +173,7 @@ export default function CoachHubPage() {
           <HubCard href="/coach/drill-library"  icon={Dumbbell}      iconBg="#dbeafe" iconColor="#2563eb" label="Drill Library"     desc="Drills · sessions · AI drill analysis" />
           <HubCard href="/coach/field-assessment" icon={ClipboardList} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Field Assessment"  desc="Position tests · benchmarks · radar chart" badge="new" />
           <HubCard href="/coach/skill-drills"   icon={Star}          iconBg="#fefce8" iconColor="#ca8a04" label="Skill Assessment"  desc="Rate & test squad across 6 core skills" badge="new" />
-          <HubCard href="/coach/assess-player"  icon={UserCheck}     iconBg="#f0fdf4" iconColor="#1a5c2a" label="Full Skill Test"   desc="Coach-assisted · 6 skills · auto-fills profile" />
+          <HubCard href="/coach/assess-player"  icon={UserCheck}     iconBg="#f0fdf4" iconColor="#1a5c2a" label="Player Technique Assessment"   desc="Coach-assisted · 6 skills · feeds technique radar" />
         </div>
 
         {/* ── 4. Network & Videos ────────────────────────────────────── */}

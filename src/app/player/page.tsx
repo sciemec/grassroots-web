@@ -138,7 +138,7 @@ function DrillGroupCard() {
           marginBottom: 12,
         }}
       >
-        Coach Assisted Skills Drill Test
+        Player Technique Assessment
       </div>
       <div
         style={{

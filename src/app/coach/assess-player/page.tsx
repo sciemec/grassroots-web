@@ -283,7 +283,7 @@ export default function AssessPlayerPage() {
             <ArrowLeft size={20} />
           </Link>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>Full Skill Assessment</div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>Player Technique Assessment</div>
             <div style={{ fontSize: 12, color: "#6b7280" }}>Coach-assisted — 6 skills, ~10 minutes</div>
           </div>
         </div>
