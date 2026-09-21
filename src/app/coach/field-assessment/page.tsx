@@ -259,6 +259,9 @@ export default function CoachFieldAssessmentPage() {
   const [results, setResults]             = useState<Record<string, string>>({});
   const [expandedTest, setExpandedTest]   = useState<string | null>(null);
 
+  // Squad error
+  const [squadError, setSquadError] = useState<string | null>(null);
+
   // Submit
   const [submitting, setSubmitting]   = useState(false);
   const [submitted, setSubmitted]     = useState(false);
@@ -278,7 +281,7 @@ export default function CoachFieldAssessmentPage() {
         const members = safeArray<SquadMember>(res.data?.data ?? res.data);
         setSquad(members);
       })
-      .catch(() => {})
+      .catch(() => setSquadError("Could not load squad. Please refresh the page."))
       .finally(() => setSquadLoading(false));
   }, []);
 
@@ -422,6 +425,8 @@ Brief analysis: overall rating out of 10, 2 key strengths, 2 areas to improve, 4
             <div className="flex items-center gap-2 text-gray-400 text-sm">
               <Loader2 size={15} className="animate-spin" /> Loading squad…
             </div>
+          ) : squadError ? (
+            <p className="text-sm text-red-600">{squadError}</p>
           ) : squad.length === 0 ? (
             <p className="text-sm text-gray-500">No players in your squad yet. <Link href="/coach/squad" className="text-[#1a5c2a] font-semibold">Add players</Link> first.</p>
           ) : (
