@@ -148,7 +148,7 @@ export default function ScholarshipReel({
           </p>
           <p style={{ fontSize: 11, color: "#6b7280", margin: 0 }}>
             {editable
-              ? `${filledCount}/4 slots filled — picked from your Gemini drill results`
+              ? `${filledCount}/4 slots filled — picked from your THUTO drill results`
               : "AI-scored performance clips across 4 recruiter evaluation categories"}
           </p>
         </div>
@@ -285,7 +285,7 @@ export default function ScholarshipReel({
                         No analysed {meta.label.toLowerCase()} drills yet.
                       </p>
                       <p style={{ fontSize: 10, color: "#d1d5db", marginTop: 4 }}>
-                        Complete a Gemini drill in this category first.
+                        Complete a THUTO drill in this category first.
                       </p>
                     </div>
                   ) : (

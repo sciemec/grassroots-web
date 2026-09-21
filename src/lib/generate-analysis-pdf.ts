@@ -530,7 +530,7 @@ export function downloadDrillResultPdf(result: DrillResult, drill: GeminiDrill):
 
   if (result.data_confidence) {
     doc.setFontSize(7.5);
-    doc.text(`Gemini confidence: ${result.data_confidence}`, ML, y + 20);
+    doc.text(`THUTO confidence: ${result.data_confidence}`, ML, y + 20);
   }
   y += 30;
 

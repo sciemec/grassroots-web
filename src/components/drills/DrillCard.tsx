@@ -237,7 +237,7 @@ export default function DrillCard({
           >
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#7e22ce" }}>
-                Gemini will score
+                THUTO will score
               </h4>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -293,7 +293,7 @@ export default function DrillCard({
 
           {/* ⑨ GEMINI CANNOT MEASURE DISCLAIMER */}
           <p className="text-[9px] text-gray-400 italic border-t border-gray-100 pt-3">
-            Gemini cannot measure match intelligence, composure, or decision-making under pressure —
+            THUTO cannot measure match intelligence, composure, or decision-making under pressure —
             those require a real coach watching you play. AI feedback scores technique only.
           </p>
         </div>

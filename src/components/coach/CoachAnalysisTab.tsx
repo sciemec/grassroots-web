@@ -153,7 +153,7 @@ const TOOLS: {
   {
     id: "first_touch", label: "First Touch Analyser", emoji: "⚽", colour: GRS_GREEN,
     icon: <Target size={18} />,
-    description: "Gemini scores each touch — foot surface, body shape, and ball control quality",
+    description: "THUTO scores each touch — foot surface, body shape, and ball control quality",
     howToFilm: [
       "Player receives 10 passes from different angles and distances",
       "Film from the SIDE so body shape and ball are both visible",
@@ -183,7 +183,7 @@ const TOOLS: {
   {
     id: "set_piece", label: "Set Piece Technique", emoji: "🎯", colour: "#7c3aed",
     icon: <Zap size={18} />,
-    description: "Gemini analyses plant foot, hip rotation, ball contact point, and follow-through",
+    description: "THUTO analyses plant foot, hip rotation, ball contact point, and follow-through",
     howToFilm: [
       "Player takes 5-8 repetitions of the same set piece",
       "Film from the SIDE or slightly behind to see plant foot clearly",

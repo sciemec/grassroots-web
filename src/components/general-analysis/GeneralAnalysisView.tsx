@@ -336,7 +336,7 @@ export default function GeneralAnalysisView({ backHref }: Props) {
               <Loader2 className="w-5 h-5 animate-spin text-green-700" />
               <div>
                 <p className="font-semibold text-gray-900 text-sm">Uploading video…</p>
-                <p className="text-xs text-gray-500">Securely uploading to Gemini — {progress}%</p>
+                <p className="text-xs text-gray-500">Securely uploading to THUTO — {progress}%</p>
               </div>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2">
@@ -360,7 +360,7 @@ export default function GeneralAnalysisView({ backHref }: Props) {
             <Loader2 className="w-5 h-5 animate-spin text-green-700 flex-shrink-0" />
             <div>
               <p className="font-semibold text-gray-900 text-sm">Analysing your footage…</p>
-              <p className="text-xs text-gray-500">Gemini is watching the full video — usually 15–60 seconds</p>
+              <p className="text-xs text-gray-500">THUTO is watching the full video — usually 15–60 seconds</p>
             </div>
           </div>
         )}

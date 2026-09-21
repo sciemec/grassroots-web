@@ -165,7 +165,7 @@ export function getUploadAdvisory(file: File): UploadAdvisory {
   // Gemini limit applies to the compressed output, not the raw upload.
   // We only block at the browser level for the small-file proxy path.
   const limitError = !isLargeFile && sizeBytes > GEMINI_MAX_BYTES
-    ? `File is ${sizeMB.toFixed(0)} MB — exceeds the 1.9 GB Gemini limit. Please trim the video or use a shorter clip.`
+    ? `File is ${sizeMB.toFixed(0)} MB — exceeds the 1.9 GB upload limit. Please trim the video or use a shorter clip.`
     : null;
 
   const sizeWarning = isLargeFile

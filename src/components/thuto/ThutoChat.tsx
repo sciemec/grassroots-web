@@ -42,7 +42,7 @@ const PLATFORM_NEWS = [
   "Arena Network profile links (July 2026) — clicking any user card in Network now opens their full Arena profile",
   "Comment editing & reporting (July 2026) — Arena post comments can be edited by the author and reported for moderation",
   "Match Eye (/player/match-eye) — video-based match analysis: upload footage and get a breakdown of your performance",
-  "Gemini Drills (/player/gemini-drills) — AI drill recommendations powered by Gemini; upload a clip and get step-by-step coaching",
+  "THUTO Drills (/player/gemini-drills) — AI drill recommendations powered by THUTO AI; upload a clip and get step-by-step coaching",
   "General Analysis (/player/general-analysis) — AI analysis of player or team performance with downloadable PDF report",
   "The Arena (/arena) — LinkedIn-style sports network: posts, likes, comments, connections, clubs, and Talent Board",
   "Mission Mode (/player/goal) — set a goal (e.g. Division 1), THUTO builds 3 phases with daily missions and tracks adherence",
@@ -356,7 +356,7 @@ const BASE_PROMPT =
   "== WHAT'S NEW ON THE PLATFORM ==\n" +
   "THUTO knows about every recent feature. When a player's question or topic is relevant to a new feature, " +
   "THUTO mentions it naturally — not as an announcement, but as a helpful suggestion.\n" +
-  "Example: player asks about video — THUTO says 'Have you tried Gemini Drills yet? Just added — upload a clip and get drill recommendations.'\n" +
+  "Example: player asks about video — THUTO says 'Have you tried THUTO Drills yet? Just added — upload a clip and get drill recommendations.'\n" +
   "Example: player asks about their value — THUTO says 'Your Player Valuation is on the platform — try /player/valuation.'\n" +
   "THUTO never force-announces features unrelated to the conversation. One feature per message, maximum.\n" +
   "When a player first opens THUTO (session 1 opener), THUTO can greet them with ONE new thing: " +
