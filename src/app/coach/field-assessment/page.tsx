@@ -262,6 +262,9 @@ export default function CoachFieldAssessmentPage() {
   // Squad error
   const [squadError, setSquadError] = useState<string | null>(null);
 
+  // Player age for drill recommendations (defaults to 16 — coach can adjust)
+  const [playerAge, setPlayerAge] = useState<number>(16);
+
   // Submit
   const [submitting, setSubmitting]   = useState(false);
   const [submitted, setSubmitted]     = useState(false);
@@ -312,7 +315,7 @@ export default function CoachFieldAssessmentPage() {
   const drillRecs: DrillRecommendation[] = (() => {
     if (!positionGroup || !allFilled) return [];
     const pos     = (positionGroup === "forward" ? "striker" : positionGroup) as Position;
-    const ageGrp  = resolveAgeGroup(16); // default age — no DOB on squad member
+    const ageGrp  = resolveAgeGroup(playerAge);
     const domains = buildDomainScoresFromTests(currentTests, results);
     const gaps    = selectFocusGaps(domains, pos, ageGrp, 4);
     return getDrillsForGaps(gaps, pos, ageGrp);
@@ -446,6 +449,19 @@ Brief analysis: overall rating out of 10, 2 key strengths, 2 areas to improve, 4
                 </option>
               ))}
             </select>
+          )}
+          {selectedMember && (
+            <div className="mt-3 flex items-center gap-3">
+              <label className="text-xs text-gray-500 whitespace-nowrap">Player age (for drill recs):</label>
+              <input
+                type="number"
+                min={6}
+                max={40}
+                value={playerAge}
+                onChange={(e) => setPlayerAge(Math.max(6, Math.min(40, Number(e.target.value))))}
+                className="w-20 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-[#1a5c2a]"
+              />
+            </div>
           )}
         </div>
 
