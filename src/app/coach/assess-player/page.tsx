@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight, Award, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, Award, CheckCircle2, Users } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import api from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Step = "setup" | "dribbling" | "first_touch" | "passing" | "tackling" | "shooting" | "sprint" | "results";
+
+interface SquadMember {
+  id:             string;
+  name:           string;
+  position:       string;
+  shirt_no:       number;
+  player_user_id: string | null;
+}
 
 interface Mechanic {
   key:    string;
@@ -20,7 +29,6 @@ interface SkillDef {
   key:        string;
   label:      string;
   emoji:      string;
-  endpoint:   string;
   extra:      Record<string, unknown>;
   mechanics:  Mechanic[];
   fieldNames: Record<string, string>;
@@ -31,7 +39,6 @@ interface SkillDef {
 const SKILLS: SkillDef[] = [
   {
     key: "dribbling", label: "Dribbling", emoji: "🔄",
-    endpoint: "/player/dribbling",
     extra: { dribble_type: "Close Control" },
     mechanics: [
       { key: "ball_control",        label: "Ball Control & Touch",      desc: "How well does the player keep the ball under close control while moving?",           weight: 0.30 },
@@ -48,7 +55,6 @@ const SKILLS: SkillDef[] = [
   },
   {
     key: "first_touch", label: "First Touch", emoji: "🦶",
-    endpoint: "/player/first-touch",
     extra: { receive_type: "Ground Pass", pressure_level: "Medium" },
     mechanics: [
       { key: "body_shape",      label: "Body Shape Before Ball",    desc: "Does the player scan and get into position before the ball arrives?",               weight: 0.25 },
@@ -65,7 +71,6 @@ const SKILLS: SkillDef[] = [
   },
   {
     key: "passing", label: "Passing", emoji: "⚽",
-    endpoint: "/player/passing",
     extra: { pass_type: "Short Pass", foot: "Right" },
     mechanics: [
       { key: "body_shape",      label: "Body Shape & Stance",    desc: "Is the non-kicking foot beside the ball? Is the body open to the target?",            weight: 0.25 },
@@ -82,7 +87,6 @@ const SKILLS: SkillDef[] = [
   },
   {
     key: "tackling", label: "Tackling", emoji: "🛡️",
-    endpoint: "/player/tackling",
     extra: { tackle_type: "Block Tackle" },
     mechanics: [
       { key: "approach",   label: "Approach & Positioning", desc: "Does the player close the attacker at the right angle and speed, cutting off options?",  weight: 0.25 },
@@ -99,7 +103,6 @@ const SKILLS: SkillDef[] = [
   },
   {
     key: "shooting", label: "Shooting", emoji: "🎯",
-    endpoint: "/player/shooting",
     extra: { shot_type: "Placed Shot", foot: "Right" },
     mechanics: [
       { key: "plant_foot",     label: "Plant Foot Position",  desc: "Where does the player place their non-kicking foot relative to the ball?",        weight: 0.25 },
@@ -116,7 +119,6 @@ const SKILLS: SkillDef[] = [
   },
   {
     key: "sprint", label: "Sprint", emoji: "💨",
-    endpoint: "/player/sprint",
     extra: { distance_metres: 40, surface: "Grass", time_achieved: null },
     mechanics: [
       { key: "arm_drive",     label: "Arm Drive",     desc: "Are the arms driving forward in a straight line, held at roughly 90 degrees?",             weight: 0.25 },
@@ -139,6 +141,10 @@ const AGE_GROUPS = ["U12", "U14", "U16", "U18", "U20", "Senior"];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function safeArray<T>(val: unknown): T[] {
+  return Array.isArray(val) ? (val as T[]) : [];
+}
+
 function computeScore(mechanics: Mechanic[], ratings: Record<string, number>): number {
   return Math.round(mechanics.reduce((sum, m) => sum + (ratings[m.key] || 0) * 20 * m.weight, 0));
 }
@@ -160,15 +166,37 @@ function scoreLabel(score: number): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AssessPlayerPage() {
-  const token   = useAuthStore((s) => s.token);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const token = useAuthStore((s) => s.token);
 
+  // Squad
+  const [squad,          setSquad]          = useState<SquadMember[]>([]);
+  const [squadLoading,   setSquadLoading]   = useState(true);
+  const [squadError,     setSquadError]     = useState(false);
+  const [selectedMember, setSelectedMember] = useState<SquadMember | null>(null);
+
+  // Assessment state
   const [step,       setStep]       = useState<Step>("setup");
   const [position,   setPosition]   = useState("");
   const [ageGroup,   setAgeGroup]   = useState("");
   const [saving,     setSaving]     = useState(false);
   const [allRatings, setAllRatings] = useState<Record<string, Record<string, number>>>({});
   const [scores,     setScores]     = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    setSquadLoading(true);
+    api
+      .get("/coach/squad")
+      .then((res) => {
+        const members = safeArray<SquadMember>(res.data?.data ?? res.data);
+        // Only show linked players — unlinked can't have their profile updated
+        setSquad(members.filter((m) => m.player_user_id));
+        setSquadLoading(false);
+      })
+      .catch(() => {
+        setSquadError(true);
+        setSquadLoading(false);
+      });
+  }, [token]);
 
   const stepIndex    = STEP_ORDER.indexOf(step);
   const progressPct  = (stepIndex / (STEP_ORDER.length - 1)) * 100;
@@ -185,16 +213,17 @@ export default function AssessPlayerPage() {
     }));
   }
 
+  function resetAll() {
+    setStep("setup");
+    setAllRatings({});
+    setScores({});
+    setPosition("");
+    setAgeGroup("");
+    setSelectedMember(null);
+  }
+
   async function advanceFromSetup() {
-    if (!position || !ageGroup) return;
-    setSaving(true);
-    if (token) {
-      fetch(`${API_URL}/profile`, {
-        method:  "PATCH",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body:    JSON.stringify({ position, age_group: ageGroup }),
-      }).catch(() => {});
-    }
+    if (!selectedMember || !position || !ageGroup) return;
     setSaving(false);
     setStep("dribbling");
   }
@@ -205,8 +234,10 @@ export default function AssessPlayerPage() {
     const overall = computeScore(currentSkill.mechanics, ratings);
     setScores((prev) => ({ ...prev, [currentSkill.key]: overall }));
 
-    if (token) {
+    // Save to the PLAYER's assessment records via the coach endpoint
+    if (token && selectedMember?.player_user_id) {
       const payload: Record<string, unknown> = {
+        skill:         currentSkill.key,
         sport:         "Football",
         position,
         overall_score: overall,
@@ -216,11 +247,9 @@ export default function AssessPlayerPage() {
       for (const [mk, fieldName] of Object.entries(currentSkill.fieldNames)) {
         payload[fieldName] = ratings[mk] ?? 1;
       }
-      fetch(`${API_URL}${currentSkill.endpoint}`, {
-        method:  "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body:    JSON.stringify(payload),
-      }).catch(() => {});
+      api
+        .post(`/coach/player-assessment/${selectedMember.player_user_id}/mechanics`, payload)
+        .catch(() => {});
     }
 
     const next = STEP_ORDER[stepIndex + 1] as Step;
@@ -238,13 +267,14 @@ export default function AssessPlayerPage() {
 
   // ── Shared styles ───────────────────────────────────────────────────────────
 
-  const bg: React.CSSProperties   = { minHeight: "100vh", backgroundColor: "#f4f2ee" };
-  const card: React.CSSProperties = { backgroundColor: "white", borderRadius: 16, padding: 20, border: "1px solid #e5e7eb", marginBottom: 16 };
+  const bg: React.CSSProperties    = { minHeight: "100vh", backgroundColor: "#f4f2ee" };
+  const card: React.CSSProperties  = { backgroundColor: "white", borderRadius: 16, padding: 20, border: "1px solid #e5e7eb", marginBottom: 16 };
   const label: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 };
 
   // ── Setup step ──────────────────────────────────────────────────────────────
 
   if (step === "setup") {
+    const canStart = !!selectedMember && !!position && !!ageGroup;
     return (
       <div style={bg}>
         {/* Nav */}
@@ -269,6 +299,53 @@ export default function AssessPlayerPage() {
               Observe each skill and rate the player&apos;s mechanics. Results automatically update their player profile.
             </p>
 
+            {/* Player selector */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={label}>Select Player</div>
+              {squadLoading ? (
+                <div style={{ fontSize: 13, color: "#6b7280", padding: "10px 0" }}>Loading squad...</div>
+              ) : squadError ? (
+                <div style={{ fontSize: 13, color: "#dc2626" }}>Could not load squad. Check your connection.</div>
+              ) : squad.length === 0 ? (
+                <div style={{ fontSize: 13, color: "#6b7280", padding: "8px 12px", backgroundColor: "#f9fafb", borderRadius: 10, border: "1px solid #e5e7eb" }}>
+                  No linked players in your squad yet.{" "}
+                  <Link href="/coach/registered-players" style={{ color: "#1a5c2a", fontWeight: 600 }}>Register players</Link>
+                  {" "}to get started.
+                </div>
+              ) : (
+                <div style={{ position: "relative" }}>
+                  <Users size={16} color="#6b7280" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                  <select
+                    value={selectedMember?.id ?? ""}
+                    onChange={(e) => {
+                      const member = squad.find((m) => m.id === e.target.value) ?? null;
+                      setSelectedMember(member);
+                      if (member?.position) setPosition(member.position);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px 10px 36px",
+                      borderRadius: 10,
+                      border: "1px solid #e5e7eb",
+                      backgroundColor: "white",
+                      fontSize: 14,
+                      color: selectedMember ? "#111" : "#9ca3af",
+                      appearance: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <option value="">— Choose a player —</option>
+                    {squad.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        #{m.shirt_no} {m.name} ({m.position || "No position"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Position */}
             <div style={{ marginBottom: 20 }}>
               <div style={label}>Player Position</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
@@ -294,6 +371,7 @@ export default function AssessPlayerPage() {
               </div>
             </div>
 
+            {/* Age Group */}
             <div style={{ marginBottom: 24 }}>
               <div style={label}>Age Group</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -321,17 +399,17 @@ export default function AssessPlayerPage() {
 
             <button
               onClick={advanceFromSetup}
-              disabled={!position || !ageGroup || saving}
+              disabled={!canStart || saving}
               style={{
                 width: "100%",
                 padding: "14px",
                 borderRadius: 12,
                 border: "none",
-                backgroundColor: position && ageGroup ? "#1a5c2a" : "#d1d5db",
+                backgroundColor: canStart ? "#1a5c2a" : "#d1d5db",
                 color: "white",
                 fontWeight: 700,
                 fontSize: 15,
-                cursor: position && ageGroup ? "pointer" : "not-allowed",
+                cursor: canStart ? "pointer" : "not-allowed",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -366,7 +444,9 @@ export default function AssessPlayerPage() {
           </Link>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>Assessment Complete</div>
-            <div style={{ fontSize: 12, color: "#6b7280" }}>{position} — {ageGroup}</div>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>
+              {selectedMember?.name ?? "Player"} — {position} — {ageGroup}
+            </div>
           </div>
         </div>
         <div style={{ height: 4, backgroundColor: "#e5e7eb" }}>
@@ -419,7 +499,7 @@ export default function AssessPlayerPage() {
             Back to Squad
           </Link>
           <button
-            onClick={() => { setStep("setup"); setAllRatings({}); setScores({}); setPosition(""); setAgeGroup(""); }}
+            onClick={resetAll}
             style={{ width: "100%", padding: "14px", borderRadius: 12, border: "1px solid #e5e7eb", backgroundColor: "white", color: "#374151", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
           >
             Assess Another Player
@@ -449,7 +529,9 @@ export default function AssessPlayerPage() {
           <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>
             {currentSkill.emoji} {currentSkill.label}
           </div>
-          <div style={{ fontSize: 12, color: "#6b7280" }}>Skill {skillIdx + 1} of {SKILLS.length} — {position}</div>
+          <div style={{ fontSize: 12, color: "#6b7280" }}>
+            {selectedMember?.name ?? "Player"} · Skill {skillIdx + 1} of {SKILLS.length} — {position}
+          </div>
         </div>
         {/* Step dots */}
         <div style={{ display: "flex", gap: 4 }}>

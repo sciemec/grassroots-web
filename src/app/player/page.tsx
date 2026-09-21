@@ -23,7 +23,6 @@ import {
   IconWorld,
   IconBrain,
   IconChalkboard,
-  IconListCheck,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
