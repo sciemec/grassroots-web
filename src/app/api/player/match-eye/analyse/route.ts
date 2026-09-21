@@ -1,17 +1,16 @@
 import { NextRequest } from "next/server";
 import { waitForGeminiFile, callGemini } from "@/lib/gemini-api";
-import { FOOTBALL_POSITION_DRILLS } from "@/lib/drill-data";
+import { FOOTBALL_DRILLS } from "@/config/gemini-drills";
 import { TACTICAL_PRINCIPLES } from "@/lib/thuto-tactics-knowledge";
 
-// Compact catalog injected into the Gemini prompt so it recommends real drill IDs
-const DRILL_CATALOG = Object.values(FOOTBALL_POSITION_DRILLS)
-  .flatMap((track) => track.drills)
-  .map((d) => ({
-    id:        d.id,
-    name:      d.name,
-    positions: d.position_tags,
-    benefit:   d.football_benefit.split(".")[0].slice(0, 100),
-  }));
+// Compact catalog injected into the Gemini prompt so it recommends real drill IDs.
+// Uses fb_* IDs from gemini-drills.ts — these have analysis pages at /player/drills.
+const DRILL_CATALOG = FOOTBALL_DRILLS.map((d) => ({
+  id:        d.id,
+  name:      d.name,
+  positions: d.positions,
+  benefit:   d.description.split(".")[0].slice(0, 100),
+}));
 
 // Compact tactics catalog — injected so Gemini can link turnovers to Tactical Academy principles
 const TACTICS_CATALOG = TACTICAL_PRINCIPLES.map((p) => ({
