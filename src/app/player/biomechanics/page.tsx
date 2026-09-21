@@ -728,7 +728,7 @@ Cover these four things as flowing paragraphs (no bullet points, no headings):
     if (!p || !token || token === 'dev-token') return;
     fetch(`${API_URL}/player/biometric-scores`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         drill:             drill?.id,
         performance_index: p.performance_index,
