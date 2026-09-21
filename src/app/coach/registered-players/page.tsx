@@ -273,6 +273,8 @@ export default function RegisteredPlayersPage() {
   const [photoFile, setPhotoFile]   = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [submitError, setSubmitError]       = useState<string | null>(null);
+  const [actionError, setActionError]       = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const user      = useAuthStore((s) => s.user);
@@ -347,13 +349,18 @@ export default function RegisteredPlayersPage() {
     e.preventDefault();
     if (!form.first_name || !form.surname || !form.date_of_birth) return;
     setSubmitting(true);
+    setSubmitError(null);
     setDuplicateWarning(null);
     try {
       // Upload photo first if one was selected
       let photoUrl: string | undefined;
       if (photoFile) {
         const uploaded = await uploadPhoto(photoFile);
-        if (uploaded) photoUrl = uploaded;
+        if (uploaded) {
+          photoUrl = uploaded;
+        } else {
+          setSubmitError("Photo upload failed — player will be registered without a photo.");
+        }
       }
 
       const res = await api.post("/coach/registered-players", {
@@ -390,8 +397,10 @@ export default function RegisteredPlayersPage() {
       setPhotoFile(null);
       setPhotoPreview(null);
       setShowForm(false);
-    } catch {
-      // silent — keep form open
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message ?? "Registration failed. Please try again.";
+      setSubmitError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -399,11 +408,12 @@ export default function RegisteredPlayersPage() {
 
   async function handleConfirm(id: string) {
     setActionId(id);
+    setActionError(null);
     try {
       const res = await api.post(`/coach/registered-players/${id}/confirm`);
       setRegs((prev) => prev.map((r) => (r.id === id ? res.data.data : r)));
     } catch {
-      // silent
+      setActionError("Could not confirm match. Please try again.");
     } finally {
       setActionId(null);
     }
@@ -411,11 +421,12 @@ export default function RegisteredPlayersPage() {
 
   async function handleStandaloneConfirm(id: string) {
     setActionId(id);
+    setActionError(null);
     try {
       const res = await api.post(`/coach/registered-players/${id}/standalone-confirm`);
       setRegs((prev) => prev.map((r) => (r.id === id ? res.data.data : r)));
     } catch {
-      // silent
+      setActionError("Could not confirm player. Please try again.");
     } finally {
       setActionId(null);
     }
@@ -423,11 +434,12 @@ export default function RegisteredPlayersPage() {
 
   async function handleReject(id: string) {
     setActionId(id);
+    setActionError(null);
     try {
       const res = await api.post(`/coach/registered-players/${id}/reject`);
       setRegs((prev) => prev.map((r) => (r.id === id ? res.data.data : r)));
     } catch {
-      // silent
+      setActionError("Could not reject match. Please try again.");
     } finally {
       setActionId(null);
     }
@@ -479,6 +491,14 @@ export default function RegisteredPlayersPage() {
       </header>
 
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "20px 16px 56px" }}>
+
+        {/* Action error banner */}
+        {actionError && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#991b1b" }}>
+            <span>{actionError}</span>
+            <button onClick={() => setActionError(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#991b1b", fontSize: 16, lineHeight: 1, padding: 0, flexShrink: 0 }}>✕</button>
+          </div>
+        )}
 
         {/* Explainer */}
         <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
@@ -685,6 +705,12 @@ export default function RegisteredPlayersPage() {
                 <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Coach Notes</p>
                 <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none resize-none" placeholder="e.g. Excellent pace, needs work on left foot" />
               </div>
+
+              {submitError && (
+                <p style={{ fontSize: 12, color: "#dc2626", backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 12px", margin: 0 }}>
+                  {submitError}
+                </p>
+              )}
 
               <button
                 type="submit"
