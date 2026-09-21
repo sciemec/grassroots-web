@@ -273,7 +273,7 @@ function TurnoverInsights({ analysis }: { analysis: PlayerAnalysis }) {
           ))}
         </div>
         <p style={{ fontSize: 10, color: "#b91c1c", fontStyle: "italic", marginTop: 10, lineHeight: 1.4 }}>
-          Turnover moments are identified from Gemini&apos;s video analysis — verify against your own footage.
+          Turnover moments are identified from THUTO&apos;s video analysis — verify against your own footage.
         </p>
       </div>
     </div>
@@ -831,7 +831,7 @@ export default function PlayerMatchEyePage() {
             }}>
               <Zap size={15} color={GRS_GREEN} style={{ marginTop: 2, flexShrink: 0 }} />
               <p style={{ fontSize: 12, color: "#166534", lineHeight: 1.5 }}>
-                Gemini analyses your full video and scores your individual performance — positioning, technique, key moments, and specific drills to improve.
+                THUTO analyses your full video and scores your individual performance — positioning, technique, key moments, and specific drills to improve.
               </p>
             </div>
           </div>
@@ -926,7 +926,7 @@ export default function PlayerMatchEyePage() {
         {pageStage === "uploading" && (
           <div style={{ background: "#fff", borderRadius: 16, padding: 28, border: "1px solid #e5e7eb", textAlign: "center" }}>
             <Upload size={28} color={GRS_GREEN} style={{ margin: "0 auto 12px" }} />
-            <p style={{ fontWeight: 700, fontSize: 15, color: "#111", marginBottom: 6 }}>Uploading to Gemini...</p>
+            <p style={{ fontWeight: 700, fontSize: 15, color: "#111", marginBottom: 6 }}>Uploading to THUTO...</p>
             <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 20 }}>
               {uploadPct < 100 ? `${uploadPct}% uploaded` : "Processing video..."}
             </p>
@@ -947,7 +947,7 @@ export default function PlayerMatchEyePage() {
             <Target size={28} color={GRS_GREEN} style={{ margin: "0 auto 12px" }} />
             <p style={{ fontWeight: 700, fontSize: 15, color: "#111", marginBottom: 6 }}>Analysing your performance...</p>
             <p style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.6 }}>
-              Gemini is watching your video frame by frame.<br />
+              THUTO is watching your video frame by frame.<br />
               This usually takes 60–120 seconds.
             </p>
             <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 20 }}>
