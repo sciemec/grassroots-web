@@ -161,6 +161,67 @@ async function callDeepSeekFallback(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Match Eye context — latest video analysis fetched from the Laravel DB
+// Called only on the first message of each chat session (history.length === 0)
+// Returns "" on any failure — never throws
+// ─────────────────────────────────────────────────────────────────────────────
+async function fetchMatchEyeContext(authToken: string): Promise<string> {
+  if (!authToken) return "";
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) return "";
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3_000);
+
+    let res: Response;
+    try {
+      res = await fetch(`${apiUrl}/video-analyses`, {
+        headers: { "Authorization": `Bearer ${authToken}` },
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+
+    if (!res.ok) return "";
+
+    const json = await res.json() as { data?: Array<{ ai_feedback: string; sport?: string; created_at?: string }> };
+    const analyses = json?.data ?? [];
+    if (!analyses.length) return "";
+
+    const latest   = analyses[0];
+    const feedback = JSON.parse(latest.ai_feedback) as {
+      overall_rating?: number;
+      performance_summary?: string;
+      technical_strengths?: string[];
+      areas_to_improve?: string[];
+    };
+
+    const rating    = feedback.overall_rating ?? null;
+    const summary   = feedback.performance_summary?.split(".")[0] ?? null;
+    const strengths = (feedback.technical_strengths ?? []).slice(0, 2);
+    const improve   = (feedback.areas_to_improve   ?? []).slice(0, 2);
+
+    const parts: string[] = [];
+    if (rating !== null)  parts.push(`Rating ${rating}/10`);
+    if (strengths.length) parts.push(`Strengths: ${strengths.join("; ")}`);
+    if (improve.length)   parts.push(`Needs work: ${improve.join("; ")}`);
+    if (summary)          parts.push(summary);
+
+    if (!parts.length) return "";
+
+    const sport = latest.sport       ? ` (${latest.sport})`               : "";
+    const date  = latest.created_at  ? ` — ${latest.created_at.slice(0, 10)}` : "";
+
+    return `\n\nPLAYER'S RECENT MATCH EYE ANALYSIS${sport}${date}: ${parts.join(". ")}.`;
+  } catch {
+    return "";
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main handler
 // ─────────────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
@@ -190,6 +251,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "message is required." }, { status: 400 });
   }
 
+  // ── Auth token (forwarded from ThutoChat for Match Eye context fetch) ──────
+  const authToken = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+
   // ── Select persona ─────────────────────────────────────────────────────────
   // system_prompt in body overrides everything (admin/coach custom prompts)
   // Otherwise: female → Amara, male/missing → THUTO
@@ -204,6 +268,11 @@ export async function POST(req: NextRequest) {
       (userContext.recentStats ? `Recent performance: ${userContext.recentStats}. ` : "")
     : "";
 
+  // ── Match Eye context — fetched once per chat session (first message only) ─
+  const matchEyeContext = history.length === 0
+    ? await fetchMatchEyeContext(authToken)
+    : "";
+
   // ── Knowledge retrieval (unchanged from original) ─────────────────────────
   const relevantSessions = findRelevantSessions(message, 3);
   const knowledgeContext = relevantSessions.length > 0
@@ -215,8 +284,8 @@ export async function POST(req: NextRequest) {
       "\n---\n"
     : "";
 
-  // ── Full system prompt: persona + player context + knowledge ───────────────
-  const fullSystem = basePersona + playerContext + knowledgeContext;
+  // ── Full system prompt: persona + player context + Match Eye + knowledge ───
+  const fullSystem = basePersona + playerContext + matchEyeContext + knowledgeContext;
 
   // ── Conversation history (last 6 turns) ───────────────────────────────────
   const messages: { role: "user" | "assistant"; content: string }[] = [

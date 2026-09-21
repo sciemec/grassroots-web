@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { useThutoCommands } from "./useThutoCommands";
 import { useThutoVoice } from "./useThutoVoice";
 import api from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 
 const ThutoOnboarding = dynamic(() => import("./ThutoOnboarding"), { ssr: false });
@@ -1126,6 +1127,8 @@ export default function ThutoChat() {
     return parts.join("");
   };
 
+  const authToken = useAuthStore((s) => s.token) ?? "";
+
   const [onboarded,       setOnboarded]       = useState(false);
   const [hydrated,        setHydrated]        = useState(false);
   const [open,            setOpen]            = useState(false);
@@ -1356,7 +1359,7 @@ export default function ThutoChat() {
         const history = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
         const resp = await fetch("/api/ai-coach", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...(authToken && { "Authorization": `Bearer ${authToken}` }) },
           body: JSON.stringify({ message: text, system_prompt: systemPrompt, history }),
         });
         const data = await resp.json();
@@ -1367,7 +1370,7 @@ export default function ThutoChat() {
         const history = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
         const resp = await fetch("/api/ai-coach", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...(authToken && { "Authorization": `Bearer ${authToken}` }) },
           body: JSON.stringify({ message: text, system_prompt: systemPrompt, history }),
         });
         const data = await resp.json();
