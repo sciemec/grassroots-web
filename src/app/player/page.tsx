@@ -263,14 +263,6 @@ export default function PlayerHubPage() {
           subtitle="Full-body movement scan"
         />
         <HubCard
-          href="/player/assess-me"
-          icon={IconListCheck}
-          iconBg={O}
-          iconColor={OL}
-          title="Full Skill Assessment"
-          subtitle="Coach rates all 6 skills — auto-fills your profile"
-        />
-        <HubCard
           href="/player/assessment"
           icon={IconRun}
           iconBg={O}
