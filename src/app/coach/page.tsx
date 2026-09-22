@@ -8,6 +8,7 @@ import {
   Users, Dumbbell, Calendar, Video,
   UserSearch, Globe, Bell, Layers,
   ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, UserCheck, Clapperboard, ShoppingBag, Star, ClipboardList,
+  CalendarDays, BarChart2, HeartPulse,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -152,18 +153,21 @@ export default function CoachHubPage() {
         {/* ── 1. Squad & Players ─────────────────────────────────────── */}
         <SectionLabel>1 · Squad &amp; Players</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <HubCard href="/coach/squad"              icon={Users}      iconBg="#dcfce7" iconColor="#16a34a" label="My Squad"              desc="Players · injuries · fatigue · chemistry" badge="core" />
-          <HubCard href="/coach/registered-players" icon={UserCheck}  iconBg="#f0fdf4" iconColor="#1a5c2a" label="Player Registry"        desc="Register players · build talent passports" badge="new" />
-          <HubCard href="/coach/scouting"           icon={UserSearch} iconBg="#fef3c7" iconColor="#d97706" label="Scouting & Recruitment" desc="Discover players · track targets" />
+          <HubCard href="/coach/squad"              icon={Users}       iconBg="#dcfce7" iconColor="#16a34a" label="My Squad"              desc="Players · injuries · fatigue · chemistry" badge="core" />
+          <HubCard href="/coach/registered-players" icon={UserCheck}   iconBg="#f0fdf4" iconColor="#1a5c2a" label="Player Registry"        desc="Register players · build talent passports" badge="new" />
+          <HubCard href="/coach/scouting"           icon={UserSearch}  iconBg="#fef3c7" iconColor="#d97706" label="Scouting & Recruitment" desc="Discover players · track targets" />
+          <HubCard href="/coach/stats"              icon={BarChart2}   iconBg="#e0f2fe" iconColor="#0284c7" label="Team Stats"             desc="Squad performance · trends · season overview" />
+          <HubCard href="/coach/injury-hub"         icon={HeartPulse}  iconBg="#fee2e2" iconColor="#dc2626" label="Injury Hub"             desc="Track injuries · return timelines · load risk" />
         </div>
 
         {/* ── 2. Match & Tactics ─────────────────────────────────────── */}
         <SectionLabel>2 · Match &amp; Tactics</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <HubCard href="/coach/tactics/board"  icon={Layers}        iconBg="#dbeafe" iconColor="#2563eb" label="Intelligence Board" desc="XG map, formations & drag"            badge="new" />
-          <HubCard href="/coach/set-pieces"     icon={Video}         iconBg="#fdf4ff" iconColor="#a21caf" label="Set Pieces"         desc="Clip analysis + scoring lab"          badge="ai" />
-          <HubCard href="/coach/video-analysis" icon={Eye}           iconBg="#fee2e2" iconColor="#dc2626" label="Video Analysis"     desc="Match Eye · Drill · General · Player" badge="ai" />
-          <HubCard href="/coach/tactics/learn"  icon={GraduationCap} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Tactics Academy"   desc="Formations, principles & badges"      badge="new" />
+          <HubCard href="/coach/matches"        icon={CalendarDays}  iconBg="#dcfce7" iconColor="#16a34a" label="Matches"            desc="Fixtures · results · upcoming schedule"  badge="core" />
+          <HubCard href="/coach/tactics/board"  icon={Layers}        iconBg="#dbeafe" iconColor="#2563eb" label="Intelligence Board" desc="XG map, formations & drag"               badge="new" />
+          <HubCard href="/coach/set-pieces"     icon={Video}         iconBg="#fdf4ff" iconColor="#a21caf" label="Set Pieces"         desc="Clip analysis + scoring lab"             badge="ai" />
+          <HubCard href="/coach/video-analysis" icon={Eye}           iconBg="#fee2e2" iconColor="#dc2626" label="Video Analysis"     desc="Match Eye · Drill · General · Player"    badge="ai" />
+          <HubCard href="/coach/tactics/learn"  icon={GraduationCap} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Tactics Academy"   desc="Formations, principles & badges"         badge="new" />
         </div>
 
         {/* ── 3. Training ────────────────────────────────────────────── */}
