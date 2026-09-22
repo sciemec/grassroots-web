@@ -2,6 +2,7 @@
 // src/app/coach/page.tsx
 // Coach Hub — card-based feature dashboard
 
+import { useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import {
@@ -9,6 +10,7 @@ import {
   UserSearch, Globe, Bell, Layers,
   ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, UserCheck, Clapperboard, ShoppingBag, Star, ClipboardList,
   CalendarDays, BarChart2, HeartPulse,
+  ChevronDown, ChevronUp, Film, Zap,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -107,6 +109,7 @@ function DarkCTA({ href, icon: Icon, iconColor, title, sub }: {
 
 export default function CoachHubPage() {
   const user = useAuthStore((s) => s.user);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
@@ -193,6 +196,28 @@ export default function CoachHubPage() {
         <SectionLabel>5 · School Programme</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           <HubCard href="/school-hub" icon={School} iconBg="#f0fdf4" iconColor="#1a5c2a" label="School Hub" desc="Teams · fixtures · NASH leagues · notices" badge="nash" />
+        </div>
+
+        {/* ── More Tools ─────────────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+          <button
+            onClick={() => setMoreOpen(v => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-none border-none cursor-pointer hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-400 flex items-center gap-2">
+              <span className="inline-block w-4 h-px bg-gray-300" />
+              More Tools
+            </span>
+            {moreOpen ? <ChevronUp size={16} color="#9ca3af" /> : <ChevronDown size={16} color="#9ca3af" />}
+          </button>
+          {moreOpen && (
+            <div className="px-4 pb-4 pt-1 border-t border-gray-100">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
+                <HubCard href="/coach/futurefit"     icon={Zap}  iconBg="#fef3c7" iconColor="#d97706" label="FutureFit"      desc="Player development projections & potential" />
+                <HubCard href="/coach/video-library" icon={Film} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Video Library"  desc="Browse & manage all uploaded footage" />
+              </div>
+            </div>
+          )}
         </div>
 
       </div>
