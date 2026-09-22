@@ -118,7 +118,7 @@ export default function FieldTestRequestsPage() {
               </p>
               <p style={{ margin: "4px 0 0", fontSize: 12, color: "#888" }}>
                 The player{successCount > 1 ? "s have" : " has"} been added to your Player Registry.
-                Go to <Link href="/coach/registered-players" style={{ color: "#f0b429" }}>Player Registry</Link> to run their field tests.
+                Go to <Link href="/coach/field-assessment" style={{ color: "#f0b429" }}>Field Assessment</Link> to run their field tests.
               </p>
             </div>
           </div>
