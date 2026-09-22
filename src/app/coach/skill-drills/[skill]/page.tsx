@@ -33,11 +33,12 @@ interface SkillCfg {
 }
 
 interface SquadPlayer {
-  id:         string;
-  name?:      string;
-  first_name?: string;
-  surname?:   string;
-  position?:  string;
+  id:              string;
+  name?:           string;
+  first_name?:     string;
+  surname?:        string;
+  position?:       string;
+  player_user_id:  string | null;
 }
 
 type AiFeedback = Record<string, string | string[] | { name: string; description: string }>;
@@ -319,7 +320,8 @@ export default function CoachSkillDrillPage() {
     fetch(`${API_URL}/coach/squad`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(j => {
-        const list = Array.isArray(j.data) ? j.data : Array.isArray(j) ? j : [];
+        const list = (Array.isArray(j.data) ? j.data : Array.isArray(j) ? j : [])
+          .filter((m: SquadPlayer) => m.player_user_id);
         setSquad(list);
         if (list.length > 0) setSelectedId(list[0].id);
       })
@@ -329,9 +331,10 @@ export default function CoachSkillDrillPage() {
 
   // Load history when player changes
   useEffect(() => {
-    if (!token || !selectedId || !cfg) return;
+    const playerUserId = squad.find(p => p.id === selectedId)?.player_user_id;
+    if (!token || !playerUserId || !cfg) return;
     setHistLoading(true);
-    fetch(`${API_URL}/coach/skill-drills?player_id=${selectedId}&skill=${cfg.skillCode}`, {
+    fetch(`${API_URL}/coach/skill-drills?player_id=${playerUserId}&skill=${cfg.skillCode}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.ok ? r.json() : null)
@@ -343,7 +346,7 @@ export default function CoachSkillDrillPage() {
       })
       .catch(() => {})
       .finally(() => setHistLoading(false));
-  }, [token, selectedId, cfg]);
+  }, [token, selectedId, cfg, squad]);
 
   if (!cfg) {
     return (
@@ -409,7 +412,8 @@ ${fbKeys},
     const computed = computeScore(cfg, ratings);
 
     // Save to backend
-    if (token && selectedId) {
+    const selectedPlayer = squad.find(p => p.id === selectedId);
+    if (token && selectedPlayer?.player_user_id) {
       const mechanicsPayload: Record<string, number> = {};
       cfg.mechanics.forEach(m => { mechanicsPayload[m.key] = ratings[m.key] || 0; });
 
@@ -417,7 +421,7 @@ ${fbKeys},
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          player_id:     selectedId,
+          player_id:     selectedPlayer.player_user_id,
           skill:         cfg.skillCode,
           activity_type: activityType,
           mechanics:     mechanicsPayload,
