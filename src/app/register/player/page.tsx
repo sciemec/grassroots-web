@@ -173,7 +173,13 @@ export default function RegisterPlayerPage() {
         const data = await res.json().catch(() => ({})) as {
           message?: string;
           errors?: Record<string, string[]>;
+          code?: string;
         };
+
+        // Under-13 hard rejection — no account was created
+        if (data.code === "UNDER_13_SELF_REGISTRATION") {
+          throw new Error("__under_13__");
+        }
 
         // Parse Laravel field-level validation errors into friendly messages
         if (data.errors && Object.keys(data.errors).length > 0) {
@@ -300,6 +306,17 @@ export default function RegisterPlayerPage() {
                   Retry now
                 </button>
               </div>
+            ) : error === "__under_13__" ? (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+                <p className="font-semibold">Players under 13 can&apos;t create their own account</p>
+                <p className="mt-1 text-xs leading-relaxed">A parent or guardian needs to register them instead.</p>
+                <a
+                  href="/register/guardian"
+                  className="mt-2 inline-block text-xs font-bold underline text-amber-900 hover:text-amber-700"
+                >
+                  Register as a guardian →
+                </a>
+              </div>
             ) : (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
                 {error}
@@ -386,11 +403,16 @@ export default function RegisterPlayerPage() {
 
               {computedAgeGroup === "under_13" && (
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                  <p className="font-bold">Parent/Guardian Consent Required</p>
+                  <p className="font-bold">Players under 13 can&apos;t create their own account</p>
                   <p className="mt-1 leading-relaxed">
-                    Players under 13 need a parent or guardian to approve their account before
-                    they can start training. You will receive instructions after signing up.
+                    A parent or guardian needs to register them instead.
                   </p>
+                  <a
+                    href="/register/guardian"
+                    className="mt-2 inline-block text-xs font-bold underline text-amber-900 hover:text-amber-700"
+                  >
+                    Register as a guardian →
+                  </a>
                 </div>
               )}
 
