@@ -11,9 +11,9 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { compressVideo } from "@/lib/compress-video";
 import { downloadPlayerMatchEyePdf } from "@/lib/generate-analysis-pdf";
-import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
+import { getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
 import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
-import { enqueueUpload, flushQueue } from "@/lib/upload-queue";
+import { flushQueue } from "@/lib/upload-queue";
 import { UploadGate } from "@/components/upload/UploadGate";
 import { saveAnalysisEvent } from "@/lib/thuto-context";
 
@@ -530,7 +530,10 @@ export default function PlayerMatchEyePage() {
 
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // ── Upload to Gemini ────────────────────────────────────────────────────────
+  // ── Upload via R2 → Laravel job → Gemini Files API ───────────────────────
+  // Bypasses the Render proxy entirely (avoids 60s load-balancer timeout).
+  // Flow: compress → presigned PUT to R2 → POST r2_key to Laravel →
+  //       poll until status='uploaded' → receive fileUri for analyse step.
 
   const uploadVideo = useCallback(async (file: File) => {
     setPageStage("uploading");
@@ -539,21 +542,95 @@ export default function PlayerMatchEyePage() {
     setUploadedFile(file);
 
     try {
-      // Compress to 720p H.264 before upload (matches Coach Hub — reduces failures on large files)
-      const fileToUpload = await compressVideo(file, (pct) => setUploadPct(Math.round(pct * 0.5)));
+      // Step 1 — Compress to 720p H.264
+      const fileToUpload = await compressVideo(file, (pct) => setUploadPct(Math.round(pct * 0.4)));
 
-      const data = await uploadVideoInChunksParallel(fileToUpload, (pct) => setUploadPct(50 + Math.round(pct * 0.5)));
+      // Step 2 — Get a presigned R2 PUT URL (direct to R2, no Render proxy)
+      const presignRes = await fetch("/api/upload/presigned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName:    fileToUpload.name || file.name,
+          contentType: fileToUpload.type || "video/mp4",
+          source:      "match-eye",
+        }),
+      });
+      if (!presignRes.ok) throw new Error("Could not get upload URL");
+      const { uploadUrl, publicUrl, key } = await presignRes.json() as { uploadUrl: string; publicUrl: string; key: string };
 
-      setFileUri(data.fileUri);
-      setFileName(data.fileName);
-      setMimeType(data.mimeType);
-      setUploadPct(100);
-      setPageStage("uploaded");
+      // Step 3 — PUT file directly to R2 (progress 40→80%)
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setUploadPct(40 + Math.round((e.loaded / e.total) * 40));
+        };
+        xhr.onload  = () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`R2 upload failed (${xhr.status})`));
+        xhr.onerror = () => reject(new Error("Connection dropped during upload. Check your signal and try again."));
+        xhr.timeout  = 180_000;
+        xhr.ontimeout = () => reject(new Error("Upload timed out. Try a smaller clip or a stronger connection."));
+        xhr.open("PUT", uploadUrl);
+        xhr.setRequestHeader("Content-Type", fileToUpload.type || "video/mp4");
+        xhr.send(fileToUpload);
+      });
+
+      setUploadPct(80);
+
+      // Step 4 — Submit r2_key to Laravel; background worker forwards to Gemini
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
+      const submitRes = await fetch(`${apiBase}/match-eye/player-upload`, {
+        method: "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          r2_key:         key,
+          r2_url:         publicUrl,
+          sport,
+          position,
+          jersey:         jersey   || undefined,
+          focus_question: focusQuestion || undefined,
+          mime_type:      fileToUpload.type || "video/mp4",
+        }),
+      });
+      if (!submitRes.ok) throw new Error("Could not submit clip for processing");
+      const { upload_id } = await submitRes.json() as { upload_id: string };
+
+      // Step 5 — Poll every 4 s until status='uploaded' or 'failed' (max 8 min)
+      setUploadPct(85);
+      const maxPolls = 120;
+      for (let i = 0; i < maxPolls; i++) {
+        await new Promise((r) => setTimeout(r, 4_000));
+        const pollRes = await fetch(`${apiBase}/match-eye/player-upload/${upload_id}`, {
+          headers: { "Authorization": `Bearer ${token}` },
+        });
+        if (!pollRes.ok) continue;
+        const poll = await pollRes.json() as { status: string; file_uri?: string; file_name?: string; mime_type?: string; error?: string };
+
+        if (poll.status === "uploaded" && poll.file_uri) {
+          setFileUri(poll.file_uri);
+          setFileName(poll.file_name ?? "");
+          setMimeType(poll.mime_type ?? "video/mp4");
+          setUploadPct(100);
+          setPageStage("uploaded");
+          return;
+        }
+
+        if (poll.status === "failed") {
+          throw new Error(poll.error ?? "Background processing failed. Please try again.");
+        }
+
+        // Still processing — bump progress indicator slightly
+        setUploadPct(Math.min(98, 85 + Math.round((i / maxPolls) * 13)));
+      }
+
+      throw new Error("Upload timed out waiting for Gemini. Please try again.");
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
       setPageStage("error");
     }
-  }, []);
+  }, [token, sport, position, jersey, focusQuestion]);
 
   const confirmAndUpload = (file: File) => {
     const adv = getUploadAdvisory(file);
@@ -888,15 +965,8 @@ export default function PlayerMatchEyePage() {
                 onQueue={() => {
                   const file = pendingFile!;
                   setPendingFile(null); setAdvisory(null); setGateStrategy(null);
-                  setPageStage("uploading");
-                  setUploadPct(0);
-                  enqueueUpload(file, (pct) => setUploadPct(Math.round(pct)), true)
-                    .then((data) => {
-                      setFileUri(data.fileUri); setFileName(data.fileName);
-                      setMimeType(data.mimeType); setUploadPct(100);
-                      setPageStage("uploaded");
-                    })
-                    .catch((err) => { setError(err instanceof Error ? err.message : "Upload failed"); setPageStage("error"); });
+                  // Route through the same R2 → Laravel → Gemini async flow
+                  uploadVideo(file);
                 }}
               />
             ) : (
