@@ -5,7 +5,7 @@ import { persist } from "zustand/middleware";
 // Types & Helper Functions
 // ==========================================
 
-export type UserRole = "admin" | "coach" | "scout" | "player" | "athlete" | "fan" | "analyst";
+export type UserRole = "admin" | "coach" | "scout" | "player" | "athlete" | "fan" | "analyst" | "guardian";
 
 export interface AuthUser {
   id: string;
@@ -29,8 +29,9 @@ export function roleHomePath(role: UserRole): string {
     case "coach":   return "/coach";
     case "scout":   return "/scout";
     case "fan":     return "/fan";
-    case "analyst": return "/analyst";
-    case "player":  return "/player";
+    case "analyst":  return "/analyst";
+    case "guardian": return "/guardian";
+    case "player":   return "/player";
     default:        return "/arena";
   }
 }

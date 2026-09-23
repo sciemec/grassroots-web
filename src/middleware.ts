@@ -19,6 +19,7 @@ const PUBLIC_ROUTES = [
   '/scout',
   '/fan',
   '/analyst',
+  '/guardian',
   '/streaming',
   '/video-studio',
   '/video-analysis',
