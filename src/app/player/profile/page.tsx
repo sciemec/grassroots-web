@@ -283,7 +283,8 @@ function PlayerProfilePage() {
         : "";
 
       // Pull in real AI analysis data from Match Eye / Gemini Drills if available
-      const analysisLog = getAnalysisLog();
+      // getAnalysisLog() fetches from backend first, falls back to localStorage
+      const analysisLog = await getAnalysisLog();
       const analysisContext = analysisLog.length > 0
         ? `\n\nReal AI analysis results from this player's recent sessions:\n${analysisLog.slice(-4).map((e) => {
             const label = { "match-eye": "Match Eye", "gemini-drills": "AI Drill Analysis", "biomechanics": "Biomechanics", "assessment": "Field Assessment" }[e.tool] ?? e.tool;

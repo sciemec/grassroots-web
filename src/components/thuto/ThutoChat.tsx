@@ -10,6 +10,7 @@ import { useThutoVoice } from "./useThutoVoice";
 import api from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
+import { getAnalysisLog } from "@/lib/thuto-context";
 
 const ThutoOnboarding = dynamic(() => import("./ThutoOnboarding"), { ssr: false });
 
@@ -805,6 +806,12 @@ function DailyJourney() {
       try { localStorage.setItem(journeyDateKey(), JSON.stringify(j)); } catch { /* ignore */ }
       setLoading(false);
     });
+  }, []);
+
+  // Refresh analysis log from backend on mount so THUTO has cross-device history.
+  // getAnalysisLog() writes the result back to localStorage, which buildContext() then reads.
+  useEffect(() => {
+    getAnalysisLog().catch(() => { /* offline — localStorage fallback already in place */ });
   }, []);
 
   const markDone = (id: string) => {
