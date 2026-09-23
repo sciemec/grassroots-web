@@ -11,6 +11,7 @@ const PUBLIC_ROUTES = [
   '/about',
   '/pricing',
   '/privacy',
+  '/privacy-policy',
   '/terms',
   // All hub routes are open to guests (explore-first model)
   '/player',
