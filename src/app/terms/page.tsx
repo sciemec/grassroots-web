@@ -186,7 +186,7 @@ export default function TermsPage() {
         {/* Footer links */}
         <div className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-[#f0b429]/10 pt-8 text-sm text-green-500">
           <Link href="/" className="hover:text-green-300 transition-colors">← Back to home</Link>
-          <Link href="/privacy" className="hover:text-green-300 transition-colors">Privacy Policy →</Link>
+          <Link href="/privacy-policy" className="hover:text-green-300 transition-colors">Privacy Policy →</Link>
         </div>
       </div>
     </div>
