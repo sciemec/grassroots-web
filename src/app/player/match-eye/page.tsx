@@ -15,6 +15,7 @@ import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } f
 import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
 import { enqueueUpload, flushQueue } from "@/lib/upload-queue";
 import { UploadGate } from "@/components/upload/UploadGate";
+import { saveAnalysisEvent } from "@/lib/thuto-context";
 
 const GRS_GREEN = "#1a5c2a";
 const SPORTS = [
@@ -600,6 +601,19 @@ export default function PlayerMatchEyePage() {
       const data = await res.json() as { analysis: PlayerAnalysis; narrative: string };
       setAnalysis(data.analysis);
       setNarrative(data.narrative ?? "");
+      // Save to THUTO player intelligence context
+      saveAnalysisEvent({
+        tool: "match-eye",
+        timestamp: new Date().toISOString(),
+        sport,
+        position,
+        summary: data.analysis.performance_summary?.slice(0, 200) ?? "Match video analysis completed.",
+        score: data.analysis.overall_rating != null
+          ? Math.min(100, Math.round(data.analysis.overall_rating * 10))
+          : undefined,
+        strengths:    (data.analysis.technical_strengths ?? []).slice(0, 2),
+        improvements: (data.analysis.areas_to_improve ?? []).slice(0, 2),
+      });
       setPageStage("results");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed. Please try again.");

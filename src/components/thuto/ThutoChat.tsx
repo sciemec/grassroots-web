@@ -1124,6 +1124,37 @@ export default function ThutoChat() {
       }
     } catch { /* ignore */ }
 
+    // Inject AI analysis history from Match Eye, Gemini Drills, etc.
+    try {
+      const analysisRaw = localStorage.getItem("thuto_analysis_log");
+      if (analysisRaw) {
+        const events = JSON.parse(analysisRaw) as Array<{
+          tool: string; timestamp: string; sport: string; position?: string;
+          summary: string; score?: number; strengths?: string[]; improvements?: string[];
+        }>;
+        if (events.length > 0) {
+          const TOOL_LABELS: Record<string, string> = {
+            "match-eye":     "Match Eye",
+            "gemini-drills": "AI Drill Analysis",
+            "biomechanics":  "Biomechanics Scan",
+            "assessment":    "Field Assessment",
+          };
+          const fmt = (iso: string) =>
+            new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+          const lines = [`\nPLAYER ANALYSIS HISTORY (${events.length} AI session${events.length !== 1 ? "s" : ""} on record):`];
+          events.slice(-3).forEach((e) => {
+            const label = TOOL_LABELS[e.tool] ?? e.tool;
+            lines.push(`• [${fmt(e.timestamp)}] ${label} · ${e.sport}${e.position ? ` · ${e.position}` : ""}${e.score !== undefined ? ` · Score: ${e.score}/100` : ""}: ${e.summary}`);
+            if (e.strengths?.length)    lines.push(`  Strengths: ${e.strengths.slice(0, 2).join("; ")}`);
+            if (e.improvements?.length) lines.push(`  Improve: ${e.improvements.slice(0, 2).join("; ")}`);
+          });
+          const latest = events[events.length - 1];
+          lines.push(`\nWhen the player asks about their performance or what to work on, reference these real AI analysis results. Most recent session: ${TOOL_LABELS[latest.tool] ?? latest.tool} on ${fmt(latest.timestamp)}.`);
+          parts.push(lines.join("\n"));
+        }
+      }
+    } catch { /* ignore */ }
+
     return parts.join("");
   };
 

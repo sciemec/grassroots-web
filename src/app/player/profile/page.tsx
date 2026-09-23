@@ -19,6 +19,7 @@ import {
   Users,
   ChevronDown,
   QrCode,
+  MessageCircle,
 } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
 import { PlayerGamificationPanel } from "@/components/player/PlayerGamificationPanel";
@@ -37,6 +38,7 @@ import { SportSelector } from "@/components/sports/sport-selector";
 import { SPORT_MAP, SportKey } from "@/config/sports";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
+import { getAnalysisLog } from "@/lib/thuto-context";
 import { useSearchParams } from "next/navigation";
 
 import { getPositionConfig, POSITION_ICON_REGISTRY } from "@/config/positions";
@@ -280,11 +282,22 @@ function PlayerProfilePage() {
         ? ` This player has a Beautiful Game Score of ${joyScore}/100, reflecting ${joyScore} joyful training experiences logged on the platform. Include one sentence about their evident passion for the game and what that character trait means at professional level.`
         : "";
 
-      const prompt = `Generate a 3-sentence professional scouting profile narrative (third person) for this player:
+      // Pull in real AI analysis data from Match Eye / Gemini Drills if available
+      const analysisLog = getAnalysisLog();
+      const analysisContext = analysisLog.length > 0
+        ? `\n\nReal AI analysis results from this player's recent sessions:\n${analysisLog.slice(-4).map((e) => {
+            const label = { "match-eye": "Match Eye", "gemini-drills": "AI Drill Analysis", "biomechanics": "Biomechanics", "assessment": "Field Assessment" }[e.tool] ?? e.tool;
+            const date  = new Date(e.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+            return `- ${label} (${date}): ${e.summary}${e.score !== undefined ? ` Score: ${e.score}/100.` : ""}${e.strengths?.length ? ` Strengths: ${e.strengths.join(", ")}.` : ""}${e.improvements?.length ? ` Needs work on: ${e.improvements.join(", ")}.` : ""}`;
+          }).join("\n")}`
+        : "";
+
+      const prompt = `Generate a GRS Player Report — 4 to 5 professional sentences in third person about this player.
 Name: ${user?.name}, Sport: ${watchedValues.sport ?? profile.sport}, Position: ${watchedValues.position},
 Province: ${watchedValues.province ?? profile.province}, Age group: ${watchedValues.age_group ?? profile.age_group},
-Club/School: ${watchedValues.club || watchedValues.school || profile.club || profile.school || "unattached"}.
-Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntuFlair}${joyFlair}`;
+Club/School: ${watchedValues.club || watchedValues.school || profile.club || profile.school || "unattached"}.${analysisContext}
+Write like a FIFA scout preparing a dossier. Structure: 1) Playing profile and position. 2) Technical attributes and style. 3) AI-observed strengths from any analysis data above. 4) Key development area. 5) Scout recommendation (trial, watch list, development programme).
+If no AI analysis data is provided, write a strong profile from position and sport context only. Be professional, specific, and positive. No bullet points.${ubuntuFlair}${joyFlair}`;
 
       const reply = await queryAI(prompt, "scout");
       setAiNarrative(reply);
@@ -636,7 +649,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
       y += 7;
       doc.setFont("helvetica", "bold");
       doc.setTextColor(26, 92, 42);
-      doc.text("AI Scout Narrative", 14, y);
+      doc.text("GRS Player Report", 14, y);
       y += 6;
       doc.setFont("helvetica", "italic");
       doc.setTextColor(80, 80, 80);
@@ -1139,7 +1152,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
               className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors">
               <span className="flex items-center gap-2">
                 <Brain className="h-4 w-4 text-[#f0b429]" />
-                AI Scout Narrative
+                GRS Player Report
                 {aiNarrative && <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-bold text-green-400">Generated</span>}
               </span>
               <ChevronDown className={`h-4 w-4 transition-transform ${showNarrativePanel ? "rotate-180" : ""}`} />
@@ -1149,21 +1162,31 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 {aiNarrative ? (
                   <>
                     <p className="mb-3 text-sm leading-relaxed text-[#f0b429]/80">{aiNarrative}</p>
-                    <button onClick={generateNarrative} disabled={generatingNarrative}
-                      className="text-xs text-accent hover:text-[#f0b429] transition-colors">
-                      {generatingNarrative ? "Regenerating…" : "↻ Regenerate"}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button onClick={generateNarrative} disabled={generatingNarrative}
+                        className="text-xs text-accent hover:text-[#f0b429] transition-colors">
+                        {generatingNarrative ? "Regenerating…" : "↻ Regenerate"}
+                      </button>
+                      <button type="button" onClick={() => {
+                        localStorage.setItem("thuto_preload_message", "Tell me more about my GRS Player Report and what I should focus on to develop as a player.");
+                        localStorage.setItem("thuto_chat_open", "1");
+                        window.dispatchEvent(new Event("thuto_open"));
+                      }} className="flex items-center gap-1.5 text-xs text-[#f0b429]/70 hover:text-[#f0b429] transition-colors">
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        Discuss this report with THUTO
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <>
                     <p className="mb-3 text-sm text-[#f0b429]/70">
-                      Generate a 3-sentence professional scouting profile — written by AI, based on your position and club. Shown to scouts on your public profile.
+                      Generate a professional GRS Player Report — written by AI using your profile and any recent Match Eye or drill analysis. Shown to scouts on your public profile.
                     </p>
                     <button onClick={generateNarrative} disabled={generatingNarrative || (profile !== null && !watchedValues.position)}
                       className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2 text-xs font-semibold text-[#1a3a1a] transition-colors hover:bg-[#f5c542] disabled:opacity-40">
                       {generatingNarrative
                         ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating…</>
-                        : <><Sparkles className="h-3.5 w-3.5" /> Generate narrative</>}
+                        : <><Sparkles className="h-3.5 w-3.5" /> Generate GRS Player Report</>}
                     </button>
                     {profile !== null && !watchedValues.position && (
                       <p className="mt-2 text-xs text-emerald-400">Complete your position in Edit Profile first</p>

@@ -25,6 +25,7 @@ import {
   type GeminiDrill, type DrillResult,
 } from '@/config/gemini-drills';
 import { downloadDrillResultPdf } from '@/lib/generate-analysis-pdf';
+import { saveAnalysisEvent } from '@/lib/thuto-context';
 
 const GRS_GREEN  = '#1a5c2a';
 const GRS_GOLD   = '#c8962a';
@@ -305,6 +306,17 @@ export default function GeminiDrillsPage() {
       [result.drillId]: Math.max(prev[result.drillId] ?? 0, result.overall_score),
     }));
     setHistory(prev => [result, ...prev].slice(0, 20));
+
+    // Save to THUTO player intelligence context
+    saveAnalysisEvent({
+      tool: "gemini-drills",
+      timestamp: result.analysedAt,
+      sport: result.sport,
+      summary: `${result.drillName} drill — scored ${result.overall_score}/100. ${result.top_strength ?? ""}`.trim(),
+      score: result.overall_score,
+      strengths:    result.top_strength    ? [result.top_strength]    : [],
+      improvements: result.key_improvement ? [result.key_improvement] : [],
+    });
 
     // Persist to backend (non-blocking — shows retry banner on failure)
     // MediaPipe results skip auto-post: the user chooses via explicit buttons
