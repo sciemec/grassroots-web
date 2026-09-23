@@ -26,12 +26,34 @@ const SPORTS = [
   { key: "hockey",     emoji: "🏑", label: "Hockey"     },
 ];
 
+/** Returns the player's age in whole years from a YYYY-MM-DD string, or null if invalid. */
+function ageFromDob(dob: string): number | null {
+  if (!dob) return null;
+  const birth = new Date(dob);
+  if (isNaN(birth.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+/** Maps a DOB to the platform's age_group ENUM values. */
+function ageGroupFromDob(dob: string): "under_13" | "13_17" | "18_25" | "26_plus" | null {
+  const age = ageFromDob(dob);
+  if (age === null) return null;
+  if (age < 13)  return "under_13";
+  if (age <= 17) return "13_17";
+  if (age <= 25) return "18_25";
+  return "26_plus";
+}
+
 interface FormData {
   first_name:      string;
   surname:         string;
   gender:          "male" | "female" | "";
   sport:           string;
-  age:             string;
+  date_of_birth:   string;   // YYYY-MM-DD
   country:         string;
   contactType:     "email" | "phone";
   email:           string;
@@ -63,7 +85,7 @@ export default function RegisterPlayerPage() {
     surname:         "",
     gender:          "",
     sport:           "",
-    age:             "",
+    date_of_birth:   "",
     country:         "Zimbabwe",
     contactType:     "email",
     email:           "",
@@ -75,14 +97,17 @@ export default function RegisterPlayerPage() {
   const set = (field: keyof FormData, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
+  const computedAge      = ageFromDob(form.date_of_birth);
+  const computedAgeGroup = ageGroupFromDob(form.date_of_birth);
+
   const canProceedStep1 =
     form.first_name.trim().length >= 2 &&
     form.surname.trim().length >= 2 &&
     form.gender !== "" &&
     form.sport !== "" &&
-    form.age !== "" &&
-    parseInt(form.age) >= 5 &&
-    parseInt(form.age) <= 100 &&
+    computedAge !== null &&
+    computedAge >= 5 &&
+    computedAge <= 100 &&
     form.country !== "";
 
   const contactValid =
@@ -107,7 +132,8 @@ export default function RegisterPlayerPage() {
         name:                  `${form.first_name.trim()} ${form.surname.trim()}`,
         gender:                form.gender || "male",
         sport:                 form.sport,
-        age:                   parseInt(form.age),
+        date_of_birth:         form.date_of_birth,
+        age:                   ageFromDob(form.date_of_birth) ?? 0,
         country:               form.country,
         password:              form.password,
         password_confirmation: form.confirmPassword,
@@ -152,11 +178,11 @@ export default function RegisterPlayerPage() {
         // Parse Laravel field-level validation errors into friendly messages
         if (data.errors && Object.keys(data.errors).length > 0) {
           const fieldLabels: Record<string, string> = {
-            email:    "Email",
-            phone:    "Phone number",
-            password: "Password",
-            name:     "Name",
-            age:      "Age",
+            email:          "Email",
+            phone:          "Phone number",
+            password:       "Password",
+            name:           "Name",
+            date_of_birth:  "Date of birth",
           };
           const msgs = Object.entries(data.errors).map(([field, messages]) => {
             const label = fieldLabels[field] ?? field;
@@ -342,17 +368,31 @@ export default function RegisterPlayerPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1.5">Age</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5">
+                  Date of Birth <span className="text-red-400">*</span>
+                </label>
                 <input
-                  type="number"
-                  value={form.age}
-                  onChange={(e) => set("age", e.target.value)}
-                  placeholder="e.g. 19"
-                  min={5}
-                  max={100}
+                  type="date"
+                  value={form.date_of_birth}
+                  onChange={(e) => set("date_of_birth", e.target.value)}
+                  max={new Date(Date.now() - 5 * 365.25 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)}
+                  min={new Date(Date.now() - 100 * 365.25 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)}
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]"
                 />
+                {computedAge !== null && (
+                  <p className="text-xs text-gray-500 mt-1">Age: {computedAge} years old</p>
+                )}
               </div>
+
+              {computedAgeGroup === "under_13" && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                  <p className="font-bold">Parent/Guardian Consent Required</p>
+                  <p className="mt-1 leading-relaxed">
+                    Players under 13 need a parent or guardian to approve their account before
+                    they can start training. You will receive instructions after signing up.
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1.5">Country</label>
