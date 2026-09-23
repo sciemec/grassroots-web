@@ -23,18 +23,6 @@ import {
   IconWorld,
   IconBrain,
   IconChalkboard,
-  IconRobot,
-  IconFlag,
-  IconChartBar,
-  IconCalendarEvent,
-  IconTrophy,
-  IconTrendingUp,
-  IconCoin,
-  IconId,
-  IconPresentation,
-  IconApple,
-  IconBell,
-  IconCreditCard,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -261,92 +249,9 @@ export default function PlayerHubPage() {
           title="My Pathway"
           subtitle="Your stage on the journey"
         />
-        <HubCard
-          href="/player/passport"
-          icon={IconId}
-          iconBg={G}
-          iconColor={GL}
-          title="Talent Passport"
-          subtitle="Your public scouting profile"
-        />
-        <HubCard
-          href="/player/valuation"
-          icon={IconCoin}
-          iconBg={O}
-          iconColor={OL}
-          title="Market Value"
-          subtitle="AI-estimated transfer value"
-        />
-        <HubCard
-          href="/player/notifications"
-          icon={IconBell}
-          iconBg={N}
-          iconColor={NC}
-          title="Notifications"
-          subtitle="Alerts, scout views & updates"
-        />
-        <HubCard
-          href="/player/subscription"
-          icon={IconCreditCard}
-          iconBg={N}
-          iconColor={NC}
-          title="Subscription"
-          subtitle="Manage your plan"
-        />
-
-        {/* Section — Goals & Progress */}
-        <SectionLabel label="Goals & progress" />
-        <HubCard
-          href="/player/goal"
-          icon={IconFlag}
-          iconBg="#1a0a3d"
-          iconColor="#c4b5fd"
-          title="Mission Mode"
-          subtitle="Set your goal · AI plan · daily missions"
-        />
-        <HubCard
-          href="/player/stats"
-          icon={IconChartBar}
-          iconBg="#1a0a3d"
-          iconColor="#c4b5fd"
-          title="Match Stats"
-          subtitle="Log & review your game stats"
-        />
-        <HubCard
-          href="/player/sessions"
-          icon={IconCalendarEvent}
-          iconBg="#1a0a3d"
-          iconColor="#c4b5fd"
-          title="Training Sessions"
-          subtitle="Track your training load"
-        />
-        <HubCard
-          href="/player/milestones"
-          icon={IconTrophy}
-          iconBg="#1a0a3d"
-          iconColor="#c4b5fd"
-          title="Milestones"
-          subtitle="Record your achievements"
-        />
-        <HubCard
-          href="/player/potential"
-          icon={IconTrendingUp}
-          iconBg="#1a0a3d"
-          iconColor="#c4b5fd"
-          title="My Potential"
-          subtitle="Development trajectory · projected peak"
-        />
 
         {/* Section 2 — Train & get assessed */}
         <SectionLabel label="Train & get assessed" />
-        <HubCard
-          href="/player/ai-coach"
-          icon={IconRobot}
-          iconBg="#7a3a00"
-          iconColor="#fbbf24"
-          title="AI Coach"
-          subtitle="Ask THUTO anything · get coaching advice"
-        />
         <DrillGroupCard />
         <HubCard
           href="/player/biomechanics"
@@ -408,14 +313,6 @@ export default function PlayerHubPage() {
 
         {/* Section 3 — Showcase */}
         <SectionLabel label="Showcase" />
-        <HubCard
-          href="/player/showcase"
-          icon={IconPresentation}
-          iconBg={DG}
-          iconColor={GL}
-          title="Talent Showcase"
-          subtitle="Upload skill clips · get seen by scouts"
-        />
         <HubCard
           href="/player/vault"
           icon={IconFolderStar}
