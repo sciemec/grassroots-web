@@ -302,7 +302,7 @@ export default function PrivacyPage() {
         {/* Footer links */}
         <div className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-[#f0b429]/10 pt-8 text-sm text-green-500">
           <Link href="/terms" className="hover:text-green-300 transition-colors">&larr; Terms of Service</Link>
-          <Link href="/" className="hover:text-green-300 transition-colors">Back to home &rarr;</Link>
+          <Link href="/privacy-policy" className="hover:text-green-300 transition-colors">Canonical URL &rarr;</Link>
         </div>
       </div>
     </div>
