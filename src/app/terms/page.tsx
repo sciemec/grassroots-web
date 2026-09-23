@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 
-const EFFECTIVE_DATE = "1 March 2026";
-const CONTACT_EMAIL = "support@grassrootssports.live";
+const EFFECTIVE_DATE = "September 23, 2026";
+const CONTACT_EMAIL = "info@grassrootssports.live";
 
 export default function TermsPage() {
   return (
@@ -90,7 +90,7 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-3 text-xl font-bold text-white">6. AI-Generated Content</h2>
             <p>
-              The Platform uses Claude AI (Anthropic) and on-device machine learning to generate coaching feedback,
+              The Platform uses Google Gemini, GROQ, and on-device machine learning to generate coaching feedback,
               tactical insights, scouting reports, and training plans. This content is:
             </p>
             <ul className="ml-4 mt-2 list-disc space-y-2">
