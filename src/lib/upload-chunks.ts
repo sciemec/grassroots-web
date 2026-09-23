@@ -337,12 +337,12 @@ function sendChunkXhr(
       reject(new UploadError(msg, "unknown"));
     };
 
-    // ── Connection dropped (mobile tower handoff / Samsung battery manager) ─
-    // Android Chrome fires onerror with no additional error code when the OS
-    // terminates the TCP socket. Log network state to console for diagnostics,
-    // but do NOT include it in the user-facing message — on Samsung, "4g / 12 Mbps"
-    // alongside a connection drop is misleading (signal is fine; battery manager
-    // killed the TCP socket when the screen dimmed, not a real network failure).
+    // ── Connection dropped ────────────────────────────────────────────────────
+    // xhr.onerror fires when the OS or carrier terminates the TCP socket with no
+    // HTTP response. We cannot reliably distinguish a Render cold-start rejection,
+    // a carrier tower handoff, a battery-manager kill, or a stale auth token from
+    // each other — all produce an identical onerror with no error code.
+    // Log raw network state for diagnostics; do NOT guess the cause in user copy.
     xhr.onerror = () => {
       const conn = (navigator as Navigator & {
         connection?: { effectiveType?: string; downlink?: number; rtt?: number };
@@ -353,16 +353,11 @@ function sendChunkXhr(
           `downlink=${conn.downlink ?? "?"}Mbps rtt=${conn.rtt ?? "?"}ms`,
         );
       }
-      // Samsung battery-kill signature: strong 4G signal + onerror = battery manager
-      // severed the TCP socket. Surface a device-specific message with next steps.
-      const looksLikeBatteryKill = conn?.effectiveType === "4g" && (conn.downlink ?? 0) > 2;
-      const userMsg = looksLikeBatteryKill
-        ? "Upload stopped — your phone's battery saver interrupted the connection. " +
-          "Tap your screen to keep it awake and the upload will retry automatically. " +
-          "To stop this happening: Settings → Battery → App Battery Saver → disable for your browser."
-        : "Connection dropped — the upload will retry automatically. " +
-          "If this keeps happening, keep your screen on and disable battery saver for your browser.";
-      reject(new UploadError(userMsg, "connection-dropped"));
+      reject(new UploadError(
+        "Connection dropped — the upload will retry automatically. " +
+        "If it keeps failing, try switching to Wi-Fi or a stronger signal.",
+        "connection-dropped",
+      ));
     };
 
     xhr.open("POST", `/api/match-eye/upload?${params.toString()}`);

@@ -555,23 +555,14 @@ export default function ArenaPage() {
           // Fix 2 — timeout handler for stalled connections
           xhr.ontimeout = () =>
             reject(new Error("Upload timed out. Your connection may be too slow for this file size — try on Wi-Fi."));
-          // Fix 3 — smarter onerror: detect Samsung battery-kill vs genuine CORS failure
+          // onerror fires when the TCP connection is terminated with no HTTP response.
+          // We cannot distinguish a cold-start rejection from a network drop or any
+          // other connection failure — don't guess the cause in user-facing copy.
           xhr.onerror = () => {
-            const conn = (navigator as { connection?: { effectiveType?: string; downlink?: number } }).connection;
-            const isMobileData = conn?.effectiveType === "4g" && (conn?.downlink ?? 0) > 2;
-            if (isMobileData) {
-              reject(new Error(
-                "Upload dropped — your phone's battery saver may have killed the connection. " +
-                "Disable battery saver or switch to Wi-Fi and try again."
-              ));
-            } else {
-              reject(new Error(
-                "Upload blocked — this is usually a CORS error. " +
-                "The R2 bucket needs a CORS rule allowing PUT from this domain. " +
-                "Go to Cloudflare R2 → your bucket → Settings → CORS and add: " +
-                "AllowedOrigins: [\"https://grassrootssports.live\"], AllowedMethods: [\"PUT\"], AllowedHeaders: [\"*\"]"
-              ));
-            }
+            reject(new Error(
+              "Connection dropped — could not upload the video. " +
+              "Try switching to Wi-Fi or a stronger signal and try again."
+            ));
           };
           xhr.send(file);
         });
