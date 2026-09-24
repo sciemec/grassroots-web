@@ -727,7 +727,7 @@ interface Journey     { greeting: string; steps: JourneyStep[]; }
 const DEFAULT_JOURNEY: Journey = {
   greeting: "Mhoro! Here is your plan for today — let us make every minute count. 🇿🇼",
   steps: [
-    { id: "checkin",   title: "Success Check-In",  subtitle: "Your daily goal mission",           href: "/player/success-engine", emoji: "🎯" },
+    { id: "checkin",   title: "Success Check-In",  subtitle: "Your daily goal mission",           href: "/player/goal", emoji: "🎯" },
     { id: "dna",       title: "Player DNA",         subtitle: "Help THUTO know you better",        href: "/player/dna",            emoji: "🧬" },
     { id: "train",     title: "Train Now",          subtitle: "Hit the pitch — drills + fitness",  href: "/player/pitch",          emoji: "⚡" },
     { id: "nutrition", title: "Log Your Meals",     subtitle: "Fuel is part of training",          href: "/player/nutrition",      emoji: "🍎" },
@@ -748,7 +748,7 @@ async function generateJourney(): Promise<Journey> {
       `Player: goal="${goal?.goal_text ?? "improve as a footballer"}", position="${goal?.position ?? "player"}", ` +
       `timeline=${goal?.timeline_months ?? "?"} months, today=${today} ${timeOfDay}.\n\n` +
       `Pick the 5 most relevant steps from this list in logical order:\n` +
-      `success-engine=/player/success-engine (daily goal check-in — always include first)\n` +
+      `success-engine=/player/goal (daily goal check-in — always include first)\n` +
       `dna=/player/dna (build player profile with THUTO)\n` +
       `ai-coach=/player/ai-coach (deep coaching session)\n` +
       `training=/player/training (review/build 7-day schedule)\n` +
