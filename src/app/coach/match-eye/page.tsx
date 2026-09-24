@@ -176,6 +176,133 @@ function secondsToFFmpegTime(s: number): string {
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
 }
 
+// ── MediaPipe Pose helpers ──────────────────────────────────────────────────
+
+interface PoseLandmark {
+  name: string;
+  x: number;
+  y: number;
+  z?: number;
+  visibility?: number;
+}
+
+interface MediaPipeData {
+  landmarks?: PoseLandmark[];
+  angles?: Record<string, number>;
+  confidence?: number;
+  frame_count?: number;
+}
+
+async function extractVideoFrames(file: File, count = 8): Promise<ImageBitmap[]> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.muted = true;
+    video.preload = "metadata";
+    const frames: ImageBitmap[] = [];
+    video.onloadedmetadata = async () => {
+      const duration = video.duration;
+      if (!isFinite(duration) || duration <= 0) { URL.revokeObjectURL(url); resolve([]); return; }
+      const interval = duration / (count + 1);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { URL.revokeObjectURL(url); resolve([]); return; }
+      for (let i = 1; i <= count; i++) {
+        await new Promise<void>((res) => { video.currentTime = interval * i; video.onseeked = () => res(); });
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 360;
+        ctx.drawImage(video, 0, 0);
+        try { frames.push(await createImageBitmap(canvas)); } catch { /* skip */ }
+      }
+      URL.revokeObjectURL(url);
+      resolve(frames);
+    };
+    video.onerror = () => { URL.revokeObjectURL(url); resolve([]); };
+    video.src = url;
+  });
+}
+
+function computeAngle(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  c: { x: number; y: number },
+): number {
+  const rad = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+  let deg = Math.abs(rad * 180 / Math.PI);
+  if (deg > 180) deg = 360 - deg;
+  return Math.round(deg);
+}
+
+const POSE_LANDMARK_NAMES = [
+  "nose","left_eye_inner","left_eye","left_eye_outer","right_eye_inner","right_eye",
+  "right_eye_outer","left_ear","right_ear","mouth_left","mouth_right",
+  "left_shoulder","right_shoulder","left_elbow","right_elbow","left_wrist","right_wrist",
+  "left_pinky","right_pinky","left_index","right_index","left_thumb","right_thumb",
+  "left_hip","right_hip","left_knee","right_knee","left_ankle","right_ankle",
+  "left_heel","right_heel","left_foot_index","right_foot_index",
+];
+
+async function runMediaPipeOnFile(file: File): Promise<MediaPipeData | null> {
+  try {
+    const { PoseLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
+    const vision = await FilesetResolver.forVisionTasks("/mediapipe-wasm");
+    const landmarker = await PoseLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+        delegate: "GPU",
+      },
+      runningMode: "IMAGE",
+      numPoses: 1,
+    }) as unknown as {
+      detect(frame: ImageBitmap): { poseLandmarks?: Array<Array<{ x: number; y: number; z?: number; visibility?: number }>> };
+      close(): void;
+    };
+    const frames = await extractVideoFrames(file, 8);
+    if (frames.length === 0) { landmarker.close(); return null; }
+    type RawPoint = { x: number; y: number; z: number; visibility: number };
+    const accumulated: RawPoint[][] = [];
+    let totalConf = 0, confCount = 0;
+    for (const frame of frames) {
+      const result = landmarker.detect(frame);
+      if (result.poseLandmarks?.length) {
+        accumulated.push(result.poseLandmarks[0] as RawPoint[]);
+        const avgVis = (result.poseLandmarks[0] as RawPoint[])
+          .reduce((s, l) => s + (l.visibility ?? 0), 0) / result.poseLandmarks[0].length;
+        totalConf += avgVis;
+        confCount++;
+      }
+    }
+    landmarker.close();
+    frames.forEach((f) => f.close());
+    if (accumulated.length === 0) return null;
+    const n = accumulated[0].length;
+    const avg = Array.from({ length: n }, (_, i) => ({
+      x:          accumulated.reduce((s, f) => s + f[i].x,          0) / accumulated.length,
+      y:          accumulated.reduce((s, f) => s + f[i].y,          0) / accumulated.length,
+      z:          accumulated.reduce((s, f) => s + f[i].z,          0) / accumulated.length,
+      visibility: accumulated.reduce((s, f) => s + (f[i].visibility ?? 0), 0) / accumulated.length,
+    }));
+    const landmarks: PoseLandmark[] = avg.map((p, i) => ({
+      name: POSE_LANDMARK_NAMES[i] ?? `landmark_${i}`,
+      x: p.x, y: p.y, z: p.z, visibility: p.visibility,
+    }));
+    const angles: Record<string, number> = {};
+    if (avg.length > 28) {
+      angles.knee_left   = computeAngle(avg[23], avg[25], avg[27]);
+      angles.knee_right  = computeAngle(avg[24], avg[26], avg[28]);
+      angles.hip_left    = computeAngle(avg[11], avg[23], avg[25]);
+      angles.hip_right   = computeAngle(avg[12], avg[24], avg[26]);
+      angles.elbow_left  = computeAngle(avg[11], avg[13], avg[15]);
+      angles.elbow_right = computeAngle(avg[12], avg[14], avg[16]);
+      angles.trunk_lean  = computeAngle(avg[23], avg[11], avg[13]);
+    }
+    return { landmarks, angles, confidence: confCount > 0 ? totalConf / confCount : undefined, frame_count: accumulated.length };
+  } catch {
+    return null;
+  }
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function MatchEyePage() {
@@ -224,6 +351,10 @@ export default function MatchEyePage() {
   // Super Engine local tracking (YOLOv8 ball + player detection in browser)
   const [firstTracking,  setFirstTracking]  = useState<VideoMeasurement | null>(null);
   const [secondTracking, setSecondTracking] = useState<VideoMeasurement | null>(null);
+
+  // MediaPipe pose data (per half)
+  const [firstPoseData,  setFirstPoseData]  = useState<MediaPipeData | null>(null);
+  const [secondPoseData, setSecondPoseData] = useState<MediaPipeData | null>(null);
 
   // File inputs
   const firstRef    = useRef<HTMLInputElement>(null);
@@ -357,6 +488,9 @@ export default function MatchEyePage() {
 
     // Run Super Engine ball+player tracking in the browser in parallel with compression+upload.
     measureFromVideo(file, "team", () => undefined).then(setT).catch(() => undefined);
+    // Run MediaPipe pose estimation concurrently — cost absorbed during upload wait
+    const setP = which === "first" ? setFirstPoseData : setSecondPoseData;
+    runMediaPipeOnFile(file).then((d) => { if (d) setP(d); }).catch(() => undefined);
 
     // Step 1 — compress to 720p H.264 in the browser (skipped if file < 50 MB)
     setH((h) => ({ ...h, stage: "compressing", pct: 0, error: "" }));
@@ -437,6 +571,7 @@ export default function MatchEyePage() {
             drillFocus,
             sport,
             trackedPlayers: trackedPlayers.filter((p) => p.jersey || p.name),
+            poseData:       firstPoseData,
           }),
         });
         if (!res.ok) {
@@ -455,7 +590,7 @@ export default function MatchEyePage() {
     // ── Match mode: two halves in parallel ───────────────────────────────────
     if (firstHalf.stage !== "uploaded" || secondHalf.stage !== "uploaded") return;
 
-    const analyseHalf = async (half: HalfUploadState, label: string): Promise<HalfResult> => {
+    const analyseHalf = async (half: HalfUploadState, poseData: MediaPipeData | null, label: string): Promise<HalfResult> => {
       const res = await fetch("/api/match-eye/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -469,6 +604,7 @@ export default function MatchEyePage() {
           competition:    competition ? `${competition} — ${label}` : label,
           sport,
           trackedPlayers: trackedPlayers.filter((p) => p.jersey || p.name),
+          poseData,
         }),
       });
       if (!res.ok) {
@@ -480,8 +616,8 @@ export default function MatchEyePage() {
 
     try {
       const [first, second] = await Promise.all([
-        analyseHalf(firstHalf, "First Half"),
-        analyseHalf(secondHalf, "Second Half"),
+        analyseHalf(firstHalf, firstPoseData, "First Half"),
+        analyseHalf(secondHalf, secondPoseData, "Second Half"),
       ]);
       setFirstResult(first);
       setSecondResult(second);
@@ -491,12 +627,13 @@ export default function MatchEyePage() {
       setGlobalError(err instanceof Error ? err.message : "Analysis failed. Please try again.");
       setPageStage("error");
     }
-  }, [sessionType, firstHalf, secondHalf, homeTeam, awayTeam, competition, sport, drillType, drillFocus, trackedPlayers]);
+  }, [sessionType, firstHalf, secondHalf, homeTeam, awayTeam, competition, sport, drillType, drillFocus, trackedPlayers, firstPoseData, secondPoseData]);
 
   // ── Analyse a single half independently (match mode) ────────────────────────
 
   const analyseIndependent = useCallback(async (which: "first" | "second") => {
     const half       = which === "first" ? firstHalf  : secondHalf;
+    const poseData   = which === "first" ? firstPoseData : secondPoseData;
     const setAnalysing = which === "first" ? setFirstAnalysing  : setSecondAnalysing;
     const setResult  = which === "first" ? setFirstResult : setSecondResult;
     const label      = which === "first" ? "First Half" : "Second Half";
@@ -520,6 +657,7 @@ export default function MatchEyePage() {
           competition:    competition ? `${competition} — ${label}` : label,
           sport,
           trackedPlayers: trackedPlayers.filter((p) => p.jersey || p.name),
+          poseData,
         }),
       });
       if (!res.ok) {
@@ -533,7 +671,7 @@ export default function MatchEyePage() {
     } finally {
       setAnalysing(false);
     }
-  }, [firstHalf, secondHalf, homeTeam, awayTeam, competition, sport, trackedPlayers]);
+  }, [firstHalf, secondHalf, homeTeam, awayTeam, competition, sport, trackedPlayers, firstPoseData, secondPoseData]);
 
   // ── Commentary upload + analysis ─────────────────────────────────────────
   const uploadCommentary = useCallback(async (file: File) => {
@@ -574,6 +712,8 @@ export default function MatchEyePage() {
     setSecondAnalysing(false);
     setFirstTracking(null);
     setSecondTracking(null);
+    setFirstPoseData(null);
+    setSecondPoseData(null);
     setGlobalError("");
     setHomeTeam("");
     setAwayTeam("");

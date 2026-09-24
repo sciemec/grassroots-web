@@ -46,6 +46,43 @@ interface TrackedPlayer {
   position: string;
 }
 
+// ── MediaPipe / Pose context ──────────────────────────────────────────────────
+
+interface PoseLandmark {
+  name: string;
+  x: number;
+  y: number;
+  z?: number;
+  visibility?: number;
+}
+
+interface MediaPipeData {
+  landmarks?: PoseLandmark[];
+  angles?: Record<string, number>;
+  confidence?: number;
+  frame_count?: number;
+}
+
+function buildPoseContext(poseData: MediaPipeData): string {
+  const lines: string[] = ["\n\nMEDIAPIPE BIOMECHANICS DATA (client-side pose estimation):"];
+  if (poseData.confidence != null)
+    lines.push(`Detection confidence: ${(poseData.confidence * 100).toFixed(0)}%`);
+  if (poseData.frame_count != null)
+    lines.push(`Frames analysed: ${poseData.frame_count}`);
+  if (poseData.angles && Object.keys(poseData.angles).length > 0) {
+    lines.push("Joint angles (degrees):");
+    for (const [joint, angle] of Object.entries(poseData.angles)) {
+      lines.push(`  ${joint.replace(/_/g, " ")}: ${angle.toFixed(1)}°`);
+    }
+  }
+  if (poseData.landmarks && poseData.landmarks.length > 0) {
+    const visible = poseData.landmarks.filter((l) => (l.visibility ?? 1) > 0.5);
+    lines.push(`Visible landmarks: ${visible.map((l) => l.name).join(", ")}`);
+  }
+  lines.push("Use this biomechanics data to enrich your assessment of player movement, body positioning, and physical load.");
+  return lines.join("\n");
+}
+
 interface MatchAnalysis {
   formation_home: string;
   formation_away: string;
@@ -134,6 +171,7 @@ export async function POST(req: NextRequest) {
       homeTeam, awayTeam, competition,
       drillType, drillFocus,
       sport, trackedPlayers,
+      poseData,
     } = await req.json() as {
       fileUri: string;
       fileName: string;
@@ -147,6 +185,7 @@ export async function POST(req: NextRequest) {
       drillFocus?: string;
       sport?: string;
       trackedPlayers?: TrackedPlayer[];
+      poseData?: MediaPipeData | null;
     };
 
     if (!fileUri || !fileName) {
@@ -162,6 +201,11 @@ export async function POST(req: NextRequest) {
     if (fileState !== "ACTIVE") {
       await waitForGeminiFile(fileName, googleKey, 10);
     }
+
+    // Build pose context string (empty when no pose data provided)
+    const poseContext = poseData && Object.keys(poseData).length > 0
+      ? buildPoseContext(poseData)
+      : "";
 
     // ── Build player tracking section (injected when coach specifies players) ───
     const activePlayers = (trackedPlayers ?? []).filter((p) => p.jersey || p.name);
@@ -224,7 +268,7 @@ Return ONLY a valid JSON object — no markdown, no explanation:
   "drill_progression": "Specific way to progress or regress this drill based on what you observed"
 }
 
-Be specific and practical. Reference what you actually see — jersey colours, positions, moments in the video. No generic advice.${playerTrackingPrompt}`;
+Be specific and practical. Reference what you actually see — jersey colours, positions, moments in the video. No generic advice.${playerTrackingPrompt}${poseContext}`;
 
       const drillText = await callGemini(
         googleKey,
@@ -327,7 +371,7 @@ turnover_moments: identify 0-3 recurring team-level patterns where a collective 
 Be specific and professional. Base everything on what you observe in the video.
 
 TACTICS CATALOG — match turnover patterns to these principles by ID:
-${JSON.stringify(TACTICS_CATALOG)}${playerTrackingPrompt}`;
+${JSON.stringify(TACTICS_CATALOG)}${playerTrackingPrompt}${poseContext}`;
 
     // ── Server-side segmentation: 3 × 15-minute sequential calls ────────────
     // Gemini processes video at 1 fps by default. Each 15-min segment = 900 frames × 258
