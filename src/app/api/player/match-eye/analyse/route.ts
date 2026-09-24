@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { waitForGeminiFile, callGemini } from "@/lib/gemini-api";
+import { waitForGeminiFile, callGemini, deleteGeminiFile } from "@/lib/gemini-api";
 import { FOOTBALL_DRILLS } from "@/config/gemini-drills";
 import { TACTICAL_PRINCIPLES } from "@/lib/thuto-tactics-knowledge";
 
@@ -22,6 +22,92 @@ const TACTICS_CATALOG = TACTICAL_PRINCIPLES.map((p) => ({
 
 export const maxDuration = 600;
 export const runtime = "nodejs";
+
+// ── MediaPipe / YOLO optional pipeline ───────────────────────────────────────
+
+interface PoseLandmark {
+  name: string;
+  x: number;
+  y: number;
+  z?: number;
+  visibility?: number;
+}
+
+interface MediaPipeData {
+  landmarks?: PoseLandmark[];
+  angles?: Record<string, number>; // e.g. { knee_left: 145, hip_right: 162 }
+  confidence?: number;
+  frame_count?: number;
+}
+
+interface YoloResult {
+  player_count?: number;
+  ball_detected?: boolean;
+  field_zones?: Record<string, number>; // zone → player count
+  target_jersey_visible?: boolean;
+}
+
+// Call the Python AI microservice for YOLOv8 detection — skip gracefully if absent
+async function tryYoloDetection(
+  fileUri: string,
+  fileName: string,
+  jersey: string,
+  geminiApiKey: string,
+): Promise<YoloResult | null> {
+  const aiServiceUrl = process.env.AI_SERVICE_URL;
+  if (!aiServiceUrl) return null;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15_000);
+    const res = await fetch(`${aiServiceUrl}/yolo/detect`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ file_uri: fileUri, file_name: fileName, jersey, gemini_key: geminiApiKey }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    return await res.json() as YoloResult;
+  } catch {
+    return null; // service unavailable — skip gracefully
+  }
+}
+
+function buildPoseContext(poseData: MediaPipeData): string {
+  const lines: string[] = ["\n\nMEDIAPIPE BIOMECHANICS DATA (client-side pose estimation):"];
+  if (poseData.confidence != null)
+    lines.push(`Detection confidence: ${(poseData.confidence * 100).toFixed(0)}%`);
+  if (poseData.frame_count != null)
+    lines.push(`Frames analysed: ${poseData.frame_count}`);
+  if (poseData.angles && Object.keys(poseData.angles).length > 0) {
+    lines.push("Joint angles (degrees):");
+    for (const [joint, angle] of Object.entries(poseData.angles)) {
+      lines.push(`  ${joint.replace(/_/g, " ")}: ${angle.toFixed(1)}°`);
+    }
+  }
+  if (poseData.landmarks && poseData.landmarks.length > 0) {
+    const visible = poseData.landmarks.filter((l) => (l.visibility ?? 1) > 0.5);
+    lines.push(`Visible landmarks: ${visible.map((l) => l.name).join(", ")}`);
+  }
+  lines.push("Use this biomechanics data to add specific observations about body mechanics, posture, and movement efficiency.");
+  return lines.join("\n");
+}
+
+function buildYoloContext(yolo: YoloResult, jersey: string): string {
+  const lines: string[] = ["\n\nYOLOv8 COMPUTER VISION DATA (server-side object detection):"];
+  if (yolo.player_count != null) lines.push(`Players detected in frame: ${yolo.player_count}`);
+  if (yolo.ball_detected != null) lines.push(`Ball detected: ${yolo.ball_detected ? "yes" : "not visible"}`);
+  if (yolo.target_jersey_visible != null)
+    lines.push(`Target player (#${jersey}) detected: ${yolo.target_jersey_visible ? "yes" : "not reliably detected"}`);
+  if (yolo.field_zones && Object.keys(yolo.field_zones).length > 0) {
+    lines.push("Player distribution by field zone:");
+    for (const [zone, count] of Object.entries(yolo.field_zones)) {
+      lines.push(`  ${zone}: ${count} players`);
+    }
+  }
+  lines.push("Use this detection data to enrich your positioning and physical assessment sections.");
+  return lines.join("\n");
+}
 
 interface KeyMoment {
   time: string;
@@ -83,6 +169,7 @@ export async function POST(req: NextRequest) {
     const {
       fileUri, fileName, mimeType, fileState,
       sport, position, jersey, focusQuestion,
+      poseData,
     } = await req.json() as {
       fileUri: string;
       fileName: string;
@@ -92,6 +179,7 @@ export async function POST(req: NextRequest) {
       position?: string;
       jersey?: string;
       focusQuestion?: string;
+      poseData?: MediaPipeData | null; // optional — sent by client after MediaPipe processing
     };
 
     if (!fileUri || !fileName) {
@@ -103,9 +191,15 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 });
     }
 
+    // Run YOLO detection concurrently with Gemini file polling — both are async waits
+    const yoloPromise = tryYoloDetection(fileUri, fileName, jersey ?? "", googleKey);
+
     if (fileState !== "ACTIVE") {
       await waitForGeminiFile(fileName, googleKey, 10);
     }
+
+    // Collect YOLO result (already capped at 15 s internally — should be ready by now)
+    const yoloResult = await yoloPromise;
 
     const sportLabel    = sport     || "Football";
     const positionLabel = position  || "player";
@@ -122,8 +216,16 @@ export async function POST(req: NextRequest) {
       ? `DRILL CATALOG — match weaknesses to these drills by ID:\n${JSON.stringify(DRILL_CATALOG)}\n`
       : "";
 
+    // Build supplementary context from any available model outputs
+    const poseContext = poseData && Object.keys(poseData).length > 0
+      ? buildPoseContext(poseData)
+      : "";
+    const yoloContext = yoloResult
+      ? buildYoloContext(yoloResult, jersey ?? "")
+      : "";
+
     const systemPrompt = `You are an expert ${sportLabel} coach reviewing footage of an individual player.
-Player: ${positionLabel}${jerseyLabel}${focusLabel}
+Player: ${positionLabel}${jerseyLabel}${focusLabel}${poseContext}${yoloContext}
 
 Watch the full video carefully. Focus entirely on this one player's individual performance — their movement, technical execution, decision-making, positioning relative to teammates and opponents, work rate, and standout moments.
 
@@ -185,11 +287,20 @@ ${JSON.stringify(TACTICS_CATALOG)}`;
       ],
       { temperature: 0.2, maxOutputTokens: 4096 }
     );
+    // Clean up uploaded Gemini file (fire-and-forget)
+    deleteGeminiFile(fileName, googleKey);
+
     const analysis = extractJSON(geminiText);
 
     if (!analysis) {
+      const isEmpty = geminiText.trim() === "";
       return Response.json(
-        { error: "Gemini returned unreadable analysis", raw: geminiText.slice(0, 500) },
+        {
+          error: isEmpty
+            ? "Gemini couldn't analyse this clip — try a clearer angle or shorter clip"
+            : "Gemini returned unreadable analysis",
+          raw: geminiText.slice(0, 500),
+        },
         { status: 502 }
       );
     }
@@ -223,6 +334,19 @@ Write as a coach who knows this player and cares about their development. Be dir
     return Response.json({ analysis, narrative });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    if (
+      message.includes("input token count") ||
+      message.includes("1048576") ||
+      message.includes("token limit") ||
+      message.includes("context limit") ||
+      message.includes("too long for model") ||
+      message.includes("exceeds the maximum")
+    ) {
+      return Response.json(
+        { error: "Video is too long for analysis. Upload a clip under 15 minutes for best results." },
+        { status: 422 }
+      );
+    }
     return Response.json({ error: message }, { status: 500 });
   }
 }
