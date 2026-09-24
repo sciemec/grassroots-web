@@ -860,7 +860,7 @@ export default function PlayerMatchEyePage() {
       setError(err instanceof Error ? err.message : "Analysis failed. Please try again.");
       setPageStage("error");
     }
-  }, [fileUri, fileName, mimeType, sport, position, jersey, focusQuestion]);
+  }, [fileUri, fileName, mimeType, sport, position, jersey, focusQuestion, poseData]);
 
   const reset = () => {
     setPageStage("setup");
