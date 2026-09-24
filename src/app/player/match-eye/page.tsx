@@ -159,9 +159,7 @@ async function runMediaPipeOnFile(file: File): Promise<MediaPipeData | null> {
     // Dynamic import avoids SSR issues and keeps it out of the initial bundle
     const { PoseLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
 
-    const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm",
-    );
+    const vision = await FilesetResolver.forVisionTasks("/mediapipe-wasm");
     const landmarker = await PoseLandmarker.createFromOptions(vision, {
       baseOptions: {
         modelAssetPath:
