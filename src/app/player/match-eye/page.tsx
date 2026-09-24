@@ -65,6 +65,21 @@ interface PlayerAnalysis {
 
 type PageStage = "setup" | "confirm" | "uploading" | "uploaded" | "analysing" | "results" | "error";
 
+interface PoseLandmark {
+  name: string;
+  x: number;
+  y: number;
+  z?: number;
+  visibility?: number;
+}
+
+interface MediaPipeData {
+  landmarks?: PoseLandmark[];
+  angles?: Record<string, number>;
+  confidence?: number;
+  frame_count?: number;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function ratingColor(r: number) {
@@ -78,6 +93,148 @@ function momentColor(type: KeyMoment["type"]) {
   if (type === "strength") return { bg: "#f0fdf4", border: "#bbf7d0", dot: "#16a34a" };
   if (type === "weakness") return { bg: "#fef9c3", border: "#fde047", dot: "#ca8a04" };
   return { bg: "#f8fafc", border: "#e2e8f0", dot: "#94a3b8" };
+}
+
+// ── MediaPipe Pose helpers ──────────────────────────────────────────────────
+
+/** Extract N evenly-spaced frames from a video File using canvas. */
+async function extractVideoFrames(file: File, count = 8): Promise<ImageBitmap[]> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.muted = true;
+    video.preload = "metadata";
+    const frames: ImageBitmap[] = [];
+
+    video.onloadedmetadata = async () => {
+      const duration = video.duration;
+      if (!isFinite(duration) || duration <= 0) { URL.revokeObjectURL(url); resolve([]); return; }
+      const interval = duration / (count + 1);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { URL.revokeObjectURL(url); resolve([]); return; }
+      for (let i = 1; i <= count; i++) {
+        await new Promise<void>((res) => { video.currentTime = interval * i; video.onseeked = () => res(); });
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 360;
+        ctx.drawImage(video, 0, 0);
+        try { frames.push(await createImageBitmap(canvas)); } catch { /* skip */ }
+      }
+      URL.revokeObjectURL(url);
+      resolve(frames);
+    };
+    video.onerror = () => { URL.revokeObjectURL(url); resolve([]); };
+    video.src = url;
+  });
+}
+
+/** Angle (degrees) at joint B formed by segments A→B and B→C. */
+function computeAngle(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  c: { x: number; y: number },
+): number {
+  const rad = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+  let deg = Math.abs(rad * 180 / Math.PI);
+  if (deg > 180) deg = 360 - deg;
+  return Math.round(deg);
+}
+
+const POSE_LANDMARK_NAMES = [
+  "nose","left_eye_inner","left_eye","left_eye_outer","right_eye_inner","right_eye",
+  "right_eye_outer","left_ear","right_ear","mouth_left","mouth_right",
+  "left_shoulder","right_shoulder","left_elbow","right_elbow","left_wrist","right_wrist",
+  "left_pinky","right_pinky","left_index","right_index","left_thumb","right_thumb",
+  "left_hip","right_hip","left_knee","right_knee","left_ankle","right_ankle",
+  "left_heel","right_heel","left_foot_index","right_foot_index",
+];
+
+/**
+ * Run MediaPipe Pose on the first 8 key frames of a video file.
+ * Returns averaged landmarks + computed joint angles, or null if unavailable.
+ * Never throws — all errors are silently swallowed.
+ */
+async function runMediaPipeOnFile(file: File): Promise<MediaPipeData | null> {
+  try {
+    // Dynamic import avoids SSR issues and keeps it out of the initial bundle
+    const { PoseLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
+
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm",
+    );
+    const landmarker = await PoseLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+        delegate: "GPU",
+      },
+      runningMode: "IMAGE",
+      numPoses: 1,
+    }) as unknown as {
+      detect(frame: ImageBitmap): { poseLandmarks?: Array<Array<{ x: number; y: number; z?: number; visibility?: number }>> };
+      close(): void;
+    };
+
+    const frames = await extractVideoFrames(file, 8);
+    if (frames.length === 0) { landmarker.close(); return null; }
+
+    // Accumulate landmarks across frames
+    type RawPoint = { x: number; y: number; z: number; visibility: number };
+    const accumulated: RawPoint[][] = [];
+    let totalConf = 0, confCount = 0;
+
+    for (const frame of frames) {
+      const result = landmarker.detect(frame);
+      if (result.poseLandmarks?.length) {
+        accumulated.push(result.poseLandmarks[0] as RawPoint[]);
+        const avgVis = (result.poseLandmarks[0] as RawPoint[])
+          .reduce((s, l) => s + (l.visibility ?? 0), 0) / result.poseLandmarks[0].length;
+        totalConf += avgVis;
+        confCount++;
+      }
+    }
+
+    landmarker.close();
+    frames.forEach((f) => f.close());
+
+    if (accumulated.length === 0) return null;
+
+    // Average landmark positions across detected frames
+    const n = accumulated[0].length;
+    const avg = Array.from({ length: n }, (_, i) => ({
+      x:          accumulated.reduce((s, f) => s + f[i].x,          0) / accumulated.length,
+      y:          accumulated.reduce((s, f) => s + f[i].y,          0) / accumulated.length,
+      z:          accumulated.reduce((s, f) => s + f[i].z,          0) / accumulated.length,
+      visibility: accumulated.reduce((s, f) => s + (f[i].visibility ?? 0), 0) / accumulated.length,
+    }));
+
+    const landmarks: PoseLandmark[] = avg.map((p, i) => ({
+      name: POSE_LANDMARK_NAMES[i] ?? `landmark_${i}`,
+      x: p.x, y: p.y, z: p.z, visibility: p.visibility,
+    }));
+
+    // Key joint angles (indices: 11=L_shoulder 12=R_shoulder 13=L_elbow 14=R_elbow
+    // 15=L_wrist 16=R_wrist 23=L_hip 24=R_hip 25=L_knee 26=R_knee 27=L_ankle 28=R_ankle)
+    const angles: Record<string, number> = {};
+    if (avg.length > 28) {
+      angles.knee_left   = computeAngle(avg[23], avg[25], avg[27]);
+      angles.knee_right  = computeAngle(avg[24], avg[26], avg[28]);
+      angles.hip_left    = computeAngle(avg[11], avg[23], avg[25]);
+      angles.hip_right   = computeAngle(avg[12], avg[24], avg[26]);
+      angles.elbow_left  = computeAngle(avg[11], avg[13], avg[15]);
+      angles.elbow_right = computeAngle(avg[12], avg[14], avg[16]);
+      angles.trunk_lean  = computeAngle(avg[23], avg[11], avg[13]);
+    }
+
+    return {
+      landmarks,
+      angles,
+      confidence:  confCount > 0 ? totalConf / confCount : undefined,
+      frame_count: accumulated.length,
+    };
+  } catch {
+    return null; // MediaPipe unavailable — skip gracefully
+  }
 }
 
 // ── Safety & Injury Exposure ────────────────────────────────────────────────
@@ -529,6 +686,7 @@ export default function PlayerMatchEyePage() {
   const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
+  const [poseData, setPoseData] = useState<MediaPipeData | null>(null);
 
   // ── Upload via R2 → Laravel job → Gemini Files API ───────────────────────
   // Bypasses the Render proxy entirely (avoids 60s load-balancer timeout).
@@ -540,6 +698,10 @@ export default function PlayerMatchEyePage() {
     setUploadPct(0);
     setError("");
     setUploadedFile(file);
+
+    // Fire MediaPipe pose analysis concurrently — WASM runs while R2 uploads
+    // and Gemini processes (60–120 s), so the ~5–10 s pose analysis is free.
+    const posePromise = runMediaPipeOnFile(file);
 
     try {
       // Step 1 — Compress to 720p H.264
@@ -612,6 +774,9 @@ export default function PlayerMatchEyePage() {
           setFileName(poll.file_name ?? "");
           setMimeType(poll.mime_type ?? "video/mp4");
           setUploadPct(100);
+          // Collect MediaPipe result (ran concurrently — should be ready by now)
+          const pose = await posePromise;
+          if (pose) setPoseData(pose);
           setPageStage("uploaded");
           return;
         }
@@ -669,6 +834,7 @@ export default function PlayerMatchEyePage() {
         body: JSON.stringify({
           fileUri, fileName, mimeType,
           sport, position, jersey, focusQuestion,
+          poseData: poseData ?? undefined,
         }),
       });
       if (!res.ok) {
@@ -713,6 +879,7 @@ export default function PlayerMatchEyePage() {
     setSavedId(null);
     setPassportSaved(false);
     setArenaShared(false);
+    setPoseData(null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
