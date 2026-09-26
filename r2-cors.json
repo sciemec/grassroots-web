@@ -1,10 +1,8 @@
-{
-  "rules": [
-    {
-      "allowedOrigins": ["https://grassrootssports.live", "https://www.grassrootssports.live"],
-      "allowedMethods": ["PUT", "GET", "HEAD"],
-      "allowedHeaders": ["*"],
-      "maxAgeSeconds": 3600
-    }
-  ]
-}
+[
+  {
+    "allowedOrigins": ["https://grassrootssports.live", "https://www.grassrootssports.live"],
+    "allowedMethods": ["PUT", "GET", "HEAD"],
+    "allowedHeaders": ["*"],
+    "maxAgeSeconds": 3600
+  }
+]
