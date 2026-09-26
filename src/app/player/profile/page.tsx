@@ -286,7 +286,7 @@ function PlayerProfilePage() {
       // getAnalysisLog() fetches from backend first, falls back to localStorage
       const analysisLog = await getAnalysisLog();
       const analysisContext = analysisLog.length > 0
-        ? `\n\nReal AI analysis results from this player's recent sessions:\n${analysisLog.slice(-4).map((e) => {
+        ? `\n\nReal AI analysis results from this player's recent sessions:\n${analysisLog.slice(-1).map((e) => {
             const label = { "match-eye": "Match Eye", "gemini-drills": "AI Drill Analysis", "biomechanics": "Biomechanics", "assessment": "Field Assessment" }[e.tool] ?? e.tool;
             const date  = new Date(e.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
             return `- ${label} (${date}): ${e.summary}${e.score !== undefined ? ` Score: ${e.score}/100.` : ""}${e.strengths?.length ? ` Strengths: ${e.strengths.join(", ")}.` : ""}${e.improvements?.length ? ` Needs work on: ${e.improvements.join(", ")}.` : ""}`;
