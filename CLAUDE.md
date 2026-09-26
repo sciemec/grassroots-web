@@ -11207,3 +11207,57 @@ Pages show empty state (not errors) until drill data accumulates.
 Tables confirmed: `style_fingerprints`, `style_fingerprint_history`, `style_similarities`,
 `chemistry_data_access_log`, `coach_player_skill_ratings`, `coach_skill_drill_results`
 
+
+---
+
+## SESSION LOG — 26 September 2026
+
+### Theme — Match Eye Hydration Fix · Privacy Cleanup
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. React Hydration Error #418 — Match Eye Page — FIXED ✅
+
+**Commit:** `79307796`
+
+**Root cause:** `src/app/player/match-eye/page.tsx` had an inline `<style>` tag always rendered
+in the component body (lines 1343–1348, no `precedence` prop):
+
+```jsx
+<style>{`
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
+`}</style>
+```
+
+React 18 + Next.js 14 treats `<style>` elements in the body specially. Without `precedence`,
+the SSR-rendered DOM node does not match the client reconciler's expectation → error #418
+(`args: HTML`).
+
+**Fix:** Moved `@keyframes pulse` to `src/app/globals.css` and deleted the inline `<style>` tag.
+Animation continues to work identically — the loading dots at line 1206 still reference
+`animation: "pulse 1.2s ease-in-out infinite"`.
+
+**Rule:** Never use inline `<style>` tags in Next.js 14 JSX body without a `precedence` prop.
+Always put `@keyframes` and global animation definitions in `globals.css`.
+
+---
+
+#### 2. /privacy → /privacy-policy Redirect — DONE ✅
+
+**Commits:** `46fe340f` (redirect) + `760d448a` (delete duplicate file)
+
+`/privacy` was an identical duplicate of `/privacy-policy` (same 10 sections, same effective date
+September 23 2026, same contact email). `/privacy-policy` is the canonical URL.
+
+**Changes:**
+- `next.config.mjs` — added permanent redirect: `{ source: '/privacy', destination: '/privacy-policy', permanent: true }`
+- `src/app/privacy/page.tsx` — **deleted**
+- `src/app/privacy/` directory — **deleted**
+
+**`/privacy-policy` remains untouched** — it is the only privacy page going forward.
+
