@@ -15,6 +15,7 @@ import ScholarshipReel, {
   EMPTY_REEL,
   type ReelState,
 } from "@/components/passport/ScholarshipReel";
+import { getAnalysisLog, type ThutoAnalysisEvent } from "@/lib/thuto-context";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
 } from "recharts";
@@ -124,6 +125,7 @@ export default function PassportPage() {
   const [aiSummary, setAiSummary] = useState("");
   const [provenance, setProvenance] = useState<ProvenanceRecord[]>([]);
   const [biometricScore, setBiometricScore] = useState<BiometricScore | null>(null);
+  const [analysisEvents, setAnalysisEvents] = useState<ThutoAnalysisEvent[]>([]);
   const [reel, setReel] = useState<ReelState>(EMPTY_REEL);
 
   type SkillReading = { score: number; grade: string; recorded_at?: string } | null;
@@ -167,6 +169,9 @@ export default function PassportPage() {
       const s = localStorage.getItem(LS_AI_SUMMARY);
       if (s) setAiSummary(s);
     } catch {}
+
+    // Fetch AI analysis history (Match Eye, Drill Analysis, Biomechanics, Assessment)
+    getAnalysisLog().then(setAnalysisEvents).catch(() => {});
 
     // Fetch skill analyzer history in parallel — take latest entry from each
     const SKILLS = ["sprint", "shooting", "first-touch", "dribbling", "passing", "tackling"] as const;
@@ -399,6 +404,36 @@ Output exactly 3 sentences. No bullet points. No headers.`,
         }
         doc.text(lines, 17, y);
         y += lines.length * 5 + 4;
+      }
+
+      // ── AI Analysis History ──
+      if (analysisEvents.length > 0) {
+        if (y + 20 > 265) { doc.addPage(); y = 20; }
+        section("AI ANALYSIS HISTORY");
+        const PDF_TOOL_LABELS: Record<string, string> = {
+          "match-eye":     "Match Eye",
+          "gemini-drills": "AI Drill Analysis",
+          "biomechanics":  "Biomechanics",
+          "assessment":    "Field Assessment",
+        };
+        analysisEvents.slice(0, 3).forEach((e) => {
+          const toolLabel = PDF_TOOL_LABELS[e.tool] ?? e.tool;
+          const date = new Date(e.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" });
+          const scoreStr = e.score != null ? `  —  ${e.score}/100` : "";
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(8);
+          doc.setTextColor(26, 92, 42);
+          if (y + 12 > 265) { doc.addPage(); y = 20; }
+          doc.text(`${toolLabel}  (${date})${scoreStr}`, 17, y);
+          y += 5;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7.5);
+          doc.setTextColor(60, 60, 60);
+          const sumLines = doc.splitTextToSize(e.summary, W - 34);
+          doc.text(sumLines, 21, y);
+          y += sumLines.length * 4.5 + 3;
+        });
+        y += 2;
       }
 
       // ── Coach Endorsements ──
@@ -910,6 +945,56 @@ Output exactly 3 sentences. No bullet points. No headers.`,
               </div>
             )}
           </div>
+
+          {/* ── AI Analysis History ── */}
+          {analysisEvents.length > 0 && (
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20">
+                  <span className="text-sm">🤖</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">AI Analysis History</h3>
+                  <p className="text-xs text-zinc-400">Match Eye · Drill Analysis · Biomechanics · Field Assessment</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {analysisEvents.slice(0, 5).map((e, i) => {
+                  const TOOL_LABELS: Record<string, string> = {
+                    "match-eye":     "Match Eye",
+                    "gemini-drills": "AI Drill Analysis",
+                    "biomechanics":  "Biomechanics",
+                    "assessment":    "Field Assessment",
+                  };
+                  const toolLabel = TOOL_LABELS[e.tool] ?? e.tool;
+                  const date = new Date(e.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+                  return (
+                    <div key={i} className="rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[#f0b429]">{toolLabel}</span>
+                        <div className="flex items-center gap-2">
+                          {e.score != null && (
+                            <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: "rgba(240,180,41,0.15)", color: "#f0b429" }}>
+                              {e.score}/100
+                            </span>
+                          )}
+                          <span className="text-[10px] text-zinc-500">{date}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-zinc-300">{e.summary}</p>
+                      {(e.strengths?.length ?? 0) > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {e.strengths!.slice(0, 3).map((s, j) => (
+                            <span key={j} className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: "rgba(34,197,94,0.1)", color: "#86efac" }}>✓ {s}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ── Skill Analyzer Readings ── */}
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-4">
