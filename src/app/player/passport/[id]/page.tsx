@@ -52,6 +52,7 @@ interface PassportData {
   badges: Badge[];
   scout_views_7d: number;
   verified: boolean;
+  analysis_events: AnalysisEvent[];
 }
 
 interface MediaItem {
@@ -69,6 +70,17 @@ interface Badge {
   name: string;
   description: string;
   icon: string;
+}
+
+interface AnalysisEvent {
+  tool: string;
+  sport: string | null;
+  position: string | null;
+  summary: string;
+  score: number | null;
+  strengths: string[];
+  improvements: string[];
+  analysed_at: string;
 }
 
 // ─── Representation Request Modal ─────────────────────────────────────────────
@@ -465,7 +477,7 @@ export default function PlayerPassportPublicPage() {
     );
   }
 
-  const { user, profile, prediction, thuto_dimensions, media, badges, scout_views_7d, verified } = data;
+  const { user, profile, prediction, thuto_dimensions, media, badges, scout_views_7d, verified, analysis_events = [] } = data;
 
   const initials = user.name
     .split(" ")
@@ -739,6 +751,78 @@ export default function PlayerPassportPublicPage() {
                   {b.name}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── AI Analysis History ── */}
+        {analysis_events.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs"
+                style={{ backgroundColor: "#e0f2fe" }}
+              >
+                🤖
+              </div>
+              <div>
+                <h2 className="font-bold text-gray-900">AI Analysis History</h2>
+                <p className="text-xs text-gray-400">Match Eye · Drill Analysis · Biomechanics · Field Assessment</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {analysis_events.map((e, i) => {
+                const TOOL_LABELS: Record<string, string> = {
+                  "match-eye": "Match Eye",
+                  "gemini-drills": "AI Drill Analysis",
+                  "biomechanics": "Biomechanics Scan",
+                  "assessment": "Field Assessment",
+                };
+                const toolLabel = TOOL_LABELS[e.tool] ?? e.tool;
+                const date = new Date(e.analysed_at).toLocaleDateString("en-GB", {
+                  day: "numeric", month: "short", year: "numeric",
+                });
+                return (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span
+                        className="text-[10px] font-bold uppercase tracking-wide"
+                        style={{ color: "#c8962a" }}
+                      >
+                        {toolLabel}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {e.score != null && (
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                            style={{ background: "rgba(200,150,42,0.12)", color: "#c8962a" }}
+                          >
+                            {e.score}/100
+                          </span>
+                        )}
+                        <span className="text-[10px] text-gray-400">{date}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-600">{e.summary}</p>
+                    {(e.strengths?.length ?? 0) > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {e.strengths.slice(0, 3).map((s, j) => (
+                          <span
+                            key={j}
+                            className="rounded-full px-2 py-0.5 text-[10px]"
+                            style={{ background: "rgba(26,92,42,0.08)", color: "#1a5c2a" }}
+                          >
+                            ✓ {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
