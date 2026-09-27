@@ -757,7 +757,7 @@ export default function GeminiDrillsPage() {
                   <div style={{ background: '#eff6ff', borderRadius: 12, padding: '10px 14px', border: '1px solid #bfdbfe' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', marginBottom: 2 }}>Pose + THUTO combined</div>
                     <div style={{ fontSize: 11, color: '#1e40af', lineHeight: 1.6 }}>
-                      Both engines run on your clip at once — MediaPipe scores precision mechanics, THUTO adds coaching context.
+                      Both engines run on your clip at once — AI scores precision mechanics, THUTO adds coaching context.
                     </div>
                   </div>
                 )}
