@@ -129,7 +129,7 @@ function ResultDisplay({ result, drill }: { result: DrillResult; drill: GeminiDr
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>out of 10</div>
         {result.data_confidence && (
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 6 }}>
-            Gemini confidence: {result.data_confidence}
+            THUTO confidence: {result.data_confidence}
           </div>
         )}
       </div>
@@ -187,7 +187,7 @@ function ResultDisplay({ result, drill }: { result: DrillResult; drill: GeminiDr
         style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
       >
         <Info size={12} color="#999" />
-        <span style={{ fontSize: 11, color: '#999' }}>What Gemini measured in this drill</span>
+        <span style={{ fontSize: 11, color: '#999' }}>What THUTO measured in this drill</span>
         {expanded ? <ChevronDown size={12} color="#999" /> : <ChevronRight size={12} color="#999" />}
       </button>
       {expanded && (
@@ -560,7 +560,7 @@ export default function GeminiDrillsPage() {
           </Link>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>Video Drill Analysis</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>Gemini 2.0 Flash · sees motion, not just frames</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>THUTO · sees motion, not just frames</div>
           </div>
         </div>
       </div>
@@ -589,10 +589,10 @@ export default function GeminiDrillsPage() {
         {/* What Gemini can do — info banner */}
         <div style={{ background: '#eaf3de', borderRadius: 12, padding: '12px 14px', border: '1px solid #c3dfa0', marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: GRS_GREEN, marginBottom: 4 }}>
-            How Gemini analyses your video
+            How THUTO analyses your video
           </div>
           <div style={{ fontSize: 11, color: '#3a6b2a', lineHeight: 1.6 }}>
-            Gemini 2.0 Flash processes your full clip at 1 frame per second — it sees motion across time, not just one frozen image. It can read acceleration, body shape, foot surface, cut sharpness, and technique without any special equipment. Just record on your phone and upload.
+            THUTO processes your full clip at 1 frame per second — it sees motion across time, not just one frozen image. It can read acceleration, body shape, foot surface, cut sharpness, and technique without any special equipment. Just record on your phone and upload.
           </div>
         </div>
 
@@ -740,7 +740,7 @@ export default function GeminiDrillsPage() {
               </div>
 
               {/* What Gemini will measure */}
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 6 }}>Gemini will score:</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 6 }}>THUTO will score:</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {selected.dimensions.map(d => (
                   <div key={d.key} title={d.tip} style={{ fontSize: 11, background: '#f5f5f5', color: '#555', padding: '3px 8px', borderRadius: 20, cursor: 'help' }}>
@@ -755,9 +755,9 @@ export default function GeminiDrillsPage() {
               <>
                 {selected.mediapipe_drill_type && (
                   <div style={{ background: '#eff6ff', borderRadius: 12, padding: '10px 14px', border: '1px solid #bfdbfe' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', marginBottom: 2 }}>Pose + Gemini combined</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', marginBottom: 2 }}>Pose + THUTO combined</div>
                     <div style={{ fontSize: 11, color: '#1e40af', lineHeight: 1.6 }}>
-                      Both engines run on your clip at once — MediaPipe scores precision mechanics, Gemini adds coaching context.
+                      Both engines run on your clip at once — MediaPipe scores precision mechanics, THUTO adds coaching context.
                     </div>
                   </div>
                 )}
@@ -788,8 +788,8 @@ export default function GeminiDrillsPage() {
                 </button>
                 <div style={{ textAlign: 'center', fontSize: 11, color: '#aaa' }}>
                   {selected.mediapipe_drill_type
-                    ? 'Pose tracking · Gemini coaching · upload from your camera roll'
-                    : 'Upload a clip from your phone or computer · Gemini analyses motion over time'}
+                    ? 'Pose tracking · THUTO coaching · upload from your camera roll'
+                    : 'Upload a clip from your phone or computer · THUTO analyses motion over time'}
                 </div>
               </>
             )}
@@ -854,7 +854,7 @@ export default function GeminiDrillsPage() {
                       style={{ flex: 2, padding: '12px', borderRadius: 10, background: GRS_GREEN, color: '#fff', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                     >
                       <Video size={16} />
-                      Send to Gemini
+                      Send to THUTO
                     </button>
                   </div>
                 )}
@@ -879,7 +879,7 @@ export default function GeminiDrillsPage() {
                 <Loader2 size={36} color={GRS_GREEN} className="animate-spin" style={{ margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#333', marginBottom: 6 }}>Analysing your technique…</div>
                 <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>
-                  Gemini 2.0 Flash processes every second of your clip — reading body shape, foot surface, acceleration, and technique.
+                  THUTO processes every second of your clip — reading body shape, foot surface, acceleration, and technique.
                   {selected?.mediapipe_drill_type ? ' Pose tracking is running in parallel.' : ''}
                 </div>
                 <div style={{ fontSize: 11, color: '#aaa', marginTop: 12 }}>This takes 30–90 seconds</div>
@@ -894,7 +894,7 @@ export default function GeminiDrillsPage() {
                     <CheckCircle2 size={16} />
                     <span style={{ fontSize: 13, fontWeight: 600 }}>
                       {upload.result.engine === 'combined'
-                        ? 'Combined pose + Gemini analysis complete — saved to your Talent Passport'
+                        ? 'Combined pose + THUTO analysis complete — saved to your Talent Passport'
                         : 'Analysis complete — saved to your Talent Passport'}
                     </span>
                   </div>
@@ -913,7 +913,7 @@ export default function GeminiDrillsPage() {
                     <CheckCircle2 size={16} />
                     <span style={{ fontSize: 13, fontWeight: 600 }}>
                       {upload.result.engine === 'combined'
-                        ? 'Combined pose + Gemini analysis complete'
+                        ? 'Combined pose + THUTO analysis complete'
                         : 'Analysis complete'}
                     </span>
                   </div>
@@ -965,7 +965,7 @@ export default function GeminiDrillsPage() {
 
         {/* Gemini cannot measure — disclaimer */}
         <div style={{ marginTop: 24, padding: '10px 14px', borderRadius: 10, background: '#f5f5f5', border: '1px solid #e5e5e5' }}>
-          <div style={{ fontSize: 10, fontWeight: 600, color: '#888', textTransform: 'uppercase', marginBottom: 4 }}>Gemini cannot measure</div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: '#888', textTransform: 'uppercase', marginBottom: 4 }}>THUTO cannot measure</div>
           <div style={{ fontSize: 11, color: '#999', lineHeight: 1.6 }}>
             Exact speed in km/h · precise angles · heart rate · offside position · distance covered
           </div>
