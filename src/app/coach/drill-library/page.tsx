@@ -28,8 +28,8 @@ const TOOLS = [
     color: "#1a5c2a",
     bg:    "#f0fdf4",
     label: "AI Drill Analysis",
-    desc:  "Upload player footage and get Gemini-powered drill-specific biomechanics reports",
-    badge: "Gemini AI",
+    desc:  "Upload player footage and get AI-powered drill-specific biomechanics reports",
+    badge: "THUTO AI",
   },
 ];
 

@@ -418,15 +418,15 @@ export default function PassportClient({
           </PremiumGate>
         )}
 
-        {/* ── Gemini drill scores ───────────────────────────────────────── */}
+        {/* ── THUTO drill scores ───────────────────────────────────────── */}
         {drillScores && drillScores.length > 0 && (
           <PremiumGate>
           <div style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', border: '0.5px solid #e5e5e5' }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
-              Gemini drill analysis
+              THUTO drill analysis
             </div>
             <div style={{ fontSize: 11, color: '#aaa', marginBottom: 10 }}>
-              AI video analysis — Gemini 2.0 Flash · technique measured across motion
+              AI video analysis — THUTO AI · technique measured across motion
             </div>
             {drillScores.map(ds => {
               const pct = Math.round((ds.overall_score / 10) * 100);

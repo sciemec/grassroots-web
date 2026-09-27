@@ -19,7 +19,7 @@ function greeting(): string {
 }
 
 const WIRE = [
-  "Match Eye: Gemini 1.5 Pro + Claude tactical narrative â€” live",
+  "Match Eye: AI tactical analysis â€” live",
   "xG data updated â€” Dynamos FC vs Highlanders (90 min logged)",
   "AI Tactical Report generated for Zvishavane City FC â€” 94% accuracy",
   "Touch Tracker: 847 touches logged across 3 matches today",
@@ -33,7 +33,7 @@ const FEATURES = [
     icon: Camera,
     iconBg: "#fef3c7", iconColor: "#d97706",
     label: "Match Eye",
-    desc: "Upload video Â· Gemini watches Â· Claude reports",
+    desc: "Upload video · THUTO watches · AI reports",
   },
   {
     href: "/analyst/match-brain",
@@ -96,7 +96,7 @@ const FEATURES = [
     icon: Zap,
     iconBg: "#ecfdf5", iconColor: "#059669",
     label: "Team Biomechanics",
-    desc: "YOLOv8 + MediaPipe Â· Performance Index Â· Resilience Index Â· PDF",
+    desc: "AI tracking · Performance Index Â· Resilience Index Â· PDF",
   },
   {
     href: "/analyst/ball-tracker",
@@ -110,7 +110,7 @@ const FEATURES = [
     icon: Mic,
     iconBg: "#fff1f2", iconColor: "#e11d48",
     label: "Commentary Analysis",
-    desc: "Record speech · Gemini extracts events · timestamped timeline",
+    desc: "Record speech · THUTO extracts events · timestamped timeline",
   },
 ];
 
@@ -287,7 +287,7 @@ export default function AnalystHubPage() {
               </div>
               <div>
                 <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">Biometric Scan</h4>
-                <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">MediaPipe skeleton Â· technique score</p>
+                <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">THUTO AI · technique score</p>
               </div>
             </Link>
 
@@ -325,7 +325,7 @@ export default function AnalystHubPage() {
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>Match Eye</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Gemini video analysis Â· Claude report</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>THUTO video analysis · AI report</p>
               </div>
             </div>
             <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />

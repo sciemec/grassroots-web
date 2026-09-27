@@ -734,7 +734,7 @@ export default function PassMapPage() {
                       {meTrackingPlayers.length > 0 && (
                         <p className="mt-2 text-[10px] text-muted-foreground">
                           <span className="font-semibold text-[#f0b429]">{meTrackingPlayers.filter(p => p.team === "home").length}</span> home players ·{" "}
-                          <span className="font-semibold text-blue-400">{meTrackingPlayers.filter(p => p.team === "away").length}</span> away players tracked by YOLOv8
+                          <span className="font-semibold text-blue-400">{meTrackingPlayers.filter(p => p.team === "away").length}</span> away players tracked by THUTO AI
                         </p>
                       )}
                     </div>
@@ -757,7 +757,7 @@ export default function PassMapPage() {
                   {/* Match Eye legend when real positions shown */}
                   {meSource && meTrackingPlayers.length > 0 && (
                     <div className="rounded-2xl border border-[#f0b429]/20 bg-[#f0b429]/5 p-3">
-                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#f0b429]">YOLOv8 Real Player Positions</p>
+                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#f0b429]">THUTO AI Real Player Positions</p>
                       <div className="flex gap-4 text-[10px] text-white/60">
                         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#f0b429] inline-block" /> {mbSession!.homeTeam}</span>
                         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-red-500 inline-block" /> {mbSession!.awayTeam}</span>

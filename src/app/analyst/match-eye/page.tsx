@@ -524,7 +524,7 @@ export default function AnalystMatchEye() {
         <div style={{ background: D.border, borderRadius: 99, height: 5 }}>
           <div style={{ background: D.green, borderRadius: 99, height: 5, width: `${pct}%`, transition: "width 0.3s" }} />
         </div>
-        <div style={{ fontSize: 11, color: D.dim, marginTop: 6 }}>Sending to Google for Gemini analysis</div>
+        <div style={{ fontSize: 11, color: D.dim, marginTop: 6 }}>Sending to THUTO for analysis</div>
       </div>
     );
   }
@@ -572,7 +572,7 @@ export default function AnalystMatchEye() {
             <CheckCircle2 size={20} style={{ color: D.green, flexShrink: 0 }} />
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: D.green }}>Uploaded</div>
-              <div style={{ fontSize: 11, color: D.muted }}>Ready for Gemini analysis</div>
+              <div style={{ fontSize: 11, color: D.muted }}>Ready for THUTO analysis</div>
             </div>
           </div>
         )}
@@ -876,7 +876,7 @@ export default function AnalystMatchEye() {
           <span style={{ fontWeight: 800, fontSize: 16, color: D.text }}>Match Eye</span>
           <span style={{ fontSize: 10, fontWeight: 700, background: D.blueBg, color: D.blue, padding: "2px 8px", borderRadius: 99 }}>ANALYST</span>
           <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, background: D.greenBg, color: D.green, padding: "2px 10px", borderRadius: 99, border: `1px solid ${D.greenBd}` }}>
-            Gemini 2.5 Flash
+            THUTO AI
           </span>
         </div>
 
@@ -965,7 +965,7 @@ export default function AnalystMatchEye() {
                       {firstAnalysing && (
                         <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: D.greenBg, border: `1px solid ${D.greenBd}`, borderRadius: 8, fontSize: 12, color: D.green }}>
                           <div style={{ width: 8, height: 8, borderRadius: "50%", background: D.green, animation: "analyst-pulse 1.5s ease-in-out infinite", flexShrink: 0 }} />
-                          Gemini is analysing first half...
+                          THUTO is analysing first half...
                         </div>
                       )}
                     </div>
@@ -982,7 +982,7 @@ export default function AnalystMatchEye() {
                       {secondAnalysing && (
                         <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: D.greenBg, border: `1px solid ${D.greenBd}`, borderRadius: 8, fontSize: 12, color: D.green }}>
                           <div style={{ width: 8, height: 8, borderRadius: "50%", background: D.green, animation: "analyst-pulse 1.5s ease-in-out infinite", flexShrink: 0 }} />
-                          Gemini is analysing second half...
+                          THUTO is analysing second half...
                         </div>
                       )}
                     </div>
@@ -1060,7 +1060,7 @@ export default function AnalystMatchEye() {
                 firstAnalysing
                   ? <div style={{ background: D.card, borderRadius: 12, padding: "48px 24px", textAlign: "center" }}>
                       <div style={{ width: 12, height: 12, borderRadius: "50%", background: D.green, animation: "analyst-pulse 1.5s ease-in-out infinite", margin: "0 auto 16px" }} />
-                      <div style={{ fontWeight: 700, fontSize: 15, color: D.text, marginBottom: 6 }}>Gemini is analysing the first half...</div>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: D.text, marginBottom: 6 }}>THUTO is analysing the first half...</div>
                       <div style={{ fontSize: 12, color: D.dim }}>This takes 2–5 minutes. You can upload and analyse the second half while you wait.</div>
                     </div>
                   : firstResult
@@ -1087,7 +1087,7 @@ export default function AnalystMatchEye() {
                 secondAnalysing
                   ? <div style={{ background: D.card, borderRadius: 12, padding: "48px 24px", textAlign: "center" }}>
                       <div style={{ width: 12, height: 12, borderRadius: "50%", background: D.green, animation: "analyst-pulse 1.5s ease-in-out infinite", margin: "0 auto 16px" }} />
-                      <div style={{ fontWeight: 700, fontSize: 15, color: D.text, marginBottom: 6 }}>Gemini is analysing the second half...</div>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: D.text, marginBottom: 6 }}>THUTO is analysing the second half...</div>
                       <div style={{ fontSize: 12, color: D.dim }}>This takes 2–5 minutes.</div>
                     </div>
                   : secondResult
@@ -1214,7 +1214,7 @@ export default function AnalystMatchEye() {
                       <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, background: D.card2, border: `2px dashed ${D.border2}`, borderRadius: 14, padding: "36px 20px", cursor: "pointer" }}>
                         <Mic size={28} color={D.green} />
                         <div style={{ fontWeight: 700, fontSize: 14, color: D.text }}>Upload Audio Commentary</div>
-                        <div style={{ fontSize: 12, color: D.muted, textAlign: "center" }}>Record your spoken commentary during the match, then upload here.<br />Gemini extracts every event, player, and tactical note.</div>
+                        <div style={{ fontSize: 12, color: D.muted, textAlign: "center" }}>Record your spoken commentary during the match, then upload here.<br />THUTO extracts every event, player, and tactical note.</div>
                         <div style={{ fontSize: 11, color: D.dim }}>Accepts mp3, m4a, wav, webm, ogg</div>
                         <input type="file" accept="audio/*" style={{ display: "none" }}
                           onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCommentary(f); e.target.value = ""; }} />
@@ -1237,7 +1237,7 @@ export default function AnalystMatchEye() {
                   {cmtPhase === "analysing" && (
                     <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 14, padding: "40px 20px", textAlign: "center" }}>
                       <div style={{ width: 12, height: 12, borderRadius: "50%", background: D.green, animation: "analyst-pulse 1.5s ease-in-out infinite", margin: "0 auto 14px" }} />
-                      <div style={{ fontSize: 13, color: D.muted }}>Gemini is transcribing and extracting match events…</div>
+                      <div style={{ fontSize: 13, color: D.muted }}>THUTO is transcribing and extracting match events…</div>
                       <div style={{ fontSize: 11, color: D.dim, marginTop: 6 }}>This takes 20–60 seconds</div>
                     </div>
                   )}

@@ -242,7 +242,7 @@ const TEST_GUIDE: Record<DomainKey, TestGuide> = {
     apps: [
       'Keepy Uppy (iOS) — AI counts ball touches from phone camera in real time. FREE.',
       'Ball Juggling Counter (Android) — detects ball bounce from camera to count touches.',
-      'Camera + AI Measure button below — records your session and counts touches using Gemini AI.',
+      'Camera + AI Measure button below — records your session and counts touches using THUTO AI.',
     ],
     cameraTip: 'Place phone 3–4 metres away at waist height, filming from the FRONT (not from behind). Bright, even light — avoid shadows which confuse the AI counter. Normal 30fps speed is fine for counting. Use 120fps only if you want to analyse touch mechanics.',
     proTip: 'GRS reference: 0–5 = Beginner · 6–15 = Developing · 16–30 = Competent · 31–60 = Advanced · 61+ = Elite. Goalkeepers: use a tennis ball in one hand instead to test hand-eye coordination. Defenders: include heading juggles (head the ball to yourself repeatedly) — a separate useful metric.',
@@ -626,7 +626,7 @@ export default function PositionFitPage() {
         {camPhase === 'processing' && (
           <div style={{ padding: 40, textAlign: 'center' }}>
             <div style={{ fontSize: 36, marginBottom: 14 }}>🤖</div>
-            <p style={{ color: 'white', fontWeight: 700, fontSize: 16, margin: 0 }}>Gemini AI is measuring…</p>
+            <p style={{ color: 'white', fontWeight: 700, fontSize: 16, margin: 0 }}>THUTO is measuring…</p>
             <p style={{ color: '#9ca3af', fontSize: 13, marginTop: 8 }}>
               Analysing your video to extract the measurement. This takes 10–30 seconds.
             </p>

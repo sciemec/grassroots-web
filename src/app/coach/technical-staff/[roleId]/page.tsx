@@ -542,7 +542,7 @@ export default function RoleWorkspacePage() {
                   <h4 className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">
                     Set Piece Lab
                   </h4>
-                  <p className="text-[11px] text-gray-400 mt-1 leading-snug">Upload clips · Gemini Vision</p>
+                  <p className="text-[11px] text-gray-400 mt-1 leading-snug">Upload clips · THUTO AI</p>
                   <ChevronRight size={12} className="absolute bottom-4 right-4 text-gray-300 group-hover:text-[#1a5c2a] transition-colors" />
                 </Link>
 

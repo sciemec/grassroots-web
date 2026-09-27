@@ -237,7 +237,7 @@ function DrillAnalysePage() {
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 22, fontWeight: 900, color: "#111827", marginBottom: 4 }}>{drillName}</h1>
           <p style={{ fontSize: 13, color: "#6b7280" }}>
-            Upload a short clip of yourself performing this drill. MediaPipe will measure your body mechanics and score what it can detect.
+            Upload a short clip of yourself performing this drill. THUTO AI will measure your body mechanics and score what it can detect.
           </p>
         </div>
 
@@ -309,7 +309,7 @@ function DrillAnalysePage() {
               }}
             >
               {videoLoading ? (
-                <><Loader2 size={16} className="animate-spin" /> Analysing with MediaPipe…</>
+                <><Loader2 size={16} className="animate-spin" /> Analysing with THUTO AI…</>
               ) : (
                 <><Video size={16} /> Measure My Technique</>
               )}
@@ -317,7 +317,7 @@ function DrillAnalysePage() {
 
             {videoLoading && (
               <p style={{ textAlign: "center", fontSize: 11, color: "#6b7280", marginTop: 10 }}>
-                This can take 30–90 seconds on first run. MediaPipe is reading your pose landmarks frame by frame.
+                This can take 30–90 seconds on first run. THUTO AI is reading your pose landmarks frame by frame.
               </p>
             )}
           </div>
@@ -457,7 +457,7 @@ function DrillAnalysePage() {
         {!done && mechanics.length > 0 && (
           <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", padding: 16, marginBottom: 20 }}>
             <h2 style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280", marginBottom: 10 }}>
-              What MediaPipe will measure
+              What THUTO AI will measure
             </h2>
             {mechanics.map((m) => (
               <div key={m.key} style={{ display: "flex", gap: 10, marginBottom: 8 }}>

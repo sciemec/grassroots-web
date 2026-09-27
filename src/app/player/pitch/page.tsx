@@ -141,7 +141,7 @@ export default function PitchPage() {
 
   const [steps, setSteps] = useState<ProcessingStep[]>([
     { label: 'Uploading video to secure storage',    status: 'waiting' },
-    { label: 'Sending to Gemini AI for analysis',    status: 'waiting' },
+    { label: 'Sending to THUTO for analysis',    status: 'waiting' },
     { label: 'Analysing body position & mechanics',  status: 'waiting' },
     { label: 'Comparing to platform benchmark',      status: 'waiting' },
     { label: 'Saving to Arena & Passport',           status: 'waiting' },
@@ -238,7 +238,7 @@ export default function PitchPage() {
     setPhase('processing');
     setSteps([
       { label: 'Uploading video to secure storage',    status: 'running' },
-      { label: 'Sending to Gemini AI for analysis',    status: 'waiting' },
+      { label: 'Sending to THUTO for analysis',    status: 'waiting' },
       { label: 'Analysing body position & mechanics',  status: 'waiting' },
       { label: 'Comparing to platform benchmark',      status: 'waiting' },
       { label: 'Saving to Arena & Passport',           status: 'waiting' },
@@ -425,7 +425,7 @@ export default function PitchPage() {
           <div>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>Drill Body Scan</h2>
             <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
-              Record yourself doing a drill. Gemini AI watches every frame and scores your body mechanics the same way a professional biomechanics coach would.
+              Record yourself doing a drill. THUTO watches every frame and scores your body mechanics the same way a professional biomechanics coach would.
             </p>
 
             {/* How it works */}
@@ -442,7 +442,7 @@ export default function PitchPage() {
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                   <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#1a5c2a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>2</div>
                   <div>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>Gemini AI watches your technique frame by frame</p>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>THUTO watches your technique frame by frame</p>
                     <p style={{ margin: '2px 0 0', fontSize: 12, color: '#666' }}>It looks at knee drive, hip extension, arm swing, trunk alignment, and foot strike — the same 5 checkpoints a UEFA coach uses to assess athletic movement.</p>
                   </div>
                 </div>
@@ -599,7 +599,7 @@ export default function PitchPage() {
                 <Loader2 size={28} color="#1a5c2a" style={{ animation: 'spin 1s linear infinite' }} />
               </div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>Analysing your drill</h2>
-              <p style={{ fontSize: 13, color: '#666', margin: 0 }}>Gemini AI is watching your technique — this takes 30-60 seconds...</p>
+              <p style={{ fontSize: 13, color: '#666', margin: 0 }}>THUTO is watching your technique — this takes 30-60 seconds...</p>
             </div>
 
             <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
@@ -626,7 +626,7 @@ export default function PitchPage() {
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>
               {drill?.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())} Analysis
             </h2>
-            <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>AI-powered body position breakdown by Gemini 2.5 Flash</p>
+            <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>AI-powered body position breakdown by THUTO AI</p>
 
             {/* Score explainer */}
             <div style={{ backgroundColor: '#f8fafc', borderRadius: 12, padding: '12px 14px', marginBottom: 16, border: '1px solid #e2e8f0' }}>

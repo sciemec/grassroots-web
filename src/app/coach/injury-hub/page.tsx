@@ -358,7 +358,7 @@ export default function CoachInjuryHubPage() {
 
       {/* Footer note */}
       <p className="text-center text-[10px] text-gray-400 mt-6">
-        Risk scores are calculated from MediaPipe biomechanics + training load data.
+        Risk scores are calculated from AI biomechanics + training load data.
         Always use clinical judgement alongside AI recommendations.
       </p>
     </main>

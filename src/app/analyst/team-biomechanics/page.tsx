@@ -369,7 +369,7 @@ export default function TeamBiometricsPage() {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <h1 className="text-2xl font-black text-gray-900">Team Biomechanics</h1>
-              <p className="text-sm text-gray-500 mt-0.5">YOLOv8 player detection · MediaPipe joint analysis · per-player scoring</p>
+              <p className="text-sm text-gray-500 mt-0.5">THUTO AI · player detection · joint analysis · per-player scoring</p>
             </div>
             <span className="text-xs font-bold bg-purple-700 text-white px-3 py-1 rounded-full">HYBRID PIPELINE</span>
           </div>
@@ -380,8 +380,8 @@ export default function TeamBiometricsPage() {
           <div className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">How the hybrid pipeline works</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { icon: "🎯", colour: "#7c3aed", title: "1 · YOLOv8 Detects", body: "Identifies every player in each frame. ByteTracker assigns persistent IDs across the full clip. K-means clusters jersey HSV colours into Home / Away / Referee." },
-              { icon: "🦾", colour: "#0891b2", title: "2 · MediaPipe Analyses", body: "Each player bounding-box crop is passed to MediaPipe Pose (33 landmarks). Joint angles are computed frame-by-frame: knee flexion, hip angle, trunk vector, ankle position." },
+              { icon: "🎯", colour: "#7c3aed", title: "1 · THUTO Detects", body: "Identifies every player in each frame. ByteTracker assigns persistent IDs across the full clip. K-means clusters jersey HSV colours into Home / Away / Referee." },
+              { icon: "🦾", colour: "#0891b2", title: "2 · THUTO Analyses", body: "Each player bounding-box crop is analysed for pose landmarks (33 points). Joint angles are computed frame-by-frame: knee flexion, hip angle, trunk vector, ankle position." },
               { icon: "📊", colour: "#1a5c2a", title: "3 · Two Scores Output", body: "Performance Index = Knee Drive + Trunk Lean + Heel Recovery. Structural Resilience Index = Valgus Risk + Bilateral Asymmetry + Amortization Duration." },
             ].map((s) => (
               <div key={s.title} className="rounded-xl p-4" style={{ backgroundColor: `${s.colour}10`, border: `1px solid ${s.colour}30` }}>
@@ -523,7 +523,7 @@ export default function TeamBiometricsPage() {
         {stage === "detecting" && (
           <ProcessingCard
             icon={<Zap size={40} className="text-purple-600" />}
-            title="YOLOv8 detecting players…"
+            title="THUTO detecting players…"
             subtitle="ByteTracker assigning player IDs · classifying teams by jersey colour"
             spinning
           />
@@ -533,7 +533,7 @@ export default function TeamBiometricsPage() {
         {stage === "analysing" && (
           <ProcessingCard
             icon={<Activity size={40} className="text-cyan-600" />}
-            title="MediaPipe analysing joint angles…"
+            title="THUTO analysing joint angles…"
             subtitle="33-landmark pose computed per player crop · measuring trunk, knee, ankle vectors"
             spinning
           />

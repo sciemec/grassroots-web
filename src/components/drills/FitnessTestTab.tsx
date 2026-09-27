@@ -164,7 +164,7 @@ const TESTS: {
       "Place phone sideways so your full body AND the ball are visible",
       "Do NOT hold the ball — drop it from your hands and start juggling",
       "If the ball goes away from camera, bring it back quickly",
-      "Do your best — Gemini can see your body shape even if you lose the ball",
+      "Do your best — THUTO can see your body shape even if you lose the ball",
     ],
     whatAIMeasures: ["Touch quality", "Body shape on receiving", "Dominant foot", "Consistency", "Technique score"],
   },

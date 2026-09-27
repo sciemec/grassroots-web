@@ -609,7 +609,7 @@ export default function BallTrackerPage() {
               <div>
                 <p className="text-sm font-bold text-gray-900">Ball path · events · player stats — from one clip</p>
                 <p className="mt-0.5 text-xs text-gray-500 leading-relaxed">
-                  YOLOv8 tracks the ball at 5 fps and players at 1 fps. Kicks, deflections, and stops are
+                  THUTO AI tracks the ball at 5 fps and players at 1 fps. Kicks, deflections, and stops are
                   detected automatically. Ball positions are linearly interpolated across gaps up to 5 seconds.
                 </p>
               </div>
@@ -757,7 +757,7 @@ export default function BallTrackerPage() {
   if (phase === "running") {
     const steps = [
       { label: "Upload", done: progress >= 50 },
-      { label: "YOLO Detection", done: progress >= 80 },
+      { label: "THUTO Detection", done: progress >= 80 },
       { label: "Event Detection", done: progress >= 95 },
     ];
     return (

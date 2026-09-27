@@ -272,7 +272,7 @@ export default function DrillGuidesPage() {
         {/* CTA */}
         <div className="bg-white rounded-2xl border border-gray-200 p-5 text-center">
           <p className="text-sm font-bold text-gray-900 mb-1">Ready to practise?</p>
-          <p className="text-xs text-gray-500 mb-4">Open the Drill Lab to work through position-specific drills with Gemini AI feedback.</p>
+          <p className="text-xs text-gray-500 mb-4">Open the Drill Lab to work through position-specific drills with THUTO AI feedback.</p>
           <Link
             href={`/player/drills`}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black text-white"

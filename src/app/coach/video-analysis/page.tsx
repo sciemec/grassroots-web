@@ -20,7 +20,7 @@ const TOOLS = [
     bg:    "#ede9fe",
     label: "Drill Analysis",
     desc:  "Upload training footage — biomechanics scoring for 6 sprint, agility and technique drills",
-    badge: "Gemini",
+    badge: "THUTO AI",
   },
   {
     href:  "/coach/general-analysis",
@@ -38,7 +38,7 @@ const TOOLS = [
     bg:    "#fee2e2",
     label: "Player Analysis",
     desc:  "4-type biomechanics hub — movement, technique, resilience, posture screening",
-    badge: "Gemini",
+    badge: "THUTO AI",
   },
 ];
 
@@ -135,7 +135,7 @@ export default function VideoAnalysisHubPage() {
 
         {/* Footer note */}
         <p style={{ marginTop: 28, fontSize: 12, color: "#9ca3af", textAlign: "center" }}>
-          All video analysis is powered by Gemini 2.0 Flash. Videos are not stored permanently unless you publish to the Arena.
+          All video analysis is powered by THUTO AI. Videos are not stored permanently unless you publish to the Arena.
         </p>
       </div>
     </div>

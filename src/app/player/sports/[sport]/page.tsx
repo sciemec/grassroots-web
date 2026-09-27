@@ -370,7 +370,7 @@ function VideoTalentSection({
         </span>
       </div>
       <p className="mb-4 text-xs text-muted-foreground">
-        Upload a short clip of your {cfg?.label.toLowerCase()} skills. Gemini AI will analyse your technique and save the result to your scout showcase.
+        Upload a short clip of your {cfg?.label.toLowerCase()} skills. THUTO will analyse your technique and save the result to your scout showcase.
       </p>
 
       <label className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-8 transition-colors hover:border-primary/50">

@@ -240,7 +240,7 @@ export function TalentPassportRadar({ drillScores }: { drillScores: DrillScore[]
         }}
       >
         <p style={{ color: "#3c3c3c", fontSize: 9 }}>
-          Gemini-assessed from drill footage
+          THUTO-assessed from drill footage
         </p>
         {available.length < N && (
           <p style={{ color: "#3c3c3c", fontSize: 9 }}>

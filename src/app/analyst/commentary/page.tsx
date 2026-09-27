@@ -4,14 +4,14 @@
  * /analyst/commentary — Per-Half Commentary Analysis
  *
  * Three independent tabs (1st Half / 2nd Half / Full Match).
- * Each tab has its own record / upload / Gemini analysis / results state.
+ * Each tab has its own record / upload / THUTO analysis / results state.
  * Match details (home team, away team, sport) are shared at the top.
  *
  * Pipeline (per tab):
  *   Browser MediaRecorder → WebM blob (or pre-recorded file upload)
- *   → uploadVideoInChunksParallel (Match Eye proxy → Gemini Files API)
+ *   → uploadVideoInChunksParallel (Match Eye proxy → THUTO Files API)
  *   → POST /api/analyse-commentary  (Next.js server route, maxDuration=300)
- *   → Gemini 2.0 Flash transcribes + extracts structured data
+ *   → THUTO 2.0 Flash transcribes + extracts structured data
  *   → Render events timeline + tactical observations + summary
  */
 
@@ -445,7 +445,7 @@ export default function CommentaryPage() {
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "32px 16px" }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: "#1a5c2a", marginBottom: 4 }}>Commentary Analysis</h1>
         <p style={{ color: "#666", marginBottom: 24, fontSize: 14 }}>
-          Speak naturally during the match — record or upload afterward per half. Gemini extracts a full event timeline.
+          Speak naturally during the match — record or upload afterward per half. THUTO extracts a full event timeline.
         </p>
 
         {/* ── Shared Match Details ── */}
@@ -646,7 +646,7 @@ export default function CommentaryPage() {
         {s.phase === "analysing" && (
           <div style={{ backgroundColor: "white", borderRadius: 12, padding: 32, textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
             <Loader2 size={40} color="#1a5c2a" style={{ margin: "0 auto 16px", animation: "spin 1s linear infinite" }} />
-            <p style={{ fontWeight: 600, color: "#1a1a1a", marginBottom: 4 }}>Gemini is analysing your {HALF_LABELS[half]} commentary</p>
+            <p style={{ fontWeight: 600, color: "#1a1a1a", marginBottom: 4 }}>THUTO is analysing your {HALF_LABELS[half]} commentary</p>
             <p style={{ color: "#888", fontSize: 13 }}>This usually takes 30–90 seconds. Please keep this tab open.</p>
           </div>
         )}

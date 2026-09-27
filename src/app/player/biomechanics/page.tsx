@@ -1067,7 +1067,7 @@ Cover these four things as flowing paragraphs (no bullet points, no headings):
             <div style={{ textAlign: 'center', padding: '3rem 0' }}>
               <div style={{ width: 64, height: 64, borderRadius: '50%', border: '4px solid #e5e7eb', borderTop: '4px solid #1a5c2a', animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem' }} />
               <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 8 }}>Analysing your movement…</h2>
-              <p style={{ fontSize: 14, color: '#6b7280', marginBottom: '1.5rem' }}>Running MoveNet · MediaPipe in your browser. Takes about 15–40 seconds.</p>
+              <p style={{ fontSize: 14, color: '#6b7280', marginBottom: '1.5rem' }}>Running THUTO AI in your browser. Takes about 15–40 seconds.</p>
 
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>

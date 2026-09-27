@@ -842,7 +842,7 @@ export default function MatchEyePage() {
             <CheckCircle2 size={20} style={{ color: "#16a34a", flexShrink: 0 }} />
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#15803d" }}>Uploaded</div>
-              <div style={{ fontSize: 11, color: "#555" }}>Ready for Gemini analysis</div>
+              <div style={{ fontSize: 11, color: "#555" }}>Ready for THUTO analysis</div>
             </div>
           </div>
         )}
@@ -932,7 +932,7 @@ export default function MatchEyePage() {
         <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span>Ball Zone Activity</span>
           <span style={{ fontSize: 10, fontWeight: 700, background: "#f3f4f6", color: "#6b7280", padding: "2px 8px", borderRadius: 99 }}>
-            YOLOv8 · {tracking.ballTrajectory?.length ?? 0} frames
+            THUTO AI · {tracking.ballTrajectory?.length ?? 0} frames
           </span>
         </div>
 
@@ -1407,7 +1407,7 @@ export default function MatchEyePage() {
               <div style={{ fontSize: 13, color: "#374151", marginBottom: 6 }}>{f.moment}</div>
               <div style={{ fontSize: 11, color: "#78350f", borderTop: "1px solid #fed7aa", paddingTop: 6 }}>
                 {f.source === "yolo"
-                  ? "⚠ YOLOv8 detected extended ball stasis — review footage to identify the player involved."
+                  ? "⚠ THUTO AI detected extended ball stasis — review footage to identify the player involved."
                   : "Prolonged possession under pressure increases exposure to mistimed challenges and studs-up tackles. Coaching fix: encourage 1–2 touch play in contested areas — receive, assess, release."}
               </div>
             </div>
@@ -1604,7 +1604,7 @@ export default function MatchEyePage() {
         <Eye size={18} style={{ color: "#1a5c2a" }} />
         <span style={{ fontWeight: 800, fontSize: 16, color: "#1a1a1a" }}>Match Eye</span>
         <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, background: "#1a5c2a", color: "#fff", padding: "2px 10px", borderRadius: 99 }}>
-          Gemini 2.5 Flash
+          THUTO AI
         </span>
       </div>
 
@@ -1742,7 +1742,7 @@ export default function MatchEyePage() {
                   </div>
                   <div>
                     <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>
-                      What should Gemini focus on? <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
+                      What should THUTO focus on? <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
                     </label>
                     <input
                       value={drillFocus} onChange={(e) => setDrillFocus(e.target.value)}
@@ -1758,7 +1758,7 @@ export default function MatchEyePage() {
             <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "20px", marginBottom: 16 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                 <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a" }}>Players to Track</div>
-                <span style={{ fontSize: 11, color: "#9ca3af" }}>Optional — Gemini will analyse each player specifically</span>
+                <span style={{ fontSize: 11, color: "#9ca3af" }}>Optional — THUTO will analyse each player specifically</span>
               </div>
 
               {/* Header row */}
@@ -1882,7 +1882,7 @@ export default function MatchEyePage() {
                   cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
               >
-                <Eye size={18} /> Analyse {drillType} with Gemini AI
+                <Eye size={18} /> Analyse {drillType} with THUTO AI
               </button>
             )}
           </>
@@ -2153,11 +2153,11 @@ export default function MatchEyePage() {
           <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "48px 24px", textAlign: "center" }}>
             <Eye size={44} style={{ color: "#1a5c2a", marginBottom: 16 }} />
             <div style={{ fontWeight: 800, fontSize: 18, color: "#1a1a1a", marginBottom: 8 }}>
-              {sessionType === "drill" ? "Gemini is watching the drill..." : "Gemini is watching the match..."}
+              {sessionType === "drill" ? "THUTO is watching the drill..." : "THUTO is watching the match..."}
             </div>
             <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 32, maxWidth: 380, margin: "0 auto 32px" }}>
               {sessionType === "drill"
-                ? `${drillType} — Gemini is analysing player movement, technique, and coaching moments. This takes 1–3 minutes.`
+                ? `${drillType} — THUTO is analysing player movement, technique, and coaching moments. This takes 1–3 minutes.`
                 : `${homeTeam} vs ${awayTeam} — both halves are being analysed simultaneously. This takes 2–5 minutes.`}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 340, margin: "0 auto" }}>
@@ -2269,7 +2269,7 @@ export default function MatchEyePage() {
                   ? (
                     <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "48px 24px", textAlign: "center" }}>
                       <Eye size={40} style={{ color: "#1a5c2a", marginBottom: 14 }} />
-                      <div style={{ fontWeight: 800, fontSize: 17, color: "#1a1a1a", marginBottom: 8 }}>Gemini is watching the first half...</div>
+                      <div style={{ fontWeight: 800, fontSize: 17, color: "#1a1a1a", marginBottom: 8 }}>THUTO is watching the first half...</div>
                       <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24 }}>
                         {homeTeam} vs {awayTeam} — First Half · This takes 2–3 minutes.
                       </div>
@@ -2309,7 +2309,7 @@ export default function MatchEyePage() {
                   ? (
                     <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "48px 24px", textAlign: "center" }}>
                       <Eye size={40} style={{ color: "#1a5c2a", marginBottom: 14 }} />
-                      <div style={{ fontWeight: 800, fontSize: 17, color: "#1a1a1a", marginBottom: 8 }}>Gemini is watching the second half...</div>
+                      <div style={{ fontWeight: 800, fontSize: 17, color: "#1a1a1a", marginBottom: 8 }}>THUTO is watching the second half...</div>
                       <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24 }}>
                         {homeTeam} vs {awayTeam} — Second Half · This takes 2–3 minutes.
                       </div>
@@ -2415,7 +2415,7 @@ export default function MatchEyePage() {
                   <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, background: "#f9fafb", border: "2px dashed #d1d5db", borderRadius: 14, padding: "36px 20px", cursor: "pointer" }}>
                     <Mic size={28} color="#1a5c2a" />
                     <div style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Upload Audio Commentary</div>
-                    <div style={{ fontSize: 12, color: "#6b7280", textAlign: "center" }}>Record your spoken commentary during the match, then upload here.<br />Gemini extracts every event, player, and tactical note.</div>
+                    <div style={{ fontSize: 12, color: "#6b7280", textAlign: "center" }}>Record your spoken commentary during the match, then upload here.<br />THUTO extracts every event, player, and tactical note.</div>
                     <div style={{ fontSize: 11, color: "#9ca3af" }}>Accepts mp3, m4a, wav, webm, ogg</div>
                     <input type="file" accept="audio/*" style={{ display: "none" }}
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCommentary(f); e.target.value = ""; }} />
@@ -2437,7 +2437,7 @@ export default function MatchEyePage() {
                 {cmtPhase === "analysing" && (
                   <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "40px 20px", textAlign: "center" }}>
                     <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#1a5c2a", animation: "matcheye-pulse 1.5s ease-in-out infinite", margin: "0 auto 14px" }} />
-                    <div style={{ fontSize: 13, color: "#6b7280" }}>Gemini is transcribing and extracting match events…</div>
+                    <div style={{ fontSize: 13, color: "#6b7280" }}>THUTO is transcribing and extracting match events…</div>
                     <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>This takes 20–60 seconds</div>
                   </div>
                 )}

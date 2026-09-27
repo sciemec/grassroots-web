@@ -433,7 +433,7 @@ export default function PublicPassportTabs({
 
   const chartSources: Record<TabId, string> = {
     physical:  "EUROFIT-based measurement",
-    technical: "Gemini-assessed from drill footage",
+    technical: "THUTO-assessed from drill footage",
     technique: "AI mechanic breakdown — 6 skill pages",
     coached:   "Coach-verified ratings",
     position:  "Position fitness assessment",

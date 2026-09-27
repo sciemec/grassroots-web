@@ -572,7 +572,7 @@ Return this exact JSON structure:
             <div style={{ ...card, border: "2px dashed #1a5c2a", backgroundColor: "#f0fdf4", marginBottom: 20 }}>
               <h3 style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 700, color: "#1a5c2a" }}>AI Body Measurement</h3>
               <p style={{ margin: "0 0 12px", fontSize: 13, color: "#6b7280", lineHeight: 1.5 }}>
-                Upload a video of yourself shooting. MediaPipe will measure <strong>body shape</strong> and <strong>follow-through</strong> from your pose. Plant foot placement and ankle lock need manual rating.
+                Upload a video of yourself shooting. THUTO will measure <strong>body shape</strong> and <strong>follow-through</strong> from your pose. Plant foot placement and ankle lock need manual rating.
               </p>
               <input
                 type="file"

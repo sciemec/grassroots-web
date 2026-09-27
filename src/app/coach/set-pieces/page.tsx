@@ -537,7 +537,7 @@ Return this exact JSON structure:
               <div className="bg-white rounded-2xl border border-gray-200 p-5">
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 mb-3">
                   3 · Upload Set Piece Clip
-                  <span className="ml-2 font-medium text-gray-300 normal-case tracking-normal">— Gemini analyses every frame</span>
+                  <span className="ml-2 font-medium text-gray-300 normal-case tracking-normal">— THUTO analyses every frame</span>
                 </p>
                 {!videoFile ? (
                   <div onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop} onClick={() => fileInputRef.current?.click()}
@@ -547,7 +547,7 @@ Return this exact JSON structure:
                     <Upload size={28} className="mx-auto mb-3" style={{ color: isDragging ? GRS_GREEN : "#9ca3af" }} />
                     <p className="text-sm font-semibold text-gray-600">Drag & drop a clip, or <span style={{ color: GRS_GREEN }} className="font-bold">browse</span></p>
                     <p className="text-xs text-gray-400 mt-1">MP4, MOV, AVI — max 500MB</p>
-                    <p className="text-[10px] text-gray-300 mt-3">6 frames extracted · sent to Gemini Vision for analysis</p>
+                    <p className="text-[10px] text-gray-300 mt-3">6 frames extracted · analysed by THUTO AI</p>
                     <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={onFileChange} />
                   </div>
                 ) : (
@@ -564,7 +564,7 @@ Return this exact JSON structure:
                         <X size={14} className="text-gray-400 hover:text-red-500" />
                       </button>
                     </div>
-                    <p className="text-[10px] text-gray-400 flex items-center gap-1.5"><Video size={10} />Gemini Vision will analyse player positions, delivery quality, and movement patterns</p>
+                    <p className="text-[10px] text-gray-400 flex items-center gap-1.5"><Video size={10} />THUTO will analyse player positions, delivery quality, and movement patterns</p>
                   </div>
                 )}
               </div>
@@ -583,7 +583,7 @@ Return this exact JSON structure:
                 style={{ backgroundColor: canAnalyse ? GRS_GREEN : "#d1d5db", color: canAnalyse ? "#fff" : "#9ca3af", cursor: canAnalyse ? "pointer" : "not-allowed" }}
               >
                 {extracting ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" />Extracting video frames...</span>
-                  : analyseLoading ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" />Gemini is analysing{videoFile ? " your clip" : ""}...</span>
+                  : analyseLoading ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" />THUTO is analysing{videoFile ? " your clip" : ""}...</span>
                   : <span className="flex items-center justify-center gap-2"><Brain size={16} />{selectedType ? `Analyse ${ANALYSE_TYPES.find((s) => s.id === selectedType)?.label}${videoFile ? " (with video)" : ""}` : "Select a set piece type first"}</span>}
               </button>
               {!selectedType && <p className="text-center text-xs text-gray-400">Select a set piece type above to enable analysis</p>}
@@ -594,7 +594,7 @@ Return this exact JSON structure:
               {(analyseLoading || extracting) && (
                 <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
                   <Loader2 size={28} className="mx-auto mb-3 animate-spin" style={{ color: GRS_GREEN }} />
-                  <p className="text-sm font-bold text-gray-600">{extracting ? "Extracting frames from clip..." : "Gemini is analysing your set piece..."}</p>
+                  <p className="text-sm font-bold text-gray-600">{extracting ? "Extracting frames from clip..." : "THUTO is analysing your set piece..."}</p>
                   <p className="text-xs text-gray-400 mt-1">{extracting ? "Reading key moments from the video" : "This takes a few seconds"}</p>
                 </div>
               )}
@@ -612,7 +612,7 @@ Return this exact JSON structure:
                     </div>
                     <div>
                       <p className="text-xs font-black text-white uppercase tracking-wide">{ANALYSE_TYPES.find((s) => s.id === analyseResult.type)?.label} · {analyseResult.context}</p>
-                      <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.6)" }}>{analyseResult.hadVideo ? "Gemini Vision · video analysed" : "Gemini · text analysis"} · {analyseResult.timestamp}</p>
+                      <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.6)" }}>{analyseResult.hadVideo ? "THUTO · video analysed" : "THUTO · text analysis"} · {analyseResult.timestamp}</p>
                     </div>
                   </div>
                   <div className="p-5">

@@ -415,7 +415,7 @@ export function PoseCamera({ onScore, focusArea }: PoseCameraProps) {
             <div>
               <p className="font-semibold text-white">Live Pose Analysis</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                MediaPipe AI detects 33 body keypoints and draws a live skeleton overlay.
+                THUTO AI detects 33 body keypoints and draws a live skeleton overlay.
                 Scores your symmetry, balance, posture and joint angles in real time.
               </p>
             </div>
@@ -436,7 +436,7 @@ export function PoseCamera({ onScore, focusArea }: PoseCameraProps) {
         {poseState === "loading" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80">
             <Loader2 className="h-8 w-8 animate-spin text-accent" />
-            <p className="text-sm text-white">Loading MediaPipe model…</p>
+            <p className="text-sm text-white">Loading THUTO AI model…</p>
             <p className="text-xs text-muted-foreground">First load ~8 MB · cached afterwards</p>
           </div>
         )}

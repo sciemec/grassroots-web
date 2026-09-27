@@ -261,7 +261,7 @@ export default function CommentaryPitchBoard({
               <Loader2 size={28} color="white"
                 style={{ animation: "spin 1s linear infinite", display: "block", margin: "0 auto 8px" }} />
               <p style={{ color: "white", fontSize: 11, fontWeight: 600, margin: 0 }}>
-                {phase === "upload" ? "Uploading audio…" : "Gemini is analysing…"}
+                {phase === "upload" ? "Uploading audio…" : "THUTO is analysing…"}
               </p>
             </div>
           </div>

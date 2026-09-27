@@ -168,7 +168,7 @@ const TOOLS: {
   {
     id: "sprint_mechanics", label: "Sprint Mechanics", emoji: "💨", colour: "#2563eb",
     icon: <Wind size={18} />,
-    description: "MediaPipe measures trunk lean, knee drive, arm drive, and stride symmetry",
+    description: "THUTO AI measures trunk lean, knee drive, arm drive, and stride symmetry",
     howToFilm: [
       "Player sprints PAST the camera 3 times at maximum effort",
       "Film from the SIDE at hip height for best landmark detection",

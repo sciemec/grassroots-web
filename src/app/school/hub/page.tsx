@@ -167,7 +167,7 @@ const SCHOOL_GRADES: SchoolGrade[] = [
       { name:"Video analysis participation",         badge:"gold",   how:"Attends video review and identifies 2 personal improvement areas" },
     ],
     safetyRules:[
-      "Full MediaPipe ACL screening before the season — mandatory for all Form 1-2 players",
+      "Full AI ACL screening before the season — mandatory for all Form 1-2 players",
       "High injury risk during growth spurts — monitor knee and hip pain closely",
       "Mental health check-ins — secondary school transition is stressful",
       "No supervised strength training sessions without a qualified fitness coach",
@@ -204,7 +204,7 @@ const SCHOOL_GRADES: SchoolGrade[] = [
       { name:"Leadership role in team",         badge:"elite", how:"Captaincy, vice-captaincy, or unofficial team leader role" },
     ],
     safetyRules:[
-      "Full pre-season and mid-season MediaPipe screening",
+      "Full pre-season and mid-season AI screening",
       "O-Level exam stress can affect sleep and nutrition — watch for performance drops",
       "Mental health priority — pressure from school + sport is significant at this age",
       "Load management during O-Level exam term — reduce training intensity by 40%",
