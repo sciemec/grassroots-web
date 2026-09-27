@@ -299,7 +299,7 @@ export default function CoachGeminiDrillsPage() {
     setUploadPhase("done");
     const drill = getDrillById(activeDrillId);
     postToArena(
-      `Analysed "${drill?.name ?? activeDrillId}" drill for ${selectedName} using Gemini AI.`,
+      `Analysed "${drill?.name ?? activeDrillId}" drill for ${selectedName} using THUTO AI.`,
       { postType: "milestone", activityType: "drill_completion", activityData: { drillId: activeDrillId, playerName: selectedName } },
     );
   };
@@ -330,7 +330,7 @@ export default function CoachGeminiDrillsPage() {
             <ChevronLeft size={20} />
           </Link>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>Gemini Drill Analysis</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>THUTO Drill Analysis</div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
               Upload player video · AI analyses technique · motion across time
             </div>
@@ -411,7 +411,7 @@ export default function CoachGeminiDrillsPage() {
             <div style={{ background: "#eff6ff", borderRadius: 12, padding: "10px 12px", border: "1px solid #bfdbfe", display: "flex", gap: 8, alignItems: "flex-start" }}>
               <Video size={14} color="#1d4ed8" style={{ marginTop: 1, flexShrink: 0 }} />
               <div style={{ fontSize: 12, color: "#1e3a8a", lineHeight: 1.5 }}>
-                <strong>Gemini 2.0 Flash</strong> analyses the full video at 1 frame/second — it sees motion across time.
+                <strong>THUTO</strong> analyses the full video at 1 frame/second — it sees motion across time.
                 Upload a short clip (10–90 seconds) of the player performing the drill.
               </div>
             </div>
@@ -594,7 +594,7 @@ export default function CoachGeminiDrillsPage() {
                 {uploadPhase === "uploading" && (
                   <div style={{ padding: "4px 0" }}>
                     <div style={{ fontSize: 12, color: "#555", marginBottom: 6 }}>
-                      Uploading to Gemini… {uploadPct}%
+                      Uploading to THUTO… {uploadPct}%
                     </div>
                     <div style={{ height: 6, background: "#e5e7eb", borderRadius: 99, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${uploadPct}%`, background: GRS_GOLD, borderRadius: 99, transition: "width 0.3s" }} />
@@ -605,7 +605,7 @@ export default function CoachGeminiDrillsPage() {
                 {uploadPhase === "processing" && (
                   <div style={{ textAlign: "center", padding: "12px", color: "#1d4ed8", fontSize: 13 }}>
                     <Loader2 size={16} style={{ display: "inline", marginRight: 6, animation: "spin 1s linear infinite" }} />
-                    Gemini is analysing the video… this may take 30–90 seconds
+                    THUTO is analysing the video… this may take 30–90 seconds
                   </div>
                 )}
 
