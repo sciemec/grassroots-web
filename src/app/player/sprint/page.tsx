@@ -543,7 +543,7 @@ Return this exact JSON structure:
               </div>
               <p style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 700, color: "#111" }}>Analysing your sprint…</p>
               <p style={{ margin: "0 0 20px", fontSize: 13, color: "#9ca3af" }}>
-                {uploadPct < 30 ? "Extracting frames from video…" : uploadPct < 70 ? "Running MoveNet pose detection…" : "Calculating mechanics scores…"}
+                {uploadPct < 30 ? "Extracting frames from video…" : uploadPct < 70 ? "Running THUTO pose detection…" : "Calculating mechanics scores…"}
               </p>
               <div style={{ height: 8, backgroundColor: "#f3f4f6", borderRadius: 4, overflow: "hidden", marginBottom: 8 }}>
                 <div style={{ height: "100%", width: `${uploadPct}%`, backgroundColor: "#1a5c2a", borderRadius: 4, transition: "width 0.3s ease" }} />

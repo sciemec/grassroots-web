@@ -380,7 +380,7 @@ export default function TeamBiometricsPage() {
           <div className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">How the hybrid pipeline works</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { icon: "🎯", colour: "#7c3aed", title: "1 · THUTO Detects", body: "Identifies every player in each frame. ByteTracker assigns persistent IDs across the full clip. K-means clusters jersey HSV colours into Home / Away / Referee." },
+              { icon: "🎯", colour: "#7c3aed", title: "1 · THUTO Detects", body: "Identifies every player in each frame. THUTO assigns persistent IDs across the full clip. K-means clusters jersey HSV colours into Home / Away / Referee." },
               { icon: "🦾", colour: "#0891b2", title: "2 · THUTO Analyses", body: "Each player bounding-box crop is analysed for pose landmarks (33 points). Joint angles are computed frame-by-frame: knee flexion, hip angle, trunk vector, ankle position." },
               { icon: "📊", colour: "#1a5c2a", title: "3 · Two Scores Output", body: "Performance Index = Knee Drive + Trunk Lean + Heel Recovery. Structural Resilience Index = Valgus Risk + Bilateral Asymmetry + Amortization Duration." },
             ].map((s) => (
@@ -524,7 +524,7 @@ export default function TeamBiometricsPage() {
           <ProcessingCard
             icon={<Zap size={40} className="text-purple-600" />}
             title="THUTO detecting players…"
-            subtitle="ByteTracker assigning player IDs · classifying teams by jersey colour"
+            subtitle="THUTO assigning player IDs · classifying teams by jersey colour"
             spinning
           />
         )}

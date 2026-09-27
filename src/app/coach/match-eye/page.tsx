@@ -957,7 +957,7 @@ export default function MatchEyePage() {
         {/* Player heatmap grid (only when Python server provided it) */}
         {hmap && hmap.length > 0 && (
           <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 6 }}>Player Heatmap (ByteTrack)</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 6 }}>Player Heatmap (THUTO)</div>
             <div style={{ display: "grid", gridTemplateColumns: `repeat(${hmap[0].length}, 1fr)`, gap: 2 }}>
               {hmap.map((row, ri) =>
                 row.map((val, ci) => {
