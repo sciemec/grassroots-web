@@ -44,11 +44,12 @@ interface ArenaVideoCardProps {
 
 export default function ArenaVideoCard({ post, currentUserRole, onFollow, onAddToPipeline }: ArenaVideoCardProps) {
   const videoRef  = useRef<HTMLVideoElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [liked,   setLiked]   = useState(false);
-  const [likes,   setLikes]   = useState(post.like_count);
-  const [views,   setViews]   = useState(post.view_count);
-  const [viewed,  setViewed]  = useState(false);
+  const [playing,   setPlaying]   = useState(false);
+  const [liked,     setLiked]     = useState(false);
+  const [likes,     setLikes]     = useState(post.like_count);
+  const [views,     setViews]     = useState(post.view_count);
+  const [viewed,    setViewed]    = useState(false);
+  const [completed, setCompleted] = useState(false);
 
   const initials    = post.player_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   const rank        = post.rank_at_post;
@@ -69,6 +70,13 @@ export default function ArenaVideoCard({ post, currentUserRole, onFollow, onAddT
       setViewed(true);
       setViews(v => v + 1);
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/arena/posts/${post.id}/view`, { method: 'POST' }).catch(() => {});
+    }
+  };
+
+  const handleComplete = () => {
+    if (!completed) {
+      setCompleted(true);
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/arena/posts/${post.id}/complete`, { method: 'POST' }).catch(() => {});
     }
   };
 
@@ -150,6 +158,7 @@ export default function ArenaVideoCard({ post, currentUserRole, onFollow, onAddT
           playsInline
           preload="metadata"
           onPlay={handlePlay}
+          onEnded={handleComplete}
           className="w-full h-full object-cover"
         />
         {/* Source badge */}
