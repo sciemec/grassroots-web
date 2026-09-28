@@ -374,6 +374,21 @@ export default function AnalysePage() {
   const [testArenaPosted,    setTestArenaPosted]    = useState<Record<string, boolean>>({});
   const [testPassportSaved,  setTestPassportSaved]  = useState<Record<string, boolean>>({});
 
+  // Free trial gate — 1 AI analysis allowed on free tier, unlimited on Pro
+  const [credits, setCredits] = useState<{ canAnalyse: boolean; isPro: boolean; count: number } | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API_URL}/video-analysis/credits`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (d) setCredits({ canAnalyse: d.can_analyse, isPro: d.is_pro, count: d.count ?? 0 });
+      })
+      .catch(() => {});
+  }, [token]);
+
   // Single shared camera instance
   const [camTestId,   setCamTestId]   = useState<string | null>(null);
   const [camReady,    setCamReady]    = useState(false);
@@ -467,6 +482,13 @@ export default function AnalysePage() {
   const measureWithPython = async (t: TestDef) => {
     const st = states[t.id];
     if (!st.video || !t.geminiType) return;
+
+    // Free trial gate — block if credits loaded and analysis not allowed
+    if (credits !== null && !credits.canAnalyse) {
+      patch(t.id, { error: "You've used your 1 free AI analysis. Upgrade to Pro for unlimited analyses." });
+      return;
+    }
+
     patch(t.id, { measuring: true, error: "" });
 
     // Pre-warm: ping the Python service via SSE before sending the video.
@@ -500,6 +522,18 @@ export default function AnalysePage() {
             measureNote:   note || "Analysis complete.",
             error:         "",
           });
+          // Record usage against free trial / Pro quota
+          if (token && token !== "dev-token") {
+            fetch(`${API_URL}/video-analysis/record`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}` },
+            })
+              .then((r) => r.ok ? r.json() : null)
+              .then((d) => {
+                if (d) setCredits({ canAnalyse: d.can_analyse, isPro: d.is_pro, count: d.count ?? 0 });
+              })
+              .catch(() => {});
+          }
         } catch {
           patch(t.id, { measuring: false, error: "Invalid response from AI service." });
         }
@@ -728,6 +762,25 @@ export default function AnalysePage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+
+        {/* Free trial exhausted banner */}
+        {credits !== null && !credits.canAnalyse && !credits.isPro && (
+          <div className="rounded-2xl p-4 border flex items-start gap-3"
+            style={{ background: "#fef3c7", borderColor: "#fcd34d" }}>
+            <span className="text-lg mt-0.5">🔒</span>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-amber-900">Free analysis used</p>
+              <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                You've used your 1 free AI analysis. Upgrade to Pro to run unlimited biomechanics tests and unlock your full talent profile.
+              </p>
+              <a href="/player/subscription"
+                className="inline-block mt-2 text-xs font-bold px-3 py-1.5 rounded-lg"
+                style={{ background: "#1c3d22", color: "#fff" }}>
+                Upgrade to Pro →
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* Intro */}
         <div className="rounded-2xl p-4 border" style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
