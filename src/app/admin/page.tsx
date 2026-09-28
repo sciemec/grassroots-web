@@ -8,7 +8,7 @@ import {
   Users, ShieldCheck, Search, CreditCard, BarChart3, Megaphone,
   Film, Bell, Database, MessageSquare, Building2, Radio, Activity,
   Smartphone, Sparkles, Trophy, Globe, UserCircle, Target,
-  Settings, Lock, Flag,
+  Settings, Lock, Flag, TrendingUp,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -112,6 +112,7 @@ export default function AdminDashboardPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
           <HubCard href="/admin/subscriptions" icon={CreditCard}  label="Subscriptions"     desc="Billing, plans & Stripe dashboard" accent />
           <HubCard href="/admin/stats"         icon={BarChart3}   label="Platform Stats"    desc="Users, sessions & engagement"      />
+          <HubCard href="/admin/engagement"    icon={TrendingUp}  label="Engagement"        desc="Sponsor dashboard — live & 14-day KPIs" />
           <HubCard href="/notifications"       icon={Bell}        label="Push Notifications" desc="Send FCM alerts to all users"     />
           <HubCard href="/admin/talent-database" icon={Database}    label="Talent Database"   desc="Registered players — profile & scout status" />
         </div>
