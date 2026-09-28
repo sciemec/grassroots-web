@@ -328,7 +328,7 @@ export default function TacticalAnalysisPage() {
                 <div className="mb-3 flex items-center gap-2">
                   <Brain className="h-4 w-4 animate-pulse text-emerald-600" />
                   <span className="text-xs text-muted-foreground">
-                    Claude is analysing your data…
+                    THUTO is analysing your data…
                   </span>
                 </div>
                 <ResponseSkeleton />
@@ -349,7 +349,7 @@ export default function TacticalAnalysisPage() {
                 <Brain className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
                 <p className="font-medium">Ask a tactical question</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Claude will analyse your season data and give coaching advice
+                  THUTO will analyse your season data and give coaching advice
                 </p>
               </div>
             )}

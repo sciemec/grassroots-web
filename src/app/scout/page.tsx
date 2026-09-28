@@ -47,7 +47,7 @@ const FEATURES = [
     icon: FileText,
     iconBg: "#f3e8ff", iconColor: "#9333ea",
     label: "PDF Reports",
-    desc: "AI scouting reports Â· Claude analysis",
+    desc: "AI scouting reports · THUTO analysis",
   },
   {
     href: "/scout/compare",

@@ -58,7 +58,7 @@ Return ONLY the JSON array, no markdown.`, "player");
           </Link>
           <div>
             <h1 className="text-2xl font-bold">AI Meal Plan</h1>
-            <p className="text-sm text-muted-foreground">Personalised weekly nutrition — Claude-powered</p>
+            <p className="text-sm text-muted-foreground">Personalised weekly nutrition — THUTO-powered</p>
           </div>
         </div>
 
@@ -68,7 +68,7 @@ Return ONLY the JSON array, no markdown.`, "player");
               <Brain className="mx-auto mb-4 h-12 w-12 text-purple-500" />
               <h2 className="mb-2 text-xl font-bold">Generate your meal plan</h2>
               <p className="mb-6 text-sm text-muted-foreground">
-                Claude will create a 7-day plan using Zimbabwe foods based on your training goals
+                THUTO will create a 7-day plan using Zimbabwe foods based on your training goals
               </p>
               <div className="mb-6">
                 <label className="mb-2 block text-sm font-medium text-left">Your primary goal</label>

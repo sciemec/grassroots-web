@@ -221,7 +221,7 @@ function HalftimePanel({
           <div className="space-y-2 animate-pulse">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Claude is building your halftime report…
+              THUTO is building your halftime report…
             </div>
             <div className="h-3 w-3/4 rounded bg-muted" />
             <div className="h-3 w-full rounded bg-muted" />

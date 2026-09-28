@@ -92,7 +92,7 @@ export default function NutritionPage() {
             <Brain className="h-5 w-5 text-purple-500" />
             <div>
               <p className="text-sm font-semibold">AI Meal Plan</p>
-              <p className="text-xs text-muted-foreground">Claude-generated weekly plan</p>
+              <p className="text-xs text-muted-foreground">THUTO-generated weekly plan</p>
             </div>
             <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
           </Link>

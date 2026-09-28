@@ -130,7 +130,7 @@ export default function VideoAnalysisPage() {
     setStage("analysing");
     setProgress(0);
     setStatusMsg(frames.length > 0
-      ? `Sending ${frames.length} frames to Claude…`
+      ? `Sending ${frames.length} frames to THUTO…`
       : "Running AI analysis…"
     );
 
@@ -219,7 +219,7 @@ export default function VideoAnalysisPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">AI Video Analysis Studio</h1>
-              <p className="text-sm text-muted-foreground">Upload match footage — Claude reads the frames and returns tactical insights</p>
+              <p className="text-sm text-muted-foreground">Upload match footage — THUTO reads the frames and returns tactical insights</p>
             </div>
           </div>
         </div>
@@ -363,8 +363,8 @@ export default function VideoAnalysisPage() {
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
             >
               {isProcessing
-                ? <><Loader2 className="h-4 w-4 animate-spin" /> {stage === "extracting" ? "Extracting frames…" : "Analysing with Claude…"}</>
-                : <><Sparkles className="h-4 w-4" /> Analyse with Claude</>
+                ? <><Loader2 className="h-4 w-4 animate-spin" /> {stage === "extracting" ? "Extracting frames…" : "Analysing with THUTO…"}</>
+                : <><Sparkles className="h-4 w-4" /> Analyse with THUTO</>
               }
             </button>
           </div>
@@ -400,7 +400,7 @@ export default function VideoAnalysisPage() {
                   <p className="text-xs text-muted-foreground text-center">{progress}%</p>
                   {stage === "analysing" && (
                     <p className="text-xs text-muted-foreground text-center opacity-70">
-                      Claude is reading your match frames…
+                      THUTO is reading your match frames…
                     </p>
                   )}
                 </div>
