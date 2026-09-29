@@ -77,6 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content={APP_NAME} />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="facebook-domain-verification" content="o2cy0837kuk76ra4od9d8y1hbgvb3f" />
       </head>
       <body className="bg-[#f4f2ee] text-gray-900 antialiased selection:bg-[#f0b429]/30">
         <Providers>
