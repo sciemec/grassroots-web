@@ -270,7 +270,7 @@ Return ONLY a valid JSON object — no markdown, no explanation — with this ex
 
 overall_rating: 1 (very poor) to 10 (exceptional). Be honest — most grassroots players are 4-7.
 key_moments: include 3-6 moments with accurate timestamps.
-technical_strengths and areas_to_improve: 3-5 items each — specific to THIS player in THIS video.
+technical_strengths and areas_to_improve: 3-5 items each — specific to THIS player in THIS video. Each item must be a single concise phrase, under 200 characters.
 drill_recommendations: 2-4 drills specific to ${sportLabel}. ${drillInstructions}
 turnover_moments: identify 0-3 moments where a poor decision directly caused a loss of possession. For each, describe the exact decision and its consequence, then pick the MOST relevant principle from the TACTICS CATALOG by ID. Set safety_flag to true only when the player was dispossessed under heavy physical pressure in a tight area (collision risk). If no clear turnovers are visible, return an empty array [].
 Base everything on what you actually see in the video.
