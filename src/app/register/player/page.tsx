@@ -13,6 +13,25 @@ const GENDER_COACH: Record<"male" | "female", { label: string; coach: string }> 
   female: { label: "Female", coach: "Amara" },
 };
 
+const ZIM_PROVINCES = [
+  "Harare", "Bulawayo", "Manicaland",
+  "Mashonaland Central", "Mashonaland East", "Mashonaland West",
+  "Masvingo", "Matabeleland North", "Matabeleland South", "Midlands",
+];
+
+const POSITIONS_BY_SPORT: Record<string, string[]> = {
+  football:   ["Goalkeeper", "Defender", "Midfielder", "Striker"],
+  rugby:      ["Prop", "Hooker", "Lock", "Flanker", "Number 8", "Scrum-half", "Fly-half", "Centre", "Wing", "Fullback"],
+  athletics:  ["Sprinter", "Middle Distance", "Long Distance", "Jumper", "Thrower", "Multi-event"],
+  netball:    ["Goal Shooter", "Goal Attack", "Wing Attack", "Centre", "Wing Defence", "Goal Defence", "Goal Keeper"],
+  basketball: ["Point Guard", "Shooting Guard", "Small Forward", "Power Forward", "Centre"],
+  cricket:    ["Batsman", "Bowler", "All-rounder", "Wicket-keeper"],
+  swimming:   ["Freestyle", "Backstroke", "Breaststroke", "Butterfly", "Individual Medley"],
+  tennis:     ["Singles Player", "Doubles Specialist"],
+  volleyball: ["Setter", "Libero", "Outside Hitter", "Middle Blocker", "Opposite"],
+  hockey:     ["Goalkeeper", "Defender", "Midfielder", "Forward"],
+};
+
 const SPORTS = [
   { key: "football",   emoji: "⚽", label: "Football"   },
   { key: "rugby",      emoji: "🏉", label: "Rugby"      },
@@ -53,6 +72,8 @@ interface FormData {
   surname:         string;
   gender:          "male" | "female" | "";
   sport:           string;
+  position:        string;
+  province:        string;
   date_of_birth:   string;   // YYYY-MM-DD
   country:         string;
   contactType:     "email" | "phone";
@@ -85,6 +106,8 @@ export default function RegisterPlayerPage() {
     surname:         "",
     gender:          "",
     sport:           "",
+    position:        "",
+    province:        "",
     date_of_birth:   "",
     country:         "Zimbabwe",
     contactType:     "email",
@@ -105,10 +128,12 @@ export default function RegisterPlayerPage() {
     form.surname.trim().length >= 2 &&
     form.gender !== "" &&
     form.sport !== "" &&
+    form.position !== "" &&
     computedAge !== null &&
     computedAge >= 5 &&
     computedAge <= 100 &&
-    form.country !== "";
+    form.country !== "" &&
+    (form.country !== "Zimbabwe" || form.province !== "");
 
   const contactValid =
     form.contactType === "email"
@@ -132,6 +157,8 @@ export default function RegisterPlayerPage() {
         name:                  `${form.first_name.trim()} ${form.surname.trim()}`,
         gender:                form.gender || "male",
         sport:                 form.sport,
+        position:              form.position || undefined,
+        province:              form.country === "Zimbabwe" && form.province ? form.province : undefined,
         date_of_birth:         form.date_of_birth,
         age:                   ageFromDob(form.date_of_birth) ?? 0,
         country:               form.country,
@@ -439,7 +466,7 @@ export default function RegisterPlayerPage() {
                     <button
                       key={s.key}
                       type="button"
-                      onClick={() => set("sport", s.key)}
+                      onClick={() => { set("sport", s.key); set("position", ""); }}
                       className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-semibold transition-colors ${
                         form.sport === s.key
                           ? "bg-[#1a5c2a] border-[#1a5c2a] text-white"
@@ -452,6 +479,50 @@ export default function RegisterPlayerPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Position — shown once a sport is selected */}
+              {form.sport && POSITIONS_BY_SPORT[form.sport] && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-2">
+                    Position <span className="text-red-400">*</span>
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {POSITIONS_BY_SPORT[form.sport].map((pos) => (
+                      <button
+                        key={pos}
+                        type="button"
+                        onClick={() => set("position", pos)}
+                        className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${
+                          form.position === pos
+                            ? "bg-[#1a5c2a] border-[#1a5c2a] text-white"
+                            : "border-gray-200 text-gray-600 hover:border-[#1a5c2a]"
+                        }`}
+                      >
+                        {pos}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Province — shown for Zimbabwe players */}
+              {form.country === "Zimbabwe" && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5">
+                    Province <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={form.province}
+                    onChange={(e) => set("province", e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a] bg-white"
+                  >
+                    <option value="">Select province…</option>
+                    {ZIM_PROVINCES.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <button
                 disabled={!canProceedStep1}

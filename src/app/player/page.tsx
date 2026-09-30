@@ -178,14 +178,22 @@ function DrillGroupCard() {
 export default function PlayerHubPage() {
   const token = useAuthStore((s) => s.token);
   const [profilePct, setProfilePct] = useState<number>(0);
+  const [showProfileBanner, setShowProfileBanner] = useState(false);
 
   useEffect(() => {
     if (!token) return;
+    const dismissed = localStorage.getItem("grs_profile_nudge_dismissed");
+    if (dismissed) return;
     api
       .get("/profile")
       .then((res) => {
-        const pct: number = res.data?.data?.profile_complete_pct ?? 0;
+        const data = res.data?.data ?? {};
+        const pct: number = data.profile_complete_pct ?? 0;
         setProfilePct(pct);
+        // Show banner for players missing position or province who haven't dismissed it
+        const missingPosition = !data.position && !data.position_primary;
+        const missingProvince = !data.province;
+        if (missingPosition || missingProvince) setShowProfileBanner(true);
       })
       .catch(() => {});
   }, [token]);
@@ -222,6 +230,67 @@ export default function PlayerHubPage() {
 
       {/* ── Content ────────────────────────────────────────────────────────── */}
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "0 16px" }}>
+
+        {/* Profile completeness nudge — shown once for players missing position/province */}
+        {showProfileBanner && (
+          <div
+            style={{
+              background: "#3a2800",
+              border: "1px solid #c8962a",
+              borderRadius: 12,
+              padding: "12px 14px",
+              marginTop: 16,
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+            }}
+          >
+            <span style={{ fontSize: 18, flexShrink: 0 }}>📋</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: "#fac775", fontSize: 13, fontWeight: 700 }}>
+                Complete your profile to get scouted
+              </div>
+              <div style={{ color: "#b89050", fontSize: 11.5, marginTop: 3, lineHeight: 1.4 }}>
+                Your position and province are missing — scouts use these to find you.
+              </div>
+              <a
+                href="/player/profile"
+                style={{
+                  display: "inline-block",
+                  marginTop: 8,
+                  background: "#c8962a",
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  borderRadius: 8,
+                  padding: "5px 14px",
+                  textDecoration: "none",
+                }}
+              >
+                Update profile →
+              </a>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem("grs_profile_nudge_dismissed", "1");
+                setShowProfileBanner(false);
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#b89050",
+                fontSize: 16,
+                cursor: "pointer",
+                flexShrink: 0,
+                padding: "0 2px",
+                lineHeight: 1,
+              }}
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Section 1 — Build my profile */}
         <SectionLabel label="Build my profile" />
