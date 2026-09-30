@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Dumbbell } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Dumbbell, Camera, Upload, User } from "lucide-react";
 import { normalizePhone } from "@/lib/phone-normalize";
 import { COUNTRIES } from "@/lib/countries";
 import { useAuthStore } from "@/lib/auth-store";
@@ -95,11 +95,33 @@ export default function RegisterPlayerPage() {
     }
   }, []);
 
-  const [showPassword,    setShowPassword]    = useState(false);
-  const [isSubmitting,    setIsSubmitting]    = useState(false);
-  const [error,           setError]           = useState<string | null>(null);
-  const [retryCountdown,  setRetryCountdown]  = useState<number | null>(null);
-  const retryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [showPassword,     setShowPassword]     = useState(false);
+  const [isSubmitting,     setIsSubmitting]     = useState(false);
+  const [error,            setError]            = useState<string | null>(null);
+  const [retryCountdown,   setRetryCountdown]   = useState<number | null>(null);
+  const [photoFile,        setPhotoFile]        = useState<File | null>(null);
+  const [photoPreview,     setPhotoPreview]     = useState<string>("");
+  const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
+  const [registered,       setRegistered]       = useState(false);
+  const retryTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoSelect = (file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file (JPEG, PNG, or WebP).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Photo must be under 5 MB.");
+      return;
+    }
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setPhotoPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
 
   const [form, setForm] = useState<FormData>({
     first_name:      "",
@@ -264,6 +286,31 @@ export default function RegisterPlayerPage() {
       if (data.user?.id)           localStorage.setItem("player_id",       data.user.id);
       if (data.user?.passport_token) localStorage.setItem("passport_token", data.user.passport_token);
 
+      setRegistered(true);
+
+      // Upload photo if the player selected one — registration already succeeded regardless
+      if (photoFile && data.token) {
+        try {
+          const photoForm = new FormData();
+          photoForm.append("photo", photoFile);
+          const photoRes = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/profile/photo`,
+            {
+              method:  "POST",
+              headers: { Authorization: `Bearer ${data.token}` },
+              body:    photoForm,
+            }
+          );
+          if (!photoRes.ok) {
+            setPhotoUploadError("Your photo didn't save — you can add it from your profile page.");
+            return; // Stay on page so player sees the notice
+          }
+        } catch {
+          setPhotoUploadError("Your photo didn't save — you can add it from your profile page.");
+          return;
+        }
+      }
+
       router.push("/player/profile");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong.";
@@ -351,10 +398,103 @@ export default function RegisterPlayerPage() {
             )
           )}
 
+          {/* ── Registration done, photo failed ──────────────────── */}
+          {registered && photoUploadError && (
+            <div className="space-y-4">
+              <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <CheckCircle size={15} /> Account created successfully!
+                </p>
+              </div>
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+                <p className="font-semibold">📷 Photo didn&apos;t save</p>
+                <p className="mt-1 text-xs leading-relaxed">{photoUploadError}</p>
+              </div>
+              <button
+                onClick={() => router.push("/player/profile")}
+                className="w-full bg-[#1a5c2a] text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+              >
+                Go to my profile <ArrowRight size={16} />
+              </button>
+            </div>
+          )}
+
           {/* ── Step 1 — Personal Info ─────────────────────────────── */}
-          {step === 1 && (
+          {!registered && step === 1 && (
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-gray-900">Personal details</h2>
+
+              {/* ── Photo picker ─────────────────────────────────────── */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-2">
+                  Profile photo{" "}
+                  <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+
+                {/* Hidden file inputs — one for gallery, one for camera */}
+                <input
+                  ref={uploadInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handlePhotoSelect(e.target.files?.[0] ?? null)}
+                />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="user"
+                  className="hidden"
+                  onChange={(e) => handlePhotoSelect(e.target.files?.[0] ?? null)}
+                />
+
+                <div className="flex items-center gap-4">
+                  {/* Circular preview */}
+                  <div
+                    style={{
+                      width: 72, height: 72, borderRadius: "50%",
+                      overflow: "hidden", flexShrink: 0,
+                      border: photoPreview ? "2px solid #1a5c2a" : "2px dashed #d1d5db",
+                      background: "#f9fafb",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}
+                  >
+                    {photoPreview ? (
+                      <img
+                        src={photoPreview}
+                        alt="Preview"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      <User size={28} color="#9ca3af" />
+                    )}
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex flex-col gap-2 flex-1">
+                    <button
+                      type="button"
+                      onClick={() => uploadInputRef.current?.click()}
+                      className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:border-[#1a5c2a] hover:text-[#1a5c2a] transition-colors"
+                    >
+                      <Upload size={14} /> Upload a photo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:border-[#1a5c2a] hover:text-[#1a5c2a] transition-colors"
+                    >
+                      <Camera size={14} /> Take a photo
+                    </button>
+                  </div>
+                </div>
+
+                {photoFile && (
+                  <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                    <CheckCircle size={11} /> {photoFile.name}
+                  </p>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -535,7 +675,7 @@ export default function RegisterPlayerPage() {
           )}
 
           {/* ── Step 2 — Account ──────────────────────────────────── */}
-          {step === 2 && (
+          {!registered && step === 2 && (
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-gray-900">Create your account</h2>
 
