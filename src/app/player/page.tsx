@@ -23,6 +23,7 @@ import {
   IconWorld,
   IconBrain,
   IconChalkboard,
+  IconFileAnalytics,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -378,6 +379,14 @@ export default function PlayerHubPage() {
           iconColor={OL}
           title="Find A Coach"
           subtitle="Connect with a coach near you"
+        />
+        <HubCard
+          href="/player/passport"
+          icon={IconFileAnalytics}
+          iconBg={O}
+          iconColor={OL}
+          title="Player Passport"
+          subtitle="Your AI analysis history & scouting CV"
         />
 
         {/* Section 3 — Showcase */}
