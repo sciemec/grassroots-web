@@ -209,7 +209,8 @@ function PlayerProfilePage() {
       })
       .catch(() => setLoadError("Unable to load your profile. Please try refreshing the page."))
       .finally(() => setLoading(false));
-  }, [user, reset]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
