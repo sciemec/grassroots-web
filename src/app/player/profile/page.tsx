@@ -21,7 +21,6 @@ import {
   QrCode,
   MessageCircle,
 } from "lucide-react";
-import { HighlightReel } from "@/components/player/HighlightReel";
 import { PlayerGamificationPanel } from "@/components/player/PlayerGamificationPanel";
 import PublicPassportTabs from "@/components/player/PublicPassportTabs";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
@@ -466,8 +465,11 @@ If no AI analysis data is provided, write a strong profile from position and spo
         const res = await api.post("/profile/photo", formData, {
           headers: { "Content-Type": undefined },
         });
-        setPhotoUrl((res.data as { photo_url?: string }).photo_url ?? preview);
+        const finalUrl = (res.data as { photo_url?: string }).photo_url ?? preview;
+        URL.revokeObjectURL(preview);
+        setPhotoUrl(finalUrl);
       } catch {
+        URL.revokeObjectURL(preview);
         setError("Photo upload failed. Please try again.");
         setPhotoUrl(null);
       } finally {
@@ -641,6 +643,7 @@ If no AI analysis data is provided, write a strong profile from position and spo
     }
 
     // AI narrative
+    if (y > 260) { doc.addPage(); y = 20; }
     if (aiNarrative) {
       y += 4;
       doc.setDrawColor(200, 200, 200);
