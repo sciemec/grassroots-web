@@ -42,10 +42,10 @@ interface UsersMeta {
   last_page: number;
 }
 
-const ROLE_TABS = ["all", "player", "coach", "scout", "fan"] as const;
+const ROLE_TABS = ["all", "player", "coach", "scout", "fan", "analyst", "admin"] as const;
 type RoleTab = typeof ROLE_TABS[number];
 
-const ALL_ROLES = ["player", "coach", "scout", "fan", "admin"] as const;
+const ALL_ROLES = ["player", "coach", "scout", "fan", "analyst", "admin"] as const;
 type UserRole = typeof ALL_ROLES[number];
 
 const ROLE_COLORS: Record<string, string> = {
