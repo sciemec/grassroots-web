@@ -242,14 +242,13 @@ function PlayerProfilePage() {
       const { preferred_foot, position, ...rest } = data;
       const payload = { ...rest, position_primary: position || undefined, dominant_foot: preferred_foot || undefined };
       const res = await api.patch("/profile", payload);
-      setProfile(res.data);
       if (res.data?.profile?.profile_complete_pct != null) setServerPct(res.data.profile.profile_complete_pct);
       reset(data);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
       // Fire-and-forget: purge the public profile cache so scouts see changes immediately
-      if (res.data?.id) {
-        fetch(`/api/revalidate/player/${res.data.id}`, { method: "POST" }).catch(() => {});
+      if (user?.id) {
+        fetch(`/api/revalidate/player/${user.id}`, { method: "POST" }).catch(() => {});
       }
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -323,8 +322,8 @@ If no AI analysis data is provided, write a strong profile from position and spo
   };
 
   const copyProfileLink = () => {
-    if (!profile?.id) return;
-    navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL ?? "https://grassrootssports.live"}/player/public/${profile.id}`);
+    if (!user?.id) return;
+    navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL ?? "https://grassrootssports.live"}/player/public/${user.id}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -878,7 +877,7 @@ If no AI analysis data is provided, write a strong profile from position and spo
               <Download className="h-4 w-4" />
               PDF
             </button>
-            {profile?.id && (
+            {user?.id && (
               <button type="button" onClick={copyProfileLink}
                 className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-600 transition-colors hover:text-gray-900 hover:bg-gray-50">
                 <Copy className="h-4 w-4" />
@@ -888,7 +887,7 @@ If no AI analysis data is provided, write a strong profile from position and spo
           </div>
 
           {/* Scout View Badge */}
-          {profile?.id && <ScoutViewBadge playerId={profile.id} />}
+          {user?.id && <ScoutViewBadge playerId={user.id} />}
 
           {/* ── EDIT PROFILE COLLAPSIBLE ──────────────────────────────────── */}
           <div className="rounded-2xl border border-white/10 bg-card overflow-hidden">
