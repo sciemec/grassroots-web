@@ -26,6 +26,16 @@ interface PhysicalAxis {
   percentile: number | null;
 }
 
+interface AnalysisHistory {
+  session_count: number;
+  average_score: number | null;
+  latest_score: number | null;
+  latest_date: string | null;
+  latest_strengths: string[];
+  latest_improvements: string[];
+  score_history: { date: string; score: number }[];
+}
+
 interface PublicProfile {
   id: string;
   name: string;
@@ -53,6 +63,7 @@ interface PublicProfile {
   daily_streak: number;
   trained_minutes: number;
   position_verified?: boolean;
+  analysis_history?: AnalysisHistory | null;
 }
 
 async function getPublicProfile(id: string): Promise<PublicProfile | null> {
@@ -254,6 +265,83 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* AI Match Analysis */}
+          {profile.analysis_history && (
+            <div className="mx-5 mb-5">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#f0b429]/50 mb-2">
+                AI Match Analysis
+              </p>
+              <div className="rounded-2xl border border-[#f0b429]/10 bg-[#f0b429]/5 p-4 space-y-3">
+
+                {/* Session count + latest score */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-[#f0b429]/40 uppercase tracking-wide">Sessions</p>
+                    <p className="text-xl font-extrabold text-white">
+                      {profile.analysis_history.session_count}
+                      <span className="text-xs font-normal text-[#f0b429]/40 ml-1">analysed</span>
+                    </p>
+                  </div>
+                  {profile.analysis_history.latest_score !== null && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-[#f0b429]/40 uppercase tracking-wide">Latest Rating</p>
+                      <p className="text-xl font-extrabold text-[#f0b429]">
+                        {profile.analysis_history.latest_score}
+                        <span className="text-xs font-normal text-[#f0b429]/40">/10</span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Progress bars — oldest left → newest right */}
+                {profile.analysis_history.score_history.length > 1 && (() => {
+                  const hist = profile.analysis_history!.score_history;
+                  const newest = hist[0].score;
+                  const oldest = hist[hist.length - 1].score;
+                  const diff = newest - oldest;
+                  const trend = diff >= 1 ? "↑ Improving" : diff <= -1 ? "↓ Declining" : "→ Consistent";
+                  const trendColor = diff >= 1 ? "text-green-400" : diff <= -1 ? "text-red-400" : "text-[#f0b429]/50";
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-[9px] text-[#f0b429]/30 uppercase tracking-wide">Progress (oldest → latest)</p>
+                        <p className={`text-[9px] font-bold ${trendColor}`}>{trend}</p>
+                      </div>
+                      <div className="flex items-end gap-1 h-8">
+                        {[...hist].reverse().map((s, i) => (
+                          <div
+                            key={i}
+                            title={`${s.date}: ${s.score}/10`}
+                            style={{ height: `${Math.max(15, s.score * 10)}%` }}
+                            className={`flex-1 rounded-sm ${
+                              i === hist.length - 1 ? "bg-[#f0b429]" : "bg-[#f0b429]/25"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Latest strengths */}
+                {profile.analysis_history.latest_strengths.length > 0 && (
+                  <div>
+                    <p className="text-[9px] text-[#f0b429]/30 uppercase tracking-wide mb-1.5">Latest Strengths</p>
+                    <ul className="space-y-1">
+                      {profile.analysis_history.latest_strengths.map((s, i) => (
+                        <li key={i} className="flex items-start gap-1.5 text-[11px] text-white/70 leading-snug">
+                          <span className="text-[#f0b429] flex-shrink-0">✓</span>
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
               </div>
             </div>
           )}
