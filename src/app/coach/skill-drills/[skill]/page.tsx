@@ -412,7 +412,6 @@ ${fbKeys},
     const computed = computeScore(cfg, ratings);
 
     // Save to backend
-    const selectedPlayer = squad.find(p => p.id === selectedId);
     if (token && selectedPlayer?.player_user_id) {
       const mechanicsPayload: Record<string, number> = {};
       cfg.mechanics.forEach(m => { mechanicsPayload[m.key] = ratings[m.key] || 0; });
