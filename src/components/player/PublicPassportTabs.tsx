@@ -381,6 +381,7 @@ export default function PublicPassportTabs({
     const v = rawSub != null ? rawSub : (found?.score != null ? found.score * 10 : null);
     return { label: ax.label, value: v !== null ? Math.max(0, Math.min(100, v)) : EMPTY_F * 100 };
   });
+  const physIsEmpty = physAxes.every(a => a.value <= EMPTY_F * 100 + 0.01);
   const techIsEmpty = techAxes.every(a => a.value <= EMPTY_F * 100 + 0.01);
 
   // Technique — 6 axes, skill mechanic average 0–10 converted to 0–100
@@ -541,6 +542,11 @@ export default function PublicPassportTabs({
             </span>
           </div>
           <RadarSVG cfg={radarCfgs[topTab]} />
+          {topTab === "physical" && physIsEmpty && (
+            <p style={{ textAlign: "center", fontSize: 11, color: "#555", margin: "-8px 0 6px" }}>
+              No physical test data recorded yet
+            </p>
+          )}
           {topTab === "technical" && techIsEmpty && (
             <p style={{ textAlign: "center", fontSize: 11, color: "#555", margin: "-8px 0 6px" }}>
               No {(sport ?? "football").toLowerCase()} drill data recorded yet
