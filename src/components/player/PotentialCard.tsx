@@ -254,7 +254,7 @@ function PotentialCardInner({ playerId, playerName, isPublicView = false }: {
   }, [playerId]);
 
   if (loading) return <PotentialCardSkeleton />;
-  if (error)   return null; // fail silently — never break the profile page
+  if (error)   return <PotentialCardEmpty playerName={playerName} />;
 
   // Backend returns data_quality as lowercase: 'low', 'medium', 'high'
   // Show empty state only when there is NO prediction record at all (404 from backend).
