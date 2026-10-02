@@ -236,7 +236,9 @@ export default function PotentialCard({ playerId, playerName, isPublicView = fal
   if (error)   return null; // fail silently — never break the profile page
 
   // Backend returns data_quality as lowercase: 'low', 'medium', 'high'
-  if (!prediction || prediction.data_quality === 'low') {
+  // Show empty state only when there is NO prediction record at all (404 from backend).
+  // For data_quality='low', show the actual data to motivate the player — hiding it is demotivating.
+  if (!prediction) {
     return <PotentialCardEmpty playerName={playerName} />;
   }
 
@@ -357,6 +359,24 @@ export default function PotentialCard({ playerId, playerName, isPublicView = fal
         </div>
 
         {/* DATA QUALITY NOTE */}
+        {prediction.data_quality === 'low' && (
+          <div className="flex items-start gap-2 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+            <span aria-hidden="true">🚀</span>
+            <div>
+              <p className="font-semibold mb-0.5">This is your starting point.</p>
+              <p>
+                Log drills and training sessions to improve your score and climb the ranks.
+                Every session you record unlocks a more accurate prediction.
+              </p>
+              <a
+                href="/player/sessions/new"
+                className="inline-block mt-1.5 font-semibold underline underline-offset-2"
+              >
+                Log a training session →
+              </a>
+            </div>
+          </div>
+        )}
         {prediction.data_quality === 'medium' && (
           <div className="flex items-start gap-2 text-xs text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
             <span aria-hidden="true">⚠</span>
