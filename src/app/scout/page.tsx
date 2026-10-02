@@ -9,6 +9,7 @@ import {
   GraduationCap, Flame, TrendingUp, Video, Users, Network, Kanban,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import api from "@/lib/api";
 import SyncStatusBadge from "@/components/ui/SyncStatusBadge";
 
 function greeting(): string {
@@ -103,6 +104,7 @@ const FEATURES = [
 export default function ScoutHubPage() {
   const router   = useRouter();
   const user     = useAuthStore((s) => s.user);
+  const token    = useAuthStore((s) => s.token);
   const hydrated = useAuthStore((s) => s._hasHydrated);
   const [wireIndex, setWireIndex] = useState(0);
 
@@ -110,6 +112,34 @@ export default function ScoutHubPage() {
     const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
     return () => clearInterval(id);
   }, []);
+
+  // Write scout profile snapshot so THUTO can give personalised, data-driven advice
+  useEffect(() => {
+    if (!token) return;
+    api
+      .get("/profile")
+      .then((res) => {
+        const raw  = res.data ?? {};
+        const prof = raw.profile ?? {};
+        localStorage.setItem(
+          "thuto_page_data",
+          JSON.stringify({
+            page:             "scout_hub",
+            sport:            raw.sport      ?? "football",
+            province:         raw.province   ?? "",
+            country:          raw.country    ?? "",
+            is_verified:      !!raw.is_verified,
+            has_photo:        !!(raw.photo_url ?? prof.photo_url),
+            has_bio:          !!(prof.bio),
+            organisation:     prof.organisation ?? raw.organisation ?? "",
+            accreditation:    prof.accreditation_number ?? prof.accreditation ?? "",
+            scouting_regions: prof.scouting_regions ?? [],
+            years_experience: prof.years_experience ?? null,
+          })
+        );
+      })
+      .catch(() => {});
+  }, [token]);
 
   useEffect(() => {
     if (!hydrated) return;

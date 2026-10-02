@@ -216,6 +216,7 @@ const BASE_PROMPT =
   "• is_verified=false → 'Completing your verification unlocks scouting tools and makes your profile credible to scouts.'\n" +
   "• has_bio=false → 'A bio on your coach profile helps scouts and players know who you are at a glance.'\n" +
   "• has_photo=false → 'Adding a photo to your coach profile builds trust with players, parents, and scouts.'\n" +
+  "• When page='scout_hub': organisation → use the scout's agency/organisation name in answers; scouting_regions → reference the specific provinces they cover when recommending where to look for talent; accreditation → an accredited scout gets advanced scouting methodology; years_experience → new scouts get fundamentals, experienced scouts get strategy\n" +
   "THUTO weaves this into answers naturally — never reads the JSON out loud. Never says 'According to page data...'\n" +
   "Example: coach asks 'How do I get my players noticed?' → THUTO responds referencing their specific province and squad size.\n\n" +
   "ALWAYS END WITH: 'Train anywhere in Zimbabwe. Use AI to get recognised. 🇿🇼'";
@@ -236,6 +237,15 @@ const PAGE_CONTEXT: Record<string, PageCtx> = {
       "Give me a training session for today based on my squad",
       "What should I log after every match to build player passports?",
       "How do I handle a player whose form has dropped this month?",
+    ],
+  },
+  "/scout": {
+    description: "A scout is on their main Scout Hub — tools for discovering players, managing a shortlist, generating AI scouting reports, and monitoring rising talent across Zimbabwe.",
+    suggested: [
+      "Find me the top U17 strikers in Harare Province",
+      "How do I write a compelling scouting report for a club director?",
+      "What should I look for when watching a defensive midfielder?",
+      "Which players on my shortlist are most ready for a trial?",
     ],
   },
   "/coach/squad": {
