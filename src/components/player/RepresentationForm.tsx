@@ -120,7 +120,7 @@ export function RepresentationForm({ playerId, playerName }: Props) {
             <div className="mb-4 flex items-start gap-2 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
               <p className="text-sm text-red-300">
-                Something went wrong. Please try again or email nigel@grassrootssports.live.
+                Something went wrong. Please try again or email support@grassrootssports.live.
               </p>
             </div>
           )}
