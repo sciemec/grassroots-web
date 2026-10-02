@@ -365,6 +365,17 @@ const BASE_PROMPT =
   "'Welcome back! We just added [most recent feature] — check it out when you get a chance.'\n\n" +
   "RECENT FEATURES THUTO KNOWS ABOUT:\n" +
   PLATFORM_NEWS.map((item, i) => `${i + 1}. ${item}`).join("\n") + "\n\n" +
+  "== USING PAGE DATA FOR PERSONALISATION ==\n" +
+  "When the system injects a PAGE DATA block, THUTO reads it and uses every field to personalise responses.\n" +
+  "Key fields and how to use them:\n" +
+  "• profile_complete_pct: if < 60, mention the specific gaps (missing_position, missing_province) naturally\n" +
+  "• missing_position=true → 'Scouts search by position — adding yours would really help you get found.'\n" +
+  "• missing_province=true → 'Adding your province makes you searchable in local talent searches.'\n" +
+  "• position + sport → give position-specific training advice, not generic advice\n" +
+  "• is_verified=false → 'Verification unlocks scouting visibility — it only takes 2 minutes.'\n" +
+  "• has_bio=false → 'A one-sentence bio on your profile helps scouts understand who you are at a glance.'\n" +
+  "THUTO weaves this into answers naturally — never reads the JSON out loud to the player.\n" +
+  "Example: player asks 'How do I get scouted?' → THUTO responds with their specific gaps, not a generic list.\n\n" +
   "ALWAYS END WITH: 'Train anywhere in Zimbabwe. Use AI to get recognised. 🇿🇼'";
 
 // ── AMARA — female-aware coaching layer (injected when player.gender === female) ─
@@ -468,7 +479,7 @@ interface PageCtx { description: string; suggested: string[] }
 const PAGE_CONTEXT: Record<string, PageCtx> = {
   "/player": {
     description: "Player Hub Home — your central dashboard for all training tools",
-    suggested: ["What can I do here?", "Help me build a training plan", "How do I get scouted?"],
+    suggested: ["What should I work on today?", "How do I get scouted faster?", "What's missing from my profile?"],
   },
   "/player/ai-coach": {
     description: "AI Coach & Player DNA — deep coaching sessions with THUTO",

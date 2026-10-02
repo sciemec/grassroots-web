@@ -183,18 +183,40 @@ export default function PlayerHubPage() {
 
   useEffect(() => {
     if (!token) return;
-    const dismissed = localStorage.getItem("grs_profile_nudge_dismissed");
-    if (dismissed) return;
     api
       .get("/profile")
       .then((res) => {
-        const data = res.data?.data ?? {};
-        const pct: number = data.profile_complete_pct ?? 0;
+        // res.data is the top-level Laravel response; profile fields are nested under res.data.profile
+        const raw = res.data ?? {};
+        const prof = raw.profile ?? {};
+
+        const pct: number = prof.profile_complete_pct ?? 0;
         setProfilePct(pct);
-        // Show banner for players missing position or province who haven't dismissed it
-        const missingPosition = !data.position && !data.position_primary;
-        const missingProvince = !data.province;
-        if (missingPosition || missingProvince) setShowProfileBanner(true);
+
+        // Show nudge banner once for players missing position or province
+        const missingPosition = !(prof.position_primary ?? prof.position);
+        const missingProvince = !raw.province;
+        const dismissed = localStorage.getItem("grs_profile_nudge_dismissed");
+        if (!dismissed && (missingPosition || missingProvince)) setShowProfileBanner(true);
+
+        // Write context snapshot so THUTO can give personalised, data-driven advice
+        localStorage.setItem(
+          "thuto_page_data",
+          JSON.stringify({
+            page:                  "player_hub",
+            profile_complete_pct:  pct,
+            position:              prof.position_primary ?? prof.position ?? "",
+            province:              raw.province ?? "",
+            sport:                 raw.sport ?? "football",
+            age_group:             raw.age_group ?? "",
+            country:               raw.country ?? "",
+            is_verified:           !!raw.is_verified,
+            has_bio:               !!(prof.bio),
+            has_photo:             !!(raw.photo_url ?? prof.photo_url),
+            missing_position:      missingPosition,
+            missing_province:      missingProvince,
+          })
+        );
       })
       .catch(() => {});
   }, [token]);
