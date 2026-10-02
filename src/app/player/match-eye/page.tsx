@@ -855,6 +855,8 @@ export default function PlayerMatchEyePage() {
         strengths:    (data.analysis.technical_strengths ?? []).slice(0, 2),
         improvements: (data.analysis.areas_to_improve ?? []).slice(0, 2),
       });
+      // Auto-save full result to passport — fire-and-forget, no spinner
+      void autoSaveToPassport(data.analysis);
       setPageStage("results");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed. Please try again.");
@@ -879,6 +881,33 @@ export default function PlayerMatchEyePage() {
     setArenaShared(false);
     setPoseData(null);
     if (fileRef.current) fileRef.current.value = "";
+  };
+
+  // Auto-saves the full PlayerAnalysis object to the passport immediately
+  // after analysis completes — no manual click required.
+  // Takes `analysisData` directly to avoid React state timing (setAnalysis is async).
+  const autoSaveToPassport = async (analysisData: PlayerAnalysis): Promise<void> => {
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL!;
+      const res = await fetch(`${apiBase}/video-analyses`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`,
+        },
+        body: JSON.stringify({
+          sport,
+          analysis_type: "match_eye",
+          ai_feedback: JSON.stringify(analysisData),
+          user_question: focusQuestion || null,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { data?: { id?: string }; id?: string };
+        setSavedId(data.data?.id ?? data.id ?? null);
+        setPassportSaved(true);
+      }
+    } catch { /* silent — player can still use the manual button as fallback */ }
   };
 
   const saveToPassport = async (): Promise<string | null> => {
