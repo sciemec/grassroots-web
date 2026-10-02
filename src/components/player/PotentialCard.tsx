@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * PotentialCard.jsx
+ * PotentialCard.tsx
  * Grassroots Sports — grassrootssports.live
  *
  * Displays the THUTO Prediction Engine output on a player's profile page.
@@ -17,6 +17,32 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/auth-store';
+
+// ── TYPES ───────────────────────────────────────────────────────────────────
+
+interface Comparable {
+  name: string;
+  style: string;
+}
+
+interface Prediction {
+  peak_level: string;
+  peak_level_label: string;
+  percentile: number;
+  platform_rank: string;
+  upside_rating: number;
+  upside_label: string;
+  readiness_age: string;
+  velocity: number;
+  consistency: number;
+  confidence: number;
+  narrative: string;
+  data_quality: 'low' | 'medium' | 'high';
+  scout_interest?: number;
+  comparable_name?: string;
+  comparable_style?: string;
+  comparable?: Comparable | null;
+}
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────
 // Keys match TalentPredictionService::LEVELS (backend)
@@ -41,7 +67,7 @@ const LEVEL_ICONS = {
 
 // ── STAR RATING COMPONENT ──────────────────────────────────────────────────
 
-function StarRating({ rating, max = 5 }) {
+function StarRating({ rating, max = 5 }: { rating: number; max?: number }) {
   return (
     <div className="flex gap-0.5" aria-label={`${rating} out of ${max} stars`}>
       {Array.from({ length: max }).map((_, i) => (
@@ -61,7 +87,7 @@ function StarRating({ rating, max = 5 }) {
 
 // ── CONFIDENCE BAR ─────────────────────────────────────────────────────────
 
-function ConfidenceBar({ confidence }) {
+function ConfidenceBar({ confidence }: { confidence: number }) {
   const colour =
     confidence >= 75 ? 'bg-green-500' :
     confidence >= 50 ? 'bg-amber-500' :
@@ -85,7 +111,7 @@ function ConfidenceBar({ confidence }) {
 
 // ── VELOCITY INDICATOR ─────────────────────────────────────────────────────
 
-function VelocityIndicator({ velocity }) {
+function VelocityIndicator({ velocity }: { velocity: number }) {
   const isPositive = velocity > 0;
   const isNeutral  = velocity === 0;
 
@@ -128,7 +154,7 @@ function PotentialCardSkeleton() {
 
 // ── EMPTY STATE ────────────────────────────────────────────────────────────
 
-function PotentialCardEmpty({ playerName }) {
+function PotentialCardEmpty({ playerName }: { playerName: string }) {
   return (
     <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center space-y-3">
       <div className="text-4xl">🔮</div>
@@ -147,10 +173,14 @@ function PotentialCardEmpty({ playerName }) {
 
 // ── MAIN COMPONENT ─────────────────────────────────────────────────────────
 
-export default function PotentialCard({ playerId, playerName, isPublicView = false }) {
-  const [prediction, setPrediction] = useState(null);
+export default function PotentialCard({ playerId, playerName, isPublicView = false }: {
+  playerId: string;
+  playerName: string;
+  isPublicView?: boolean;
+}) {
+  const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState(null);
+  const [error, setError]           = useState<string | null>(null);
   const [expanded, setExpanded]     = useState(false);
 
   useEffect(() => {
@@ -192,8 +222,8 @@ export default function PotentialCard({ playerId, playerName, isPublicView = fal
             ? { name: raw.comparable_name, style: raw.comparable_style }
             : null,
         });
-      } catch (err) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to load prediction');
       } finally {
         setLoading(false);
       }
