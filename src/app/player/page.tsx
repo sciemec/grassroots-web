@@ -369,14 +369,6 @@ export default function PlayerHubPage() {
           subtitle="Practice on your own"
         />
         <HubCard
-          href="/player/sessions"
-          icon={IconRun}
-          iconBg={O}
-          iconColor={OL}
-          title="Training Sessions"
-          subtitle="Log sessions to boost your THUTO score"
-        />
-        <HubCard
           href="/player/match-eye"
           icon={IconVideo}
           iconBg={O}

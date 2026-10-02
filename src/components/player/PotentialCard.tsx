@@ -365,15 +365,9 @@ export default function PotentialCard({ playerId, playerName, isPublicView = fal
             <div>
               <p className="font-semibold mb-0.5">This is your starting point.</p>
               <p>
-                Log drills and training sessions to improve your score and climb the ranks.
-                Every session you record unlocks a more accurate prediction.
+                Upload drill videos, complete assessments, and share clips to the Arena.
+                Every piece of activity THUTO sees improves the accuracy of your prediction.
               </p>
-              <a
-                href="/player/sessions/new"
-                className="inline-block mt-1.5 font-semibold underline underline-offset-2"
-              >
-                Log a training session →
-              </a>
             </div>
           </div>
         )}
