@@ -28,15 +28,15 @@ interface Comparable {
 interface Prediction {
   peak_level: string;
   peak_level_label: string;
-  percentile: number;
-  platform_rank: string;
-  upside_rating: number;
-  upside_label: string;
-  readiness_age: string;
-  velocity: number;
-  consistency: number;
-  confidence: number;
-  narrative: string;
+  percentile: number | null;
+  platform_rank: string | null;
+  upside_rating: number | null;
+  upside_label: string | null;
+  readiness_age: string | null;
+  velocity: number | null;
+  consistency: number | null;
+  confidence: number | null;
+  narrative: string | null;
   data_quality: 'low' | 'medium' | 'high';
   scout_interest?: number;
   comparable_name?: string;
@@ -87,22 +87,23 @@ function StarRating({ rating, max = 5 }: { rating: number; max?: number }) {
 
 // ── CONFIDENCE BAR ─────────────────────────────────────────────────────────
 
-function ConfidenceBar({ confidence }: { confidence: number }) {
+function ConfidenceBar({ confidence }: { confidence: number | null | undefined }) {
+  const pct = confidence ?? 0;
   const colour =
-    confidence >= 75 ? 'bg-green-500' :
-    confidence >= 50 ? 'bg-amber-500' :
+    pct >= 75 ? 'bg-green-500' :
+    pct >= 50 ? 'bg-amber-500' :
     'bg-orange-500';
 
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>Prediction Confidence</span>
-        <span className="font-semibold text-foreground">{confidence}%</span>
+        <span className="font-semibold text-foreground">{pct}%</span>
       </div>
       <div className="h-1.5 bg-muted rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-700 ${colour}`}
-          style={{ width: `${confidence}%` }}
+          style={{ width: `${pct}%` }}
         />
       </div>
     </div>
@@ -111,17 +112,18 @@ function ConfidenceBar({ confidence }: { confidence: number }) {
 
 // ── VELOCITY INDICATOR ─────────────────────────────────────────────────────
 
-function VelocityIndicator({ velocity }: { velocity: number }) {
-  const isPositive = velocity > 0;
-  const isNeutral  = velocity === 0;
+function VelocityIndicator({ velocity }: { velocity: number | null | undefined }) {
+  const v        = velocity ?? 0;
+  const isPositive = v > 0;
+  const isNeutral  = v === 0;
 
   const colour = isPositive ? 'text-green-400' : isNeutral ? 'text-amber-400' : 'text-red-400';
   const arrow  = isPositive ? '↑' : isNeutral ? '→' : '↓';
   const label  = isPositive
-    ? `+${velocity.toFixed(1)} pts/month`
+    ? `+${v.toFixed(1)} pts/month`
     : isNeutral
     ? 'Stable'
-    : `${velocity.toFixed(1)} pts/month`;
+    : `${v.toFixed(1)} pts/month`;
 
   return (
     <div className="flex items-center gap-1">
@@ -270,17 +272,21 @@ export default function PotentialCard({ playerId, playerName, isPublicView = fal
           </p>
           <div className="flex items-center justify-between">
             <p className="text-xl font-bold text-foreground">
-              {prediction.peak_level_label}
+              {prediction.peak_level_label ?? '—'}
             </p>
-            <span
-              className={`text-xs font-bold px-2 py-1 rounded-full ${colours.badge} ${colours.text}`}
-            >
-              {prediction.percentile}th percentile
-            </span>
+            {prediction.percentile != null && (
+              <span
+                className={`text-xs font-bold px-2 py-1 rounded-full ${colours.badge} ${colours.text}`}
+              >
+                {prediction.percentile}th percentile
+              </span>
+            )}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {prediction.platform_rank}
-          </p>
+          {prediction.platform_rank && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {prediction.platform_rank}
+            </p>
+          )}
         </div>
 
         {/* STATS GRID */}
@@ -289,16 +295,18 @@ export default function PotentialCard({ playerId, playerName, isPublicView = fal
           {/* Upside Rating */}
           <div className="rounded-xl bg-muted/30 border border-border p-3 space-y-1">
             <p className="text-xs text-muted-foreground">Upside Rating</p>
-            <StarRating rating={prediction.upside_rating} />
-            <p className="text-xs font-semibold text-amber-500">
-              {prediction.upside_label}
-            </p>
+            <StarRating rating={prediction.upside_rating ?? 0} />
+            {prediction.upside_label && (
+              <p className="text-xs font-semibold text-amber-500">
+                {prediction.upside_label}
+              </p>
+            )}
           </div>
 
           {/* Readiness */}
           <div className="rounded-xl bg-muted/30 border border-border p-3 space-y-1">
             <p className="text-xs text-muted-foreground">Professional Readiness</p>
-            <p className="text-sm font-bold text-foreground">{prediction.readiness_age}</p>
+            <p className="text-sm font-bold text-foreground">{prediction.readiness_age ?? '—'}</p>
             <p className="text-xs text-muted-foreground">Estimated timeline</p>
           </div>
 
@@ -312,7 +320,9 @@ export default function PotentialCard({ playerId, playerName, isPublicView = fal
           {/* Consistency */}
           <div className="rounded-xl bg-muted/30 border border-border p-3 space-y-1">
             <p className="text-xs text-muted-foreground">Training Consistency</p>
-            <p className="text-sm font-bold text-foreground">{prediction.consistency}%</p>
+            <p className="text-sm font-bold text-foreground">
+              {prediction.consistency != null ? `${prediction.consistency}%` : '—'}
+            </p>
             <p className="text-xs text-muted-foreground">Last 3 months</p>
           </div>
         </div>
@@ -352,7 +362,7 @@ export default function PotentialCard({ playerId, playerName, isPublicView = fal
           {expanded && (
             <div className="rounded-xl bg-muted/20 border border-border p-4">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                {prediction.narrative}
+                {prediction.narrative ?? 'Narrative will appear as more training data is logged.'}
               </p>
             </div>
           )}
