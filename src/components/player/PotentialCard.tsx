@@ -240,8 +240,8 @@ export default function PotentialCard({ playerId, playerName, isPublicView = fal
     return <PotentialCardEmpty playerName={playerName} />;
   }
 
-  const colours = LEVEL_COLOURS[prediction.peak_level] || LEVEL_COLOURS['amateur'];
-  const icon    = LEVEL_ICONS[prediction.peak_level]   || '⚽';
+  const colours = LEVEL_COLOURS[prediction.peak_level as keyof typeof LEVEL_COLOURS] || LEVEL_COLOURS['amateur'];
+  const icon    = LEVEL_ICONS[prediction.peak_level as keyof typeof LEVEL_ICONS]     || '⚽';
 
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden">
@@ -367,7 +367,7 @@ export default function PotentialCard({ playerId, playerName, isPublicView = fal
         )}
 
         {/* SCOUT VIEW — share prompt */}
-        {isPublicView && prediction.scout_interest > 0 && (
+        {isPublicView && (prediction.scout_interest ?? 0) > 0 && (
           <div className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-3">
             <div>
               <p className="text-xs text-muted-foreground">Scout Interest</p>
