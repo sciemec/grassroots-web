@@ -2,9 +2,10 @@
 // src/app/coach/page.tsx
 // Coach Hub — card-based feature dashboard
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
+import api from "@/lib/api";
 import {
   Users, Calendar, Video,
   UserSearch, Globe, Bell, Layers,
@@ -107,8 +108,36 @@ function DarkCTA({ href, icon: Icon, iconColor, title, sub }: {
 }
 
 export default function CoachHubPage() {
-  const user = useAuthStore((s) => s.user);
+  const user  = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
   const [moreOpen, setMoreOpen] = useState(false);
+
+  // Write coach profile snapshot so THUTO can give personalised advice
+  useEffect(() => {
+    if (!token) return;
+    api
+      .get("/profile")
+      .then((res) => {
+        const raw  = res.data ?? {};
+        const prof = raw.profile ?? {};
+        localStorage.setItem(
+          "thuto_page_data",
+          JSON.stringify({
+            page:              "coach_hub",
+            sport:             raw.sport  ?? "football",
+            province:          raw.province ?? "",
+            country:           raw.country  ?? "",
+            is_verified:       !!raw.is_verified,
+            has_photo:         !!(raw.photo_url ?? prof.photo_url),
+            has_bio:           !!(prof.bio),
+            club:              prof.club ?? raw.club ?? "",
+            coaching_level:    prof.coaching_level ?? "",
+            years_experience:  prof.years_experience ?? null,
+          })
+        );
+      })
+      .catch(() => {});
+  }, [token]);
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
