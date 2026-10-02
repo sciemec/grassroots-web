@@ -104,7 +104,7 @@ interface Post {
   activity_data?: Record<string, string | number | boolean | null | undefined>;
   share_token?: string;
   visibility?: string;
-  user?: { id: string; name: string; role: string; sport?: string; province?: string };
+  user?: { id: string; name: string; role: string; sport?: string; province?: string; passport_token?: string };
 }
 
 interface Comment {
@@ -1393,9 +1393,9 @@ export default function ArenaPage() {
                               + Add to Pipeline
                             </Link>
                             <Link
-                              href={`/player/public/${post.user_id}`}
+                              href={`/passport/${post.user?.passport_token ?? post.user_id}`}
                               className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-                              View Profile →
+                              View Passport →
                             </Link>
                           </div>
                         )}
