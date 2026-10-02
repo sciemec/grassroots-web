@@ -15,7 +15,7 @@
  * Date: May 2026
  */
 
-import { useState, useEffect } from 'react';
+import React, { Component, useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/auth-store';
 
 // ── TYPES ───────────────────────────────────────────────────────────────────
@@ -173,9 +173,28 @@ function PotentialCardEmpty({ playerName }: { playerName: string }) {
   );
 }
 
+// ── ERROR BOUNDARY ─────────────────────────────────────────────────────────
+// Wraps PotentialCard so a render crash never takes down the whole profile page.
+
+interface EBState { hasError: boolean }
+class PotentialCardBoundary extends Component<
+  { children: React.ReactNode },
+  EBState
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(): EBState { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return null; // fail silently
+    return this.props.children;
+  }
+}
+
 // ── MAIN COMPONENT ─────────────────────────────────────────────────────────
 
-export default function PotentialCard({ playerId, playerName, isPublicView = false }: {
+function PotentialCardInner({ playerId, playerName, isPublicView = false }: {
   playerId: string;
   playerName: string;
   isPublicView?: boolean;
@@ -405,5 +424,17 @@ export default function PotentialCard({ playerId, playerName, isPublicView = fal
 
       </div>
     </div>
+  );
+}
+
+export default function PotentialCard(props: {
+  playerId: string;
+  playerName: string;
+  isPublicView?: boolean;
+}) {
+  return (
+    <PotentialCardBoundary>
+      <PotentialCardInner {...props} />
+    </PotentialCardBoundary>
   );
 }
