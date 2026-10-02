@@ -20,6 +20,7 @@ export interface AuthUser {
   province?: string;
   is_pro?: boolean;
   subscription?: string; // 'free' | 'basic' | 'pro' | 'elite'
+  passport_token?: string;
 }
 
 export function roleHomePath(role: UserRole): string {

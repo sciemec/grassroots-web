@@ -127,6 +127,7 @@ export default function PassportPage() {
   const [biometricScore, setBiometricScore] = useState<BiometricScore | null>(null);
   const [analysisEvents, setAnalysisEvents] = useState<ThutoAnalysisEvent[]>([]);
   const [reel, setReel] = useState<ReelState>(EMPTY_REEL);
+  const [passportToken, setPassportToken] = useState<string>("");
 
   type SkillReading = { score: number; grade: string; recorded_at?: string } | null;
   const [skillReadings, setSkillReadings] = useState<Record<string, SkillReading>>({
@@ -196,8 +197,10 @@ export default function PassportPage() {
       api.get("/player/biometric-scores").catch(() => null),
     ]).then(([profRes, clipsRes, provRes, bioRes]) => {
       if (profRes) {
-        const p = profRes.data?.profile ?? profRes.data;
+        const raw = profRes.data ?? {};
+        const p = raw.profile ?? raw;
         setProfile(p);
+        if (raw.passport_token) setPassportToken(raw.passport_token);
         // Prefer backend ai_narrative if local is empty
         if (p?.ai_narrative && !localStorage.getItem(LS_AI_SUMMARY)) {
           setAiSummary(p.ai_narrative);
@@ -296,7 +299,7 @@ Output exactly 3 sentences. No bullet points. No headers.`,
 
   // ── Copy share link ────────────────────────────────────────────────────────
   const copyLink = () => {
-    const id = user?.id ?? "";
+    const id = passportToken || user?.id || "";
     navigator.clipboard.writeText(`${window.location.origin}/passport/${id}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -553,7 +556,7 @@ Output exactly 3 sentences. No bullet points. No headers.`,
     );
   }
 
-  const shareUrl = `/passport/${user?.id ?? ""}`;
+  const shareUrl = `/passport/${passportToken || user?.id || ""}`;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
