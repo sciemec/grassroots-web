@@ -1393,9 +1393,9 @@ export default function ArenaPage() {
                               + Add to Pipeline
                             </Link>
                             <Link
-                              href={`/passport/${post.user_id}`}
+                              href={`/player/public/${post.user_id}`}
                               className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-                              View Passport →
+                              View Profile →
                             </Link>
                           </div>
                         )}
