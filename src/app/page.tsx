@@ -1,56 +1,58 @@
-"use client";
-
-import { useState, useEffect } from "react";
+import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Award, Zap, ChevronRight, Radio, Users, Brain, Video, QrCode, Shield, CheckCircle } from "lucide-react";
+import { Award, Zap, ChevronRight, Users, Brain, Video, QrCode, Shield, CheckCircle } from "lucide-react";
 import { PublicNavbar } from "@/components/layout/public-navbar";
+import LiveActivityWire from "@/components/home/LiveActivityWire";
 
 const ThutoChatVisitor = dynamic(() => import("@/components/thuto/ThutoChatVisitor"), { ssr: false });
 const PublicVideoGrid  = dynamic(() => import("@/components/home/PublicVideoGrid"),   { ssr: false });
 const PlayerStories    = dynamic(() => import("@/components/home/PlayerStories"),     { ssr: false });
 
+export const metadata: Metadata = {
+  title: "Grassroots Sports — Zimbabwe's #1 Talent Discovery Platform",
+  description:
+    "AI-powered athletic scoring, personalised training plans, and a digital Talent Passport that gets African grassroots athletes discovered by scouts worldwide — with nothing but a smartphone.",
+  openGraph: {
+    title: "Grassroots Sports — Identify. Nurture. Market.",
+    description:
+      "AI sports coaching, video analysis, and a Talent Passport for every Zimbabwean athlete. Free to join.",
+    url: "https://grassrootssports.live",
+    siteName: "Grassroots Sports",
+    images: [
+      {
+        url: "https://grassrootssports.live/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Grassroots Sports — Zimbabwe's AI Talent Platform",
+      },
+    ],
+    locale: "en_ZW",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Grassroots Sports — Zimbabwe's #1 Talent Discovery Platform",
+    description: "AI coaching, video analysis, and a digital Talent Passport for every African athlete.",
+    images: ["https://grassrootssports.live/og-image.png"],
+  },
+};
+
 export default function GrassrootsSportsLanding() {
-  const [activityWire, setActivityWire] = useState<string[]>([]);
-  const [wireIndex,    setWireIndex]    = useState(0);
-
-  useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticker-wire`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data?.ticker_items) setActivityWire(data.ticker_items); })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (activityWire.length === 0) return;
-    const interval = setInterval(() => {
-      setWireIndex((prev) => (prev + 1) % activityWire.length);
-    }, 4500);
-    return () => clearInterval(interval);
-  }, [activityWire.length]);
-
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-[#1c3d22] selection:bg-[#f0b429]/30 antialiased font-sans">
 
       {/* Navigation */}
       <PublicNavbar />
 
+      {/* Spacer so content doesn't hide under fixed navbar */}
+      <div className="h-16" />
+
       {/* Player Moments — 24-hour stories strip */}
       <PlayerStories />
 
-      {/* Live activity wire */}
-      {activityWire.length > 0 && (
-        <div className="bg-[#fffbeb] border-b border-amber-200 py-2.5 px-4 overflow-hidden">
-          <div className="max-w-6xl mx-auto flex items-center gap-2">
-            <span className="flex items-center gap-1 bg-[#1c3d22] text-[#f0b429] text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm shrink-0">
-              <Radio size={10} className="animate-pulse" /> Live
-            </span>
-            <p className="text-xs font-bold text-amber-950 truncate transition-all duration-500">
-              {activityWire[wireIndex]}
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Live activity wire (client-only ticker) */}
+      <LiveActivityWire />
 
       {/* Hero */}
       <header className="relative overflow-hidden bg-gradient-to-br from-[#e2f0d9] via-[#f0f9e8] to-[#f4f2ee] border-b border-[#1c3d22]/10 py-16 lg:py-20 px-6 text-center">
@@ -78,7 +80,7 @@ export default function GrassrootsSportsLanding() {
               Get Started <ChevronRight size={14} />
             </Link>
             <Link
-              href="/players"
+              href="/talent-database"
               className="bg-white border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shadow-3xs"
             >
               Discover Talent <Users size={14} />
@@ -296,14 +298,21 @@ export default function GrassrootsSportsLanding() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white py-8 text-center px-4">
-        <Award size={32} className="mx-auto text-[#1c3d22] mb-2" />
-        <p className="text-[10px] font-black text-gray-800 uppercase tracking-widest">
-          Grassroots Sports Development Network &copy; 2026 &middot; Identify, Nurture, and Market Talent
-        </p>
-        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-1">
-          Zimbabwe&apos;s First AI-Powered Multi-Sport Talent Discovery Platform
-        </p>
+      <footer className="border-t border-gray-200 bg-white py-8 px-4">
+        <div className="max-w-4xl mx-auto flex flex-col items-center gap-3">
+          <Award size={32} className="text-[#1c3d22]" />
+          <p className="text-[10px] font-black text-gray-800 uppercase tracking-widest text-center">
+            Grassroots Sports Development Network &copy; 2026 &middot; Identify, Nurture, and Market Talent
+          </p>
+          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider text-center">
+            Zimbabwe&apos;s First AI-Powered Multi-Sport Talent Discovery Platform
+          </p>
+          <div className="flex items-center gap-4 mt-1">
+            <Link href="/privacy" className="text-[10px] text-gray-400 hover:text-gray-600 transition-colors">Privacy Policy</Link>
+            <Link href="/terms"   className="text-[10px] text-gray-400 hover:text-gray-600 transition-colors">Terms of Service</Link>
+            <a href="mailto:sciemeq@gmail.com" className="text-[10px] text-gray-400 hover:text-gray-600 transition-colors">Contact</a>
+          </div>
+        </div>
       </footer>
 
       <ThutoChatVisitor />
