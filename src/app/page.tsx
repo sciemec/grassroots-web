@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Award, Zap, ChevronRight, Users, Brain, Video, QrCode, Shield, CheckCircle } from "lucide-react";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import LiveActivityWire from "@/components/home/LiveActivityWire";
-
-const ThutoChatVisitor = dynamic(() => import("@/components/thuto/ThutoChatVisitor"), { ssr: false });
-const PublicVideoGrid  = dynamic(() => import("@/components/home/PublicVideoGrid"),   { ssr: false });
-const PlayerStories    = dynamic(() => import("@/components/home/PlayerStories"),     { ssr: false });
+import {
+  DynamicPlayerStories    as PlayerStories,
+  DynamicPublicVideoGrid  as PublicVideoGrid,
+  DynamicThutoChatVisitor as ThutoChatVisitor,
+} from "@/components/home/LandingDynamic";
 
 export const metadata: Metadata = {
   title: "Grassroots Sports — Zimbabwe's #1 Talent Discovery Platform",
