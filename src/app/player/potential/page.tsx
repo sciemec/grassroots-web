@@ -60,7 +60,7 @@ interface BackendResult {
   readiness_age: number;
   upside_rating: number;
   confidence: number;
-  velocity: number;
+  velocity: number | null;
   consistency: number;
   comparable: { name: string; team: string; similarity: number } | null;
   narrative: string;
@@ -104,8 +104,9 @@ function parseAIResult(text: string): ParsedResult {
   };
 }
 
-function VelocityBadge({ velocity }: { velocity: number }) {
-  const isPositive = velocity >= 0;
+function VelocityBadge({ velocity }: { velocity: number | null | undefined }) {
+  const v = velocity ?? 0;
+  const isPositive = v >= 0;
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
@@ -113,7 +114,7 @@ function VelocityBadge({ velocity }: { velocity: number }) {
       }`}
     >
       <TrendingUp className={`h-3 w-3 ${!isPositive ? "rotate-180" : ""}`} />
-      {isPositive ? "+" : ""}{velocity.toFixed(1)} pts/month
+      {isPositive ? "+" : ""}{v.toFixed(1)} pts/month
     </span>
   );
 }

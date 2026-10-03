@@ -187,7 +187,7 @@ class PotentialCardBoundary extends Component<
   }
   static getDerivedStateFromError(): EBState { return { hasError: true }; }
   render() {
-    if (this.state.hasError) return null; // fail silently
+    if (this.state.hasError) return <PotentialCardEmpty playerName="" />;
     return this.props.children;
   }
 }
