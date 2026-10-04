@@ -222,6 +222,45 @@ async function fetchMatchEyeContext(authToken: string): Promise<string> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// THUTO server context — server-verified player profile from the Laravel DB
+// Called only on the first message of each chat session (history.length === 0)
+// Returns { text: "", gaps: [] } on any failure — never throws
+// localStorage context (userContext body field) remains the fallback
+// ─────────────────────────────────────────────────────────────────────────────
+async function fetchThutoContext(authToken: string): Promise<{ text: string; gaps: string[] }> {
+  const empty = { text: "", gaps: [] as string[] };
+  if (!authToken) return empty;
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) return empty;
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4_000);
+
+    let res: Response;
+    try {
+      res = await fetch(`${apiUrl}/thuto/context`, {
+        headers: { "Authorization": `Bearer ${authToken}` },
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+
+    if (!res.ok) return empty;
+
+    const json = await res.json() as { text?: string; gaps?: string[] };
+    return {
+      text: json?.text ?? "",
+      gaps: json?.gaps ?? [],
+    };
+  } catch {
+    return empty;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main handler
 // ─────────────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
@@ -268,12 +307,17 @@ export async function POST(req: NextRequest) {
       (userContext.recentStats ? `Recent performance: ${userContext.recentStats}. ` : "")
     : "";
 
-  // ── Match Eye context — fetched once per chat session (first message only) ─
-  const matchEyeContext = history.length === 0
-    ? await fetchMatchEyeContext(authToken)
+  // ── Server context + Match Eye — fetched in parallel on first message only ─
+  const [serverCtx, matchEyeContext] = history.length === 0
+    ? await Promise.all([fetchThutoContext(authToken), fetchMatchEyeContext(authToken)])
+    : [{ text: "", gaps: [] as string[] }, ""];
+
+  // Build gaps hint — THUTO asks for ONE missing item naturally when relevant
+  const gapsHint = serverCtx.gaps.length > 0
+    ? `\n\nMISSING PROFILE INFO (if not already known, ask for ONE of these naturally mid-conversation): ${serverCtx.gaps.join(", ")}`
     : "";
 
-  // ── Knowledge retrieval (unchanged from original) ─────────────────────────
+  // ── Knowledge retrieval ────────────────────────────────────────────────────
   const relevantSessions = findRelevantSessions(message, 3);
   const knowledgeContext = relevantSessions.length > 0
     ? "\n\n---\nRELEVANT COACHING SESSIONS (FIFA/FA certified):\n" +
@@ -284,8 +328,9 @@ export async function POST(req: NextRequest) {
       "\n---\n"
     : "";
 
-  // ── Full system prompt: persona + player context + Match Eye + knowledge ───
-  const fullSystem = basePersona + playerContext + matchEyeContext + knowledgeContext;
+  // ── Full system prompt ─────────────────────────────────────────────────────
+  // Order: persona → server-verified profile → localStorage context → match eye → knowledge → gaps
+  const fullSystem = basePersona + serverCtx.text + playerContext + matchEyeContext + knowledgeContext + gapsHint;
 
   // ── Conversation history (last 6 turns) ───────────────────────────────────
   const messages: { role: "user" | "assistant"; content: string }[] = [
