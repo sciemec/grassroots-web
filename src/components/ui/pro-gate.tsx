@@ -24,7 +24,7 @@ interface ProGateProps {
 }
 
 function isPro(subscription?: string): boolean {
-  return ["basic", "pro", "elite"].includes(subscription ?? "free");
+  return ["school", "pro_local", "match_day"].includes(subscription ?? "free");
 }
 
 export function ProGate({ feature, children, preview = true }: ProGateProps) {

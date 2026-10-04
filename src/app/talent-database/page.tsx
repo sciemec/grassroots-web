@@ -11,7 +11,13 @@ import api from "@/lib/api";
 
 const SPORTS = ["All", "Football", "Rugby", "Athletics", "Netball", "Basketball", "Cricket", "Swimming", "Tennis", "Volleyball", "Hockey"];
 const PROVINCES = ["All", "Harare", "Bulawayo", "Manicaland", "Mashonaland East", "Mashonaland West", "Mashonaland Central", "Masvingo", "Matabeleland North", "Matabeleland South", "Midlands"];
-const AGE_GROUPS = ["All", "U16", "U18", "U21", "Senior"];
+const AGE_GROUPS: { value: string; label: string }[] = [
+  { value: "All",      label: "All" },
+  { value: "under_13", label: "Under 13" },
+  { value: "13_17",    label: "13–17" },
+  { value: "18_25",    label: "18–25" },
+  { value: "26_plus",  label: "26+" },
+];
 
 const SPORT_EMOJIS: Record<string, string> = {
   Football: "⚽", Rugby: "🏉", Athletics: "🏃", Netball: "🏐",
@@ -49,6 +55,7 @@ export default function TalentDatabasePage() {
   const [province, setProvince] = useState("All");
   const [ageGroup, setAgeGroup] = useState("All");
   const [players, setPlayers] = useState<Player[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [shortlisted, setShortlisted] = useState<Set<string>>(new Set());
@@ -103,10 +110,11 @@ export default function TalentDatabasePage() {
       if (province !== "All") params.province = province;
       if (ageGroup !== "All") params.age_group = ageGroup;
 
-      const res = await api.get("/scout/players", { params });
+      const res = await api.get("/talent-database", { params });
       const _r = res.data?.data ?? res.data;
       const data: Player[] = Array.isArray(_r) ? _r : [];
       setPlayers(data);
+      setTotal(res.data?.total ?? null);
     } catch {
       setPlayers([]);
       setError("Could not load players. Check your connection and try again.");
@@ -150,7 +158,7 @@ export default function TalentDatabasePage() {
         {/* Stat badges */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { icon: Users, label: "Total Players", value: "847", color: "text-[#f0b429]" },
+            { icon: Users, label: "Total Players", value: total !== null ? total.toString() : "—", color: "text-[#f0b429]" },
             { icon: Trophy, label: "Sports Covered", value: "10", color: "text-green-500" },
             { icon: MapPin, label: "Provinces", value: "10", color: "text-blue-500" },
             { icon: Globe, label: "Active Scouts", value: "23", color: "text-purple-500" },
@@ -240,7 +248,7 @@ export default function TalentDatabasePage() {
                 onChange={(e) => setAgeGroup(e.target.value)}
                 className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
               >
-                {AGE_GROUPS.map((a) => <option key={a}>{a}</option>)}
+                {AGE_GROUPS.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
               </select>
             </div>
             <div className="flex items-end">
@@ -289,7 +297,7 @@ export default function TalentDatabasePage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {players.map((player) => (
               <div
-                key={player.id}
+                key={player.player_id}
                 className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-5"
               >
                 <div className="mb-3 flex items-start justify-between">
@@ -329,12 +337,12 @@ export default function TalentDatabasePage() {
                     <ExternalLink className="h-3.5 w-3.5" /> View Profile
                   </Link>
                   <button
-                    onClick={() => handleShortlist(player.id)}
-                    disabled={shortlisted.has(player.id)}
+                    onClick={() => handleShortlist(player.player_id)}
+                    disabled={shortlisted.has(player.player_id)}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#1a5c2a] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1a5c2a]/90 disabled:opacity-60 transition-colors"
                   >
                     <UserPlus className="h-3.5 w-3.5" />
-                    {shortlisted.has(player.id) ? "Shortlisted" : "Shortlist"}
+                    {shortlisted.has(player.player_id) ? "Shortlisted" : "Shortlist"}
                   </button>
                 </div>
               </div>
