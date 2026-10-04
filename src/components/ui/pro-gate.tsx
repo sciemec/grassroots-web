@@ -23,7 +23,10 @@ interface ProGateProps {
   preview?: boolean;
 }
 
+const PAYWALL_ENABLED = process.env.NEXT_PUBLIC_PAYWALL_ENABLED !== 'false';
+
 function isPro(subscription?: string): boolean {
+  if (!PAYWALL_ENABLED) return true;
   return ["school", "pro_local", "match_day"].includes(subscription ?? "free");
 }
 

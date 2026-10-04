@@ -696,8 +696,8 @@ function LockedFormation({ formation }: { formation: string }) {
 export default function PlayerTacticsPage() {
   const user = useAuthStore((s) => s.user);
 
-  // Monetization flag — wire up to subscription status when billing is live
-  const isPro = false;
+  // Monetization flag — set NEXT_PUBLIC_PAYWALL_ENABLED=false to open access
+  const isPro = process.env.NEXT_PUBLIC_PAYWALL_ENABLED === 'false';
 
   const rawPosition = (user as { position?: string } | null)?.position ?? null;
   const [posKey, setPosKey] = useState<PosKey>(detectPositionKey(rawPosition));

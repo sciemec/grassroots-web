@@ -9,6 +9,8 @@ interface ProGateProps {
   feature?: string;
 }
 
+const PAYWALL_ENABLED = process.env.NEXT_PUBLIC_PAYWALL_ENABLED !== 'false';
+
 const PRO_PERKS = [
   "Business Hub — budget planner, sponsor finder, event planner",
   "Analyst Hub — xG analysis, pass maps, AI tactical reports",
@@ -26,8 +28,8 @@ export function ProGate({ children, feature }: ProGateProps) {
   // Admin always bypasses
   if (user?.role === "admin") return <>{children}</>;
 
-  // Pro users pass through
-  if (user?.is_pro) return <>{children}</>;
+  // Pro users pass through (or paywall disabled globally)
+  if (!PAYWALL_ENABLED || user?.is_pro) return <>{children}</>;
 
   // Non-pro or logged-out → show upgrade wall
   return (

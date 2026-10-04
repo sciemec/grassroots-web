@@ -379,6 +379,10 @@ export default function AnalysePage() {
 
   useEffect(() => {
     if (!token) return;
+    if (process.env.NEXT_PUBLIC_PAYWALL_ENABLED === 'false') {
+      setCredits({ canAnalyse: true, isPro: true, count: 0 });
+      return;
+    }
     fetch(`${API_URL}/video-analysis/credits`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -530,6 +534,7 @@ export default function AnalysePage() {
             })
               .then((r) => r.ok ? r.json() : null)
               .then((d) => {
+                if (process.env.NEXT_PUBLIC_PAYWALL_ENABLED === 'false') return;
                 if (d) setCredits({ canAnalyse: d.can_analyse, isPro: d.is_pro, count: d.count ?? 0 });
               })
               .catch(() => {});
