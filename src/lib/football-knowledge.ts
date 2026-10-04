@@ -271,13 +271,17 @@ export const CATEGORIES = ['attacking','defending','pressing','fundamentals','sa
 export const LEVELS = ['youth','grassroots','intermediate','advanced','all'] as const;
 
 /** Return the top N most relevant sessions for a given coach question */
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function findRelevantSessions(query: string, topN = 3): CoachingSession[] {
   const q = query.toLowerCase();
   const keywords = q.split(/\s+/).filter(w => w.length >= 2);
   const scored = COACHING_SESSIONS.map(s => {
     const haystack = (s.title + ' ' + s.content).toLowerCase();
     const score = keywords.reduce((acc, kw) => {
-      const count = (haystack.match(new RegExp(kw, 'g')) || []).length;
+      const count = (haystack.match(new RegExp(escapeRegex(kw), 'g')) || []).length;
       return acc + count;
     }, 0);
     return { ...s, score };

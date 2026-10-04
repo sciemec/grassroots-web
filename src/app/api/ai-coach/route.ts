@@ -33,12 +33,11 @@ export async function GET() {
 /**
  * POST /api/ai-coach
  *
- * TWO-ENGINE RULE (unchanged from original):
- *   1. DeepSeek first  — fast, cheap, handles simple questions
- *   2. Gemini second   — complex/analytical questions, or when DeepSeek fails
- *   3. DeepSeek again  — last resort if Gemini also fails
+ * ENGINE ORDER: Gemini primary → DeepSeek silent fallback
+ *   1. Gemini first   — primary engine for all questions
+ *   2. DeepSeek       — silent fallback if Gemini fails
  *
- * PERSONA SELECTION (new):
+ * PERSONA SELECTION:
  *   gender === 'female' → Amara (coaching persona for female athletes)
  *   gender === 'male' or missing → THUTO (coaching persona for male athletes)
  *   system_prompt in body → overrides persona entirely (admin/coach use cases)
@@ -192,7 +191,9 @@ async function fetchMatchEyeContext(authToken: string): Promise<string> {
     if (!analyses.length) return "";
 
     const latest   = analyses[0];
-    const feedback = JSON.parse(latest.ai_feedback) as {
+    // Some DB drivers return JSON columns as already-parsed objects — handle both
+    const raw = latest.ai_feedback;
+    const feedback = (typeof raw === "string" ? JSON.parse(raw) : raw) as {
       overall_rating?: number;
       performance_summary?: string;
       technical_strengths?: string[];
@@ -290,14 +291,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "message is required." }, { status: 400 });
   }
 
+  if (message.length > 2000) {
+    return NextResponse.json({ error: "Message too long. Maximum 2000 characters." }, { status: 400 });
+  }
+
   // ── Auth token (forwarded from ThutoChat for Match Eye context fetch) ──────
   const authToken = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
 
   // ── Select persona ─────────────────────────────────────────────────────────
-  // system_prompt in body overrides everything (admin/coach custom prompts)
-  // Otherwise: female → Amara, male/missing → THUTO
+  // system_prompt in body overrides persona only when the caller is authenticated
+  // (requires a Bearer token). Unauthenticated callers fall back to THUTO/AMARA.
+  // Cap at 4000 chars to prevent prompt-bloat attacks.
+  const SYSTEM_PROMPT_MAX_CHARS = 4000;
+  const resolvedSystemPrompt = (system_prompt && authToken)
+    ? system_prompt.slice(0, SYSTEM_PROMPT_MAX_CHARS)
+    : undefined;
+
   const coachName   = gender === "female" ? "Amara" : "THUTO";
-  const basePersona = system_prompt
+  const basePersona = resolvedSystemPrompt
     ?? (gender === "female" ? AMARA_BASE_PROMPT : THUTO_BASE_PROMPT);
 
   // ── Player context (unchanged from original) ───────────────────────────────
@@ -350,7 +361,7 @@ export async function POST(req: NextRequest) {
   try {
     const result = await callGemini(fullSystem, messages);
     console.log(`[ai-coach] Gemini responded OK | coach=${coachName}`);
-    return NextResponse.json({ response: result, engine: "gemini", coach: coachName });
+    return NextResponse.json({ response: result, engine: "gemini", coach: coachName, gaps: serverCtx.gaps });
   } catch (geminiErr) {
     console.error(`[ai-coach] Gemini FAILED | coach=${coachName} | error:`, geminiErr instanceof Error ? geminiErr.message : geminiErr);
   }
@@ -358,7 +369,7 @@ export async function POST(req: NextRequest) {
   try {
     const result = await callDeepSeekFallback(fullSystem, messages);
     console.log(`[ai-coach] DeepSeek fallback responded OK | coach=${coachName}`);
-    return NextResponse.json({ response: result, engine: "deepseek", coach: coachName });
+    return NextResponse.json({ response: result, engine: "deepseek", coach: coachName, gaps: serverCtx.gaps });
   } catch (err) {
     console.error(`[ai-coach] DeepSeek fallback ALSO FAILED | coach=${coachName} | error:`, err instanceof Error ? err.message : err);
   }
