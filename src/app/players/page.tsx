@@ -17,6 +17,7 @@ interface PlayerCard {
   sport: string | null;
   province: string | null;
   age_group: string | null;
+  gender: "Male" | "Female" | null;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -112,6 +113,11 @@ function PlayerTile({ player }: { player: PlayerCard }) {
             <MapPin className="h-2.5 w-2.5" />{player.province}
           </span>
         )}
+        {player.gender && (
+          <span className="px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700 font-medium">
+            {player.gender === "Male" ? "♂" : "♀"} {player.gender}
+          </span>
+        )}
       </div>
     </Link>
   );
@@ -134,6 +140,7 @@ export default function PlayersPage() {
   const [sport, setSport]       = useState("");
   const [province, setProvince] = useState("");
   const [position, setPosition] = useState("");
+  const [gender, setGender]     = useState("");
 
   const fetchPlayers = useCallback(async (pageNum: number) => {
     setLoading(true);
@@ -143,6 +150,7 @@ export default function PlayersPage() {
       if (sport)    params.set("sport",    sport);
       if (province) params.set("province", province);
       if (position) params.set("position", position);
+      if (gender)   params.set("gender",   gender);
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/players/browse?${params}`
@@ -157,25 +165,26 @@ export default function PlayersPage() {
     } finally {
       setLoading(false);
     }
-  }, [sport, province, position]);
+  }, [sport, province, position, gender]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
     fetchPlayers(1);
-  }, [sport, province, position]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sport, province, position, gender]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (page === 1) return;
     fetchPlayers(page);
   }, [page, fetchPlayers]);
 
-  const activeFilters = [sport, province, position].filter(Boolean).length;
+  const activeFilters = [sport, province, position, gender].filter(Boolean).length;
 
   const clearFilters = () => {
     setSport("");
     setProvince("");
     setPosition("");
+    setGender("");
   };
 
   return (
@@ -291,6 +300,31 @@ export default function PlayersPage() {
                     className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Gender pills */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Gender</p>
+              <div className="flex gap-2">
+                {(["", "Male", "Female"] as const).map((g) => {
+                  const label  = g === "" ? "All" : g;
+                  const active = gender === g;
+                  return (
+                    <button
+                      key={label}
+                      onClick={() => setGender(g)}
+                      className="px-3 py-1 rounded-full text-xs font-medium border transition-colors"
+                      style={{
+                        background:  active ? GRS_GREEN : "white",
+                        color:       active ? "white" : "#374151",
+                        borderColor: active ? GRS_GREEN : "#d1d5db",
+                      }}
+                    >
+                      {g === "Male" ? "♂ Male" : g === "Female" ? "♀ Female" : "All"}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
