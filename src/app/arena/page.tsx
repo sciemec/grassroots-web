@@ -114,6 +114,17 @@ interface Comment {
   user?: { id: string; name: string; first_name?: string; surname?: string; role: string };
 }
 
+interface SuggestedUser {
+  id: string;
+  initials: string;
+  role: string;
+  sport?: string;
+  province?: string;
+  match_reason: string;
+  score: number;
+  joined_ago: string;
+}
+
 // Showcase discover feed — GET /showcase/discover
 interface ArenaVideo {
   id:             string;
@@ -221,6 +232,11 @@ export default function ArenaPage() {
   const [pipedPlayers, setPipedPlayers] = useState<Set<string>>(new Set());
   const [showFilters,  setShowFilters]  = useState(false);
 
+  // ── Suggested users ("People you may know") ───────────────────────────────
+  const [suggestions,          setSuggestions]          = useState<SuggestedUser[]>([]);
+  const [followedSuggestions,  setFollowedSuggestions]  = useState<Set<string>>(new Set());
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
+
   const authToken = token;
 
   // ── Build scholarship matches when pathways tab is opened ────────────────
@@ -324,6 +340,15 @@ export default function ArenaPage() {
   useEffect(() => {
     fetchVideos();
   }, [fetchVideos]);
+
+  // ── Fetch suggested users (for-you tab only) ──────────────────────────────
+  useEffect(() => {
+    if (!token || !user || activeTab !== "for-you") return;
+    fetch(`${API}/arena/suggested`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setSuggestions(safeArray<SuggestedUser>(d.data)); })
+      .catch(() => {});
+  }, [token, user, activeTab]);
 
   // Scroll to the ?play= post once the feed has loaded
   useEffect(() => {
@@ -768,6 +793,16 @@ export default function ArenaPage() {
         method: "POST", headers: { Authorization: `Bearer ${authToken}` },
       });
       setFollowing(prev => new Set([...prev, playerId]));
+    } catch {}
+  };
+
+  const followSuggestion = async (id: string) => {
+    setFollowedSuggestions(prev => new Set(prev).add(id));
+    try {
+      await fetch(`${API}/arena/follow/${id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token ?? ""}` },
+      });
     } catch {}
   };
 
@@ -1216,6 +1251,52 @@ export default function ArenaPage() {
                 </button>
               ))}
             </div>
+
+            {/* People you may know — for-you tab only */}
+            {activeTab === "for-you" && user && suggestions.filter(s => !dismissedSuggestions.has(s.id)).length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-1">People you may know</p>
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                  {suggestions
+                    .filter(s => !dismissedSuggestions.has(s.id))
+                    .slice(0, 6)
+                    .map(s => {
+                      const roleColor = s.role === "coach" ? "#0369a1" : s.role === "scout" ? "#7c3aed" : GRS_GREEN;
+                      const followed  = followedSuggestions.has(s.id);
+                      return (
+                        <div key={s.id} className="relative flex-shrink-0 w-36 bg-white rounded-2xl border border-gray-200 p-3 flex flex-col items-center gap-2">
+                          <button
+                            onClick={() => setDismissedSuggestions(prev => new Set(prev).add(s.id))}
+                            className="absolute top-2 right-2 text-gray-300 hover:text-gray-500 transition-colors"
+                            aria-label="Dismiss">
+                            <X size={12} />
+                          </button>
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                            style={{ background: roleColor }}>
+                            {s.initials}
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full text-white"
+                            style={{ background: roleColor }}>
+                            {s.role}
+                          </span>
+                          <p className="text-[11px] text-gray-500 text-center leading-tight">{s.match_reason}</p>
+                          <button
+                            onClick={() => followSuggestion(s.id)}
+                            disabled={followed}
+                            className="w-full text-xs font-bold py-1 rounded-lg border transition-colors"
+                            style={{
+                              borderColor: followed ? "#d1d5db" : GRS_GREEN,
+                              color:       followed ? "#9ca3af" : GRS_GREEN,
+                              background:  followed ? "#f9fafb" : "transparent",
+                            }}>
+                            {followed ? "✓ Following" : "+ Follow"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
 
             {/* Posts feed */}
             {!user && (activeTab === "following" || activeTab === "connections") ? (
