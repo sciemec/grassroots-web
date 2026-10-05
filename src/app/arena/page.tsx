@@ -97,6 +97,7 @@ interface Post {
   created_at: string;
   liked?: number;
   my_reaction?: string | null;
+  reactions?: Record<string, number>;
   from_whatsapp?: boolean;
   recorded_by?: string;
   has_video?: boolean;
@@ -517,13 +518,36 @@ export default function ArenaPage() {
     setSubmittingComment(prev => ({ ...prev, [postId]: false }));
   };
 
-  const handleLike = async (postId: string) => {
+  const handleLike = async (postId: string, reaction = "heart") => {
     if (!user) { setShowLoginPrompt(true); setTimeout(() => setShowLoginPrompt(false), 3000); return; }
-    setPosts(prev => prev.map(p => p.id !== postId ? p : { ...p, liked: p.liked === 1 ? 0 : 1, like_count: p.liked === 1 ? p.like_count - 1 : p.like_count + 1 }));
+    // Optimistic: toggle off same reaction, otherwise mark new reaction
+    setPosts(prev => prev.map(p => {
+      if (p.id !== postId) return p;
+      const toggling = p.my_reaction === reaction;
+      return {
+        ...p,
+        liked:       toggling ? 0 : 1,
+        like_count:  toggling ? p.like_count - 1 : (p.my_reaction ? p.like_count : p.like_count + 1),
+        my_reaction: toggling ? null : reaction,
+      };
+    }));
     try {
-      await fetch(`${API}/arena/posts/${postId}/like`, {
-        method: "POST", headers: { Authorization: `Bearer ${authToken}` },
+      const res = await fetch(`${API}/arena/posts/${postId}/like`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ reaction }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        // Sync server counts into state
+        setPosts(prev => prev.map(p => p.id !== postId ? p : {
+          ...p,
+          like_count:  data.total  ?? p.like_count,
+          my_reaction: data.reaction ?? null,
+          reactions:   data.reactions ?? p.reactions,
+          liked:       data.reaction ? 1 : 0,
+        }));
+      }
     } catch { fetchPosts(); }
   };
 
@@ -1563,11 +1587,40 @@ export default function ArenaPage() {
 
                     {/* Action buttons */}
                     <div className="px-4 py-2 border-t border-gray-100 flex items-center gap-6">
-                      <button onClick={() => handleLike(post.id)}
-                        className={`flex items-center gap-2 text-sm transition ${post.liked === 1 ? "text-red-500" : "text-gray-500 hover:text-red-500"}`}>
-                        <Heart size={16} fill={post.liked === 1 ? "currentColor" : "none"} />
-                        Like
-                      </button>
+                      {(post.post_type === "milestone" || post.post_type === "achievement") ? (
+                        // Emoji reaction bar for milestone / achievement posts
+                        <div className="flex items-center gap-1">
+                          {([
+                            { emoji: "🔥", key: "fire",   title: "Fire" },
+                            { emoji: "💪", key: "strong", title: "Strong" },
+                            { emoji: "🏆", key: "trophy", title: "Trophy" },
+                            { emoji: "👏", key: "clap",   title: "Clap" },
+                          ] as const).map(({ emoji, key, title }) => {
+                            const active = post.my_reaction === key;
+                            const count  = post.reactions?.[key] ?? 0;
+                            return (
+                              <button
+                                key={key}
+                                title={title}
+                                onClick={() => handleLike(post.id, key)}
+                                className={`flex items-center gap-0.5 text-sm px-2 py-1 rounded-full transition-all ${
+                                  active
+                                    ? "bg-amber-100 ring-1 ring-amber-400 scale-110"
+                                    : "hover:bg-gray-100"
+                                }`}>
+                                <span className="text-base leading-none">{emoji}</span>
+                                {count > 0 && <span className={`text-[11px] font-semibold ${active ? "text-amber-700" : "text-gray-500"}`}>{count}</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <button onClick={() => handleLike(post.id)}
+                          className={`flex items-center gap-2 text-sm transition ${post.liked === 1 ? "text-red-500" : "text-gray-500 hover:text-red-500"}`}>
+                          <Heart size={16} fill={post.liked === 1 ? "currentColor" : "none"} />
+                          Like
+                        </button>
+                      )}
                       <button onClick={() => loadComments(post.id)}
                         className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#1a5c2a] transition">
                         <MessageCircle size={16} /> Comment
