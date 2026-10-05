@@ -13,7 +13,7 @@ interface Props { params: Promise<{ id: string }> }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   try {
-    const res = await fetch(`${API}/player/public/${id}?by=passport_token`, { cache:'no-store' });
+    const res = await fetch(`${API}/player/public/${id}`, { cache:'no-store' });
     if (!res.ok) return { title:'GRS Talent Passport' };
     const d = await res.json();
     const p = d.player ?? d.data ?? d;
@@ -38,10 +38,10 @@ export default async function PassportPage({ params }: Props) {
   if (!id || id.length < 10) notFound();
 
   const [playerRes, vaultRes, drillRes, reelRes] = await Promise.all([
-    fetch(`${API}/player/public/${id}?by=passport_token`,                  { cache:'no-store' }),
-    fetch(`${API}/player/vault/${id}?by=passport_token&visibility=public`,  { cache:'no-store' }),
-    fetch(`${API}/player/drill-scores/${id}?by=passport_token`,             { cache:'no-store' }),
-    fetch(`${API}/player/scholarship-reel/${id}?by=passport_token`,         { cache:'no-store' }),
+    fetch(`${API}/player/public/${id}`,                         { cache:'no-store' }),
+    fetch(`${API}/player/vault/${id}?visibility=public`,        { cache:'no-store' }),
+    fetch(`${API}/player/drill-scores/${id}`,                   { cache:'no-store' }),
+    fetch(`${API}/player/scholarship-reel/${id}`,               { cache:'no-store' }),
   ]);
 
   if (!playerRes.ok) notFound();
