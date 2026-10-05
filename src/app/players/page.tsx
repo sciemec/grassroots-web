@@ -37,6 +37,20 @@ const SPORTS = [
   "Cricket", "Swimming", "Tennis", "Volleyball", "Hockey",
 ];
 
+function formatAgeGroup(ag: string | null): string | null {
+  if (!ag) return null;
+  const v = ag.toLowerCase().replace(/[-\s]/g, "_");
+  const map: Record<string, string> = {
+    under_13: "U13", "13_17": "U17",
+    u12: "U12", u13: "U13", u14: "U14", u15: "U15",
+    u16: "U16", u17: "U17", u18: "U18",
+    u20: "U20", u21: "U21", u23: "U23",
+    senior: "Senior", adult: "Senior", "18_plus": "Senior",
+    open: "Open",
+  };
+  return map[v] ?? null;
+}
+
 const SPORT_EMOJI: Record<string, string> = {
   football: "⚽", rugby: "🏉", athletics: "🏃", netball: "⛹️",
   basketball: "🏀", cricket: "🏏", swimming: "🏊", tennis: "🎾",
@@ -116,6 +130,11 @@ function PlayerTile({ player }: { player: PlayerCard }) {
         {player.gender && (
           <span className="px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700 font-medium">
             {player.gender === "Male" ? "♂" : "♀"} {player.gender}
+          </span>
+        )}
+        {formatAgeGroup(player.age_group) && (
+          <span className="px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700 font-medium">
+            {formatAgeGroup(player.age_group)}
           </span>
         )}
       </div>
