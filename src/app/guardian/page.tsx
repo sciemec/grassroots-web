@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import {
   Shield, UserPlus, Users, Link as LinkIcon, LogOut,
-  ChevronRight, AlertTriangle, Trash2, Clock, X,
+  ChevronRight, AlertTriangle, Trash2, Clock, X, SlidersHorizontal,
 } from "lucide-react";
 
 interface Dependent {
@@ -29,7 +29,7 @@ interface LinkedPlayer {
 
 interface WithdrawTarget {
   linkId: string;
-  playerUserId: string | null;   // null = owned dependent
+  playerUserId: string | null;
   displayName: string;
   type: "owned" | "linked";
 }
@@ -57,14 +57,72 @@ const STATUS_LABEL: Record<string, { label: string; bg: string; color: string }>
   revoked:            { label: "Revoked",                bg: "#fee2e2", color: "#991b1b" },
 };
 
+const CONSENT_TYPES = [
+  {
+    key: "profile_visible",
+    label: "Scout Discovery",
+    desc: "Appears in scout search results and public player profile pages",
+  },
+  {
+    key: "video",
+    label: "Video & Media",
+    desc: "Showcase clips, highlight reels, and training videos visible to scouts",
+  },
+  {
+    key: "arena",
+    label: "Arena & Social",
+    desc: "Posts in The Arena, social connections, and public activity feed",
+  },
+  {
+    key: "biometrics",
+    label: "Biometric Data",
+    desc: "Physical measurements, fitness scores, and body composition data",
+  },
+  {
+    key: "ai_analysis",
+    label: "AI Analysis",
+    desc: "Biomechanics analysis, movement patterns, and AI coaching reports",
+  },
+];
+
+function Toggle({
+  on, onChange, disabled,
+}: {
+  on: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={() => !disabled && onChange(!on)}
+      aria-pressed={on}
+      style={{
+        width: 40, height: 22, borderRadius: 11, border: "none", padding: 0,
+        backgroundColor: on ? "#1a5c2a" : "#d1d5db",
+        cursor: disabled ? "not-allowed" : "pointer",
+        position: "relative", transition: "background-color 0.2s", flexShrink: 0,
+        opacity: disabled ? 0.6 : 1,
+      }}
+    >
+      <span style={{
+        position: "absolute", top: 3, left: on ? 21 : 3,
+        width: 16, height: 16, borderRadius: "50%",
+        backgroundColor: "#fff", transition: "left 0.15s",
+        display: "block",
+      }} />
+    </button>
+  );
+}
+
 function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_LABEL[status] ?? { label: status, bg: "#f3f4f6", color: "#374151" };
   return (
     <span style={{
       fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20,
-      backgroundColor: cfg.bg, color: cfg.color, textTransform: "uppercase", letterSpacing: "0.04em",
+      backgroundColor: cfg.bg, color: cfg.color, textTransform: "uppercase",
+      letterSpacing: "0.04em", display: "inline-flex", alignItems: "center", gap: 3,
     }}>
-      {status === "withdrawal_pending" && <Clock size={9} style={{ marginRight: 3, verticalAlign: "middle" }} />}
+      {status === "withdrawal_pending" && <Clock size={9} />}
       {cfg.label}
     </span>
   );
@@ -77,7 +135,7 @@ function WithdrawModal({
   onCancel: () => void;
   onConfirmed: (target: WithdrawTarget, reason: string) => Promise<void>;
 }) {
-  const [step, setStep]     = useState<1 | 2>(target.type === "owned" ? 1 : 1);
+  const [step, setStep]     = useState<1 | 2>(1);
   const [reason, setReason] = useState("");
   const [busy, setBusy]     = useState(false);
   const [error, setError]   = useState("");
@@ -105,7 +163,6 @@ function WithdrawModal({
         backgroundColor: "#fff", borderRadius: 16, width: "100%", maxWidth: 440,
         boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden",
       }}>
-        {/* Modal header */}
         <div style={{
           backgroundColor: "#fef2f2", borderBottom: "1px solid #fecaca",
           padding: "18px 20px", display: "flex", alignItems: "center", gap: 10,
@@ -261,13 +318,18 @@ export default function GuardianPage() {
   const user   = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
-  const [dependents,    setDependents]    = useState<Dependent[]>([]);
-  const [linkedPlayers, setLinkedPlayers] = useState<LinkedPlayer[]>([]);
-  const [loading,       setLoading]       = useState(true);
-  const [showAddForm,   setShowAddForm]   = useState(false);
-  const [saving,        setSaving]        = useState(false);
-  const [formError,     setFormError]     = useState("");
-  const [withdrawTarget, setWithdrawTarget] = useState<WithdrawTarget | null>(null);
+  const [dependents,      setDependents]      = useState<Dependent[]>([]);
+  const [linkedPlayers,   setLinkedPlayers]   = useState<LinkedPlayer[]>([]);
+  const [loading,         setLoading]         = useState(true);
+  const [showAddForm,     setShowAddForm]     = useState(false);
+  const [saving,          setSaving]          = useState(false);
+  const [formError,       setFormError]       = useState("");
+  const [withdrawTarget,  setWithdrawTarget]  = useState<WithdrawTarget | null>(null);
+
+  // Granular consent state
+  const [consentData,     setConsentData]     = useState<Record<string, Record<string, boolean>>>({});
+  const [expandedConsent, setExpandedConsent] = useState<string | null>(null);
+  const [consentSaving,   setConsentSaving]   = useState<Set<string>>(new Set());
 
   const [form, setForm] = useState({
     first_name: "", surname: "", dob: "", sport: "", position: "",
@@ -296,6 +358,54 @@ export default function GuardianPage() {
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { load(); }, [load]);
+
+  async function loadConsent(linkId: string) {
+    if (consentData[linkId]) return; // already loaded
+    try {
+      const res = await fetch(`${API}/guardian/consent-settings/${linkId}`, { headers });
+      if (res.ok) {
+        const j = await res.json();
+        setConsentData((prev) => ({ ...prev, [linkId]: j.data }));
+      }
+    } catch {
+      // Silently fail — toggles will show defaults (all on)
+    }
+  }
+
+  async function toggleConsent(linkId: string, dataType: string, newValue: boolean) {
+    const key = `${linkId}:${dataType}`;
+    setConsentSaving((prev) => new Set(prev).add(key));
+    // Optimistic update
+    setConsentData((prev) => ({
+      ...prev,
+      [linkId]: { ...(prev[linkId] ?? {}), [dataType]: newValue },
+    }));
+    try {
+      const res = await fetch(`${API}/guardian/consent-settings/${linkId}`, {
+        method: "PATCH", headers,
+        body: JSON.stringify({ data_type: dataType, consented: newValue }),
+      });
+      if (!res.ok) {
+        // Revert on API error
+        setConsentData((prev) => ({
+          ...prev,
+          [linkId]: { ...(prev[linkId] ?? {}), [dataType]: !newValue },
+        }));
+      }
+    } catch {
+      // Revert on network error
+      setConsentData((prev) => ({
+        ...prev,
+        [linkId]: { ...(prev[linkId] ?? {}), [dataType]: !newValue },
+      }));
+    } finally {
+      setConsentSaving((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }
+  }
 
   async function addDependent() {
     setFormError("");
@@ -350,7 +460,6 @@ export default function GuardianPage() {
 
     setWithdrawTarget(null);
 
-    // Update local state to reflect new status immediately.
     if (target.type === "owned") {
       setDependents((prev) => prev.filter((d) => d.id !== target.linkId));
     } else {
@@ -359,6 +468,8 @@ export default function GuardianPage() {
           lp.id === target.linkId ? { ...lp, status: "withdrawal_pending" } : lp
         )
       );
+      // Close consent panel if open for this link
+      if (expandedConsent === target.linkId) setExpandedConsent(null);
     }
   }
 
@@ -380,6 +491,9 @@ export default function GuardianPage() {
 
   const canWithdraw = (status: string) =>
     !["withdrawal_pending", "withdrawn", "revoked"].includes(status);
+
+  const canManageConsent = (status: string) =>
+    ["active", "pending"].includes(status);
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", padding: "24px 16px" }}>
@@ -575,63 +689,148 @@ export default function GuardianPage() {
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {linkedPlayers.map((lp) => (
-                <div key={lp.id} style={{ padding: "12px 14px", backgroundColor: "#f9fafb",
-                  borderRadius: 10, border: "1px solid #e5e5e5" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%",
-                        backgroundColor: "#e0f2fe", display: "flex", alignItems: "center",
-                        justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#0369a1" }}>
-                        {(lp.player?.name ?? "?")[0]}
-                      </div>
-                      <div>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: "#111", margin: 0 }}>
-                          {lp.player?.name ?? "Linked Player"}
-                        </p>
-                        <p style={{ fontSize: 11, color: "#6b7280", margin: 0 }}>
-                          {lp.age_group === "u13" ? "Under 13" : "13–17"}
-                          {lp.player?.sport ? ` · ${lp.player.sport}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <StatusBadge status={lp.status} />
-                      {canWithdraw(lp.status) && (
-                        <button
-                          onClick={() => setWithdrawTarget({
-                            linkId:       lp.id,
-                            playerUserId: lp.player_user_id,
-                            displayName:  lp.player?.name ?? "this player",
-                            type:         "linked",
-                          })}
-                          style={{
-                            display: "flex", alignItems: "center", gap: 4,
-                            padding: "5px 10px", borderRadius: 7,
-                            border: "1px solid #fecaca", backgroundColor: "#fef2f2",
-                            color: "#dc2626", fontWeight: 700, fontSize: 11, cursor: "pointer",
-                          }}>
-                          <Trash2 size={11} /> Withdraw
-                        </button>
-                      )}
-                      {!canWithdraw(lp.status) && lp.status !== "withdrawal_pending" && (
-                        <ChevronRight size={14} color="#9ca3af" />
-                      )}
-                    </div>
-                  </div>
+              {linkedPlayers.map((lp) => {
+                const isExpanded    = expandedConsent === lp.id;
+                const consent       = consentData[lp.id] ?? {};
+                const allConsented  = CONSENT_TYPES.every((t) => consent[t.key] !== false);
 
-                  {lp.status === "withdrawal_pending" && (
-                    <div style={{ marginTop: 10, padding: "8px 10px",
-                      backgroundColor: "#fef3c7", borderRadius: 8,
-                      display: "flex", alignItems: "center", gap: 6 }}>
-                      <Clock size={12} color="#92400e" />
-                      <p style={{ fontSize: 11, color: "#92400e", margin: 0 }}>
-                        Deletion in progress — this may take up to a minute.
-                      </p>
+                return (
+                  <div key={lp.id} style={{ backgroundColor: "#f9fafb",
+                    borderRadius: 10, border: "1px solid #e5e5e5", overflow: "hidden" }}>
+
+                    {/* Player row */}
+                    <div style={{ padding: "12px 14px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: "50%",
+                            backgroundColor: "#e0f2fe", display: "flex", alignItems: "center",
+                            justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#0369a1" }}>
+                            {(lp.player?.name ?? "?")[0]}
+                          </div>
+                          <div>
+                            <p style={{ fontSize: 13, fontWeight: 700, color: "#111", margin: 0 }}>
+                              {lp.player?.name ?? "Linked Player"}
+                            </p>
+                            <p style={{ fontSize: 11, color: "#6b7280", margin: 0 }}>
+                              {lp.age_group === "u13" ? "Under 13" : "13–17"}
+                              {lp.player?.sport ? ` · ${lp.player.sport}` : ""}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <StatusBadge status={lp.status} />
+
+                          {/* Manage Data button */}
+                          {canManageConsent(lp.status) && (
+                            <button
+                              onClick={() => {
+                                if (!isExpanded) loadConsent(lp.id);
+                                setExpandedConsent(isExpanded ? null : lp.id);
+                              }}
+                              title="Manage data consent"
+                              style={{
+                                display: "flex", alignItems: "center", gap: 3,
+                                padding: "5px 8px", borderRadius: 7,
+                                border: `1px solid ${allConsented ? "#d1fae5" : "#fde68a"}`,
+                                backgroundColor: allConsented ? "#f0fdf4" : "#fffbeb",
+                                color: allConsented ? "#1a5c2a" : "#92400e",
+                                fontWeight: 700, fontSize: 11, cursor: "pointer",
+                              }}>
+                              <SlidersHorizontal size={11} />
+                              Data
+                            </button>
+                          )}
+
+                          {canWithdraw(lp.status) && (
+                            <button
+                              onClick={() => setWithdrawTarget({
+                                linkId:       lp.id,
+                                playerUserId: lp.player_user_id,
+                                displayName:  lp.player?.name ?? "this player",
+                                type:         "linked",
+                              })}
+                              style={{
+                                display: "flex", alignItems: "center", gap: 4,
+                                padding: "5px 10px", borderRadius: 7,
+                                border: "1px solid #fecaca", backgroundColor: "#fef2f2",
+                                color: "#dc2626", fontWeight: 700, fontSize: 11, cursor: "pointer",
+                              }}>
+                              <Trash2 size={11} /> Withdraw
+                            </button>
+                          )}
+
+                          {!canWithdraw(lp.status) && lp.status !== "withdrawal_pending" && !canManageConsent(lp.status) && (
+                            <ChevronRight size={14} color="#9ca3af" />
+                          )}
+                        </div>
+                      </div>
+
+                      {lp.status === "withdrawal_pending" && (
+                        <div style={{ marginTop: 10, padding: "8px 10px",
+                          backgroundColor: "#fef3c7", borderRadius: 8,
+                          display: "flex", alignItems: "center", gap: 6 }}>
+                          <Clock size={12} color="#92400e" />
+                          <p style={{ fontSize: 11, color: "#92400e", margin: 0 }}>
+                            Deletion in progress — this may take up to a minute.
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    {/* Granular consent panel */}
+                    {isExpanded && (
+                      <div style={{
+                        borderTop: "1px solid #e5e5e5",
+                        backgroundColor: "#fff",
+                        padding: "14px 16px",
+                      }}>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: "#6b7280",
+                          textTransform: "uppercase", letterSpacing: "0.05em",
+                          marginBottom: 12 }}>
+                          Data permissions
+                        </p>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                          {CONSENT_TYPES.map((ct) => {
+                            const on      = consent[ct.key] !== false;
+                            const saving  = consentSaving.has(`${lp.id}:${ct.key}`);
+                            return (
+                              <div key={ct.key} style={{
+                                display: "flex", alignItems: "center",
+                                justifyContent: "space-between", gap: 12,
+                              }}>
+                                <div style={{ flex: 1 }}>
+                                  <p style={{ fontSize: 13, fontWeight: 600,
+                                    color: "#111", margin: 0 }}>
+                                    {ct.label}
+                                  </p>
+                                  <p style={{ fontSize: 11, color: "#6b7280", margin: 0, lineHeight: 1.4 }}>
+                                    {ct.desc}
+                                  </p>
+                                </div>
+                                <Toggle
+                                  on={on}
+                                  onChange={(v) => toggleConsent(lp.id, ct.key, v)}
+                                  disabled={saving}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {!allConsented && (
+                          <p style={{ fontSize: 11, color: "#92400e", marginTop: 12,
+                            backgroundColor: "#fffbeb", borderRadius: 8, padding: "8px 10px" }}>
+                            Some data types are turned off. Turning off a category hides
+                            that data from scouts and the public immediately.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
