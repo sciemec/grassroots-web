@@ -10221,6 +10221,64 @@ This entry documents everything built between 24 June and 8 July 2026 that was n
 
 ---
 
+### GUARDIAN GRANULAR CONSENT SYSTEM — FULLY BUILT (Oct 2026)
+
+Guardians can toggle consent for 5 data types per linked player.
+The toggle UI lives at `/parent/dashboard` (or any guardian-facing page that calls the consent API).
+
+#### Frontend page
+
+**`src/app/guardian/page.tsx`** — Guardian consent settings UI (commit `859c1f39`)
+- One toggle per data type: Video, Biometrics, AI Analysis, Profile Visible, Arena
+- `GET /guardian/consent-settings/{linkId}` → loads current state (missing row = true)
+- `PATCH /guardian/consent-settings/{linkId}` → saves a single toggle change
+- Optimistic UI — toggle flips instantly, reverts on API error
+
+#### Backend enforcement (bhora-ai — all deployed Oct 2026)
+
+| Endpoint | Consent type | Response when blocked |
+|---|---|---|
+| `GET /player/biomechanics` | `biometrics` | `{ data: [], composite_score: null }` |
+| `POST /player/biomechanics` | `biometrics` | `201 { data: [] }` silent |
+| `GET /player/biomechanics/risk` | `biometrics` | `{ data: null }` |
+| `GET /player/biometrics/scans` | `biometrics` | `{ data: [] }` |
+| `POST /player/drill-analysis` | `ai_analysis` | `201 { data: { saved: false }, benchmark: null }` |
+| `POST /coach/squad/{id}/biometric-scan` | `biometrics` | `403` with message to coach |
+| `POST /arena/posts` | `arena` | `201 { data: null }` silent |
+| `POST /arena/posts/share-video` | `arena` | `201 { data: null }` silent |
+| `POST /arena/posts/{id}/like` | `arena` | `{ liked: false, like_count: 0 }` |
+| `POST /arena/posts/{id}/comments` | `arena` | `201 { comment: null }` silent |
+| `POST /arena/follow/{id}` | `arena` | `{ followed: false }` silent |
+| `POST /arena/connections/{id}` | `arena` | `403` with message |
+| `POST /arena/messages/{id}` | `arena` | `403` with message |
+
+#### Design rules (PERMANENT)
+
+1. **Player-facing blocked responses are always silent** — never show the player an error about their guardian's settings. Use empty data + 201.
+2. **Coach-facing blocked responses return 403** — coaches must know when a save was blocked.
+3. **Passive reads are never blocked** — feed browsing, view tracking, reporting safety actions always pass through.
+4. **Missing consent row = consented** — guardians must explicitly revoke. Default-open prevents locking out players whose guardians haven't engaged with settings.
+5. **`POST /player/biomechanics` is a web app endpoint** — it receives MediaPipe pose analysis computed client-side in the browser via `super-engine.ts`. It is NOT Flutter.
+
+#### Consent types and their immediate side effects (backend)
+
+| Type | When turned OFF |
+|---|---|
+| `profile_visible` | `player_profiles.scout_visible = false` |
+| `video` | `player_showcases.open_for_scouting = false` |
+| `arena` | `guardian_links.public_profile_opt_in = false` |
+| `biometrics` | Stored only — enforced at read-time |
+| `ai_analysis` | Stored only — enforced at read-time |
+
+#### bhora-ai commits (Oct 2026)
+- `fa00d1d` — migration + model + GuardianConsentSettingsController + routes
+- `d797941` — biometrics gate on player biomechanics endpoints
+- `0022b4b` — ai_analysis gate + coach-side biometrics gate
+- `c65ef30` — arena consent gate (posts, likes, comments, follows, connections, messages)
+- `122dbad` — CLAUDE.md documentation
+
+---
+
 ### PLAYER SKILL ANALYZERS (7 pages)
 
 ```
@@ -11261,3 +11319,39 @@ September 23 2026, same contact email). `/privacy-policy` is the canonical URL.
 
 **`/privacy-policy` remains untouched** — it is the only privacy page going forward.
 
+
+
+---
+
+## SESSION LOG — 7 October 2026
+
+### Theme — Guardian Granular Consent System
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### Guardian Granular Consent System — FULLY BUILT ✅
+
+**Frontend commit:** `859c1f39` (grassroots-web)
+
+**File:** `src/app/guardian/page.tsx`
+- Guardian consent settings page with 5 toggles: Video, Biometrics, AI Analysis, Profile Visible, Arena
+- Calls `GET /guardian/consent-settings/{linkId}` on load — missing rows default to `true` (consented)
+- Each toggle calls `PATCH /guardian/consent-settings/{linkId}` with `{ data_type, consented }`
+- Optimistic UI — flips instantly, reverts on API error
+- Disabled when link status is `withdrawn` or `withdrawal_pending`
+
+**Backend commits (bhora-ai):** `fa00d1d`, `d797941`, `0022b4b`, `c65ef30`, `122dbad`
+
+All 13 enforcement points deployed. See the GUARDIAN GRANULAR CONSENT SYSTEM section above for the full enforcement map and design rules.
+
+---
+
+### WHAT STILL NEEDS DOING (Oct 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Guardian consent UI wired in `/parent/dashboard` | NOT YET DONE | Add "Manage Data Settings" link/card pointing to `/guardian?linkId={linkId}` |
+| `video` consent gate on showcase upload | NOT YET DONE | `POST /player/showcase` should check `video` consent before saving |
+| `profile_visible` gate on public profile | NOT YET DONE | `GET /player/public/{id}` should return 404 when `scout_visible = false` |
