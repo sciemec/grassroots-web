@@ -52,12 +52,14 @@ export async function POST(req: NextRequest) {
   let message = '';
   let context = '';
   let history: { role: string; content: string }[] = [];
+  let lang = 'en';
 
   try {
     const body = await req.json();
     message = body.message ?? '';
     context = typeof body.context === 'string' ? body.context : '';
     history = Array.isArray(body.history) ? body.history : [];
+    if (body.lang === 'sn' || body.lang === 'nd') lang = body.lang;
   } catch {
     return NextResponse.json({ reply: 'Reply HELP to see all commands.' });
   }
@@ -70,12 +72,17 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // System instruction = base prompt + personalised player context (if provided).
+  // System instruction = base prompt + language directive + player context.
   // Context already includes the minor safety block when the player is under-18
   // (injected server-side by ThutoContextService::buildContext()).
-  const systemInstruction = context
-    ? `${BASE_SYSTEM_PROMPT}\n\n${context}`
-    : BASE_SYSTEM_PROMPT;
+  const LANG_INSTRUCTION: Record<string, string> = {
+    sn: 'Reply in ChiShona (Shona). Pindura muChiShona.',
+    nd: 'Reply in isiNdebele (Ndebele). Phendula ngesiNdebele.',
+  };
+  const langLine = LANG_INSTRUCTION[lang] ?? '';
+  const systemInstruction = [BASE_SYSTEM_PROMPT, langLine, context]
+    .filter(Boolean)
+    .join('\n\n');
 
   // Build message array: stored 'model' role → 'assistant' for both AI APIs,
   // then append the current question as the final user turn.
