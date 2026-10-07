@@ -4,8 +4,6 @@
 import { useState, useEffect } from 'react';
 import { Send, Users, DollarSign } from 'lucide-react';
 
-const affiliateUrl = process.env.NEXT_PUBLIC_BETWAY_AFFILIATE_URL ?? '';
-
 export default function WhatsAppAdminPage() {
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -139,27 +137,22 @@ export default function WhatsAppAdminPage() {
         <h3 className="text-sm font-bold mb-3">Quick Templates</h3>
         <div className="space-y-2">
           <button
-            onClick={() => setMessage(
-              '⚽ LIVE: Match starting in 15 minutes!' +
-              (affiliateUrl ? `\n\n🔗 Bet now: ${affiliateUrl}` : '')
-            )}
+            onClick={() => setMessage('⚽ LIVE: Match starting in 15 minutes!')}
             className="w-full text-left p-3 bg-white rounded-lg text-sm hover:bg-gray-100"
           >
-            📢 Pre-match reminder + betting link
+            📢 Pre-match reminder
           </button>
           <button
             onClick={() => setMessage(
-              '🎙️ HALF-TIME ANALYSIS available now!\n\nReply "HALF" for AI analysis of the first half.' +
-              (affiliateUrl ? `\n\n💰 Betting specials: ${affiliateUrl}` : '')
+              '🎙️ HALF-TIME ANALYSIS available now!\n\nReply "HALF" for AI analysis of the first half.'
             )}
             className="w-full text-left p-3 bg-white rounded-lg text-sm hover:bg-gray-100"
           >
-            🎙️ Halftime analysis promo
+            🎙️ Halftime analysis
           </button>
           <button
             onClick={() => setMessage(
-              '🏁 FULL TIME!\n\nFinal score and match summary available.\n\n📱 Share with friends!' +
-              (affiliateUrl ? `\n🔗 Next match odds: ${affiliateUrl}` : '')
+              '🏁 FULL TIME!\n\nFinal score and match summary available.\n\n📱 Share with friends!'
             )}
             className="w-full text-left p-3 bg-white rounded-lg text-sm hover:bg-gray-100"
           >

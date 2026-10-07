@@ -26,7 +26,22 @@ const BETTING_PARTNERS = {
   }
 };
 
-export function BettingOdds({ match, odds }: { match: any; odds: any }) {
+const ADULT_AGE_GROUPS = ['18_25', '26_plus'] as const;
+
+export function BettingOdds({
+  match,
+  odds,
+  userAgeGroup,
+}: {
+  match: any;
+  odds: any;
+  userAgeGroup?: string;
+}) {
+  // Never render betting content for minors or users with unknown age
+  if (!userAgeGroup || !(ADULT_AGE_GROUPS as readonly string[]).includes(userAgeGroup)) {
+    return null;
+  }
+
   const [selectedBookie, setSelectedBookie] = useState<string | null>(null);
 
   return (
@@ -77,8 +92,8 @@ export function BettingOdds({ match, odds }: { match: any; odds: any }) {
         ))}
       </div>
       
-      <p className="text-[7px] text-gray-400 text-center mt-3">
-        18+. T&Cs apply. Gambling responsibly. We earn commission from qualified signups.
+      <p className="text-xs text-gray-500 text-center mt-3 font-medium">
+        18+ only. Gamble responsibly. T&Cs apply.
       </p>
     </div>
   );

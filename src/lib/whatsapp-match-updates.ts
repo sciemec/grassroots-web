@@ -14,9 +14,18 @@ export interface MatchUpdate {
   sponsor?: string;
 }
 
-export function generateWhatsAppMessage(update: MatchUpdate, affiliateLink: string): string {
-  const timestamp = new Date().toLocaleTimeString();
-  
+const ADULT_AGE_GROUPS = ['18_25', '26_plus'] as const;
+
+export function generateWhatsAppMessage(
+  update: MatchUpdate,
+  affiliateLink: string,
+  userAgeGroup?: string,
+): string {
+  const isAdult = !!userAgeGroup && (ADULT_AGE_GROUPS as readonly string[]).includes(userAgeGroup);
+  const bettingLine = isAdult && affiliateLink
+    ? `\n\n🔗 ${affiliateLink}\n⚠️ 18+ only. Gamble responsibly.`
+    : '';
+
   switch (update.type) {
     case 'goal':
       return `
@@ -25,11 +34,9 @@ ${update.minute}' minute
 
 🎙️ "${update.sponsor || 'This goal'} brought to you by GrassRoots Sports"
 
-📊 Score: ${update.homeScore} - ${update.awayScore}
-
-🔗 Bet on next goal: ${affiliateLink}
+📊 Score: ${update.homeScore} - ${update.awayScore}${bettingLine}
       `.trim();
-      
+
     case 'halftime':
       return `
 🎙️ HALF-TIME ANALYSIS - ${update.minute}' minutes played
@@ -40,11 +47,9 @@ Away: ${update.awayPossession}% possession, ${update.awayShots} shots
 
 🤖 AI BOT DEBATE:
 "The Analyst says: ${generateAnalystComment(update)}"
-"The Pundit says: ${generatePunditComment(update)}"
-
-💰 Second half specials: ${affiliateLink}
+"The Pundit says: ${generatePunditComment(update)}"${bettingLine}
       `.trim();
-      
+
     case 'stats':
       return `
 📊 MATCH STATS - ${update.minute}' minute
@@ -53,19 +58,15 @@ Possession:  ${update.homePossession}% - ${update.awayPossession}%
 Shots:       ${update.homeShots} - ${update.awayShots}
 On target:   ${Math.floor(update.homeShots * 0.4)} - ${Math.floor(update.awayShots * 0.3)}
 
-🔮 ${update.homePossession > 55 ? 'Home team dominating' : 'Close contest'}
-
-🔗 Live odds: ${affiliateLink}
+🔮 ${update.homePossession > 55 ? 'Home team dominating' : 'Close contest'}${bettingLine}
       `.trim();
-      
+
     default:
       return `
 ⚽ LIVE: ${update.minute}' minute
 ${update.homeScore} - ${update.awayScore}
 
-${update.eventDescription || 'End to end action!'}
-
-🔗 Bet now: ${affiliateLink}
+${update.eventDescription || 'End to end action!'}${bettingLine}
       `.trim();
   }
 }
