@@ -2,7 +2,7 @@
 // WhatsApp messaging via Meta Cloud API
 // Replaces former Twilio SDK implementation
 
-const GRAPH_URL = 'https://graph.facebook.com/v19.0';
+const GRAPH_URL = 'https://graph.facebook.com/v22.0';
 
 export interface Subscriber {
   phoneNumber: string;

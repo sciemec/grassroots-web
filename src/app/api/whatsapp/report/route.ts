@@ -12,7 +12,7 @@
  * Body: { to, home_team, away_team, home_score, away_score, summary?, match_url? }
  */
 
-const GRAPH_URL = "https://graph.facebook.com/v19.0";
+const GRAPH_URL = "https://graph.facebook.com/v22.0";
 
 interface ReportBody {
   to?: string;

@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { putBinaryObject } from '@/lib/r2';
 
-const GRAPH_URL = 'https://graph.facebook.com/v19.0';
+const GRAPH_URL = 'https://graph.facebook.com/v22.0';
 const API       = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
 
 // Words that are never treated as Arena posts
