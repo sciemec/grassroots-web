@@ -11348,10 +11348,10 @@ All 13 enforcement points deployed. See the GUARDIAN GRANULAR CONSENT SYSTEM sec
 
 ---
 
-### WHAT STILL NEEDS DOING (Oct 2026)
+### ALL ITEMS COMPLETE — NO OUTSTANDING WORK (Oct 2026)
 
-| Item | Status | Action Required |
+| Item | Status | Commit |
 |---|---|---|
-| Guardian consent UI wired in `/parent/dashboard` | NOT YET DONE | Add "Manage Data Settings" link/card pointing to `/guardian?linkId={linkId}` |
-| `video` consent gate on showcase upload | NOT YET DONE | `POST /player/showcase` should check `video` consent before saving |
-| `profile_visible` gate on public profile | NOT YET DONE | `GET /player/public/{id}` should return 404 when `scout_visible = false` |
+| Guardian consent UI wired in `/parent/dashboard` | DONE ✅ | `f91b9951` — "Manage Data Settings" card added, links to `/guardian` |
+| `video` consent gate on showcase upload | DONE ✅ | `9cea0a6` — `hasConsentFor('video')` added to `ShowcaseController::store()` |
+| `profile_visible` gate on public profile | ALREADY EXISTED ✅ | `PublicPlayerController::show()` lines 192–199 had gate before this session |
