@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ChevronLeft, AlertCircle, CheckCircle2,
-  Activity, Zap, Shield, Trophy, MessageCircle,
+  Activity, Zap, Shield, Trophy, MessageCircle, SlidersHorizontal,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -304,6 +304,30 @@ export default function ParentDashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Manage Data Settings */}
+        <Link
+          href="/guardian"
+          style={{
+            display: "flex", alignItems: "center", gap: 12,
+            background: "#fff", borderRadius: 16, padding: 20,
+            border: "1px solid #e5e5e5", textDecoration: "none",
+          }}
+        >
+          <div style={{
+            width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+            background: GRS_GREEN + "12", display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <SlidersHorizontal size={20} color={GRS_GREEN} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>Manage Data Settings</div>
+            <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+              Control what data can be collected, shared, and analysed
+            </div>
+          </div>
+          <ChevronLeft size={16} color="#9ca3af" style={{ transform: "rotate(180deg)" }} />
+        </Link>
 
         {/* Addon expiry */}
         <div style={{ fontSize: 11, color: "#aaa", textAlign: "center" }}>
