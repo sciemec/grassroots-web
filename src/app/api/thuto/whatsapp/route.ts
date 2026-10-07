@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { geminiText } from '@/lib/gemini';
 
 // POST /api/thuto/whatsapp
 // ─────────────────────────────────────────────────────────────────────────────
@@ -6,13 +7,12 @@ import { NextRequest, NextResponse } from 'next/server';
 // "THUTO <question>" or "AMARA <question>" via WhatsApp.
 //
 // Input:  { from: "+263...", message: "THUTO how do I sprint faster?" }
-// Output: { reply: "short coaching text (max ~150 chars for WhatsApp)" }
+// Output: { reply: "short coaching text" }
 //
-// Uses Gemini 2.0 Flash (primary) or Anthropic Claude (fallback) — same provider
-// stack as THUTO chat on the web app.
+// Uses Gemini (primary, model from @/lib/gemini) or Claude Haiku (fallback).
+// Model ID is NOT hardcoded here — it follows GEMINI_TEXT_MODEL in gemini.ts.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const GEMINI_API_KEY    = process.env.GEMINI_API_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
 // Strip the command keyword (THUTO / AMARA / COACH) from the raw message
@@ -58,30 +58,17 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // ── Try Gemini first ────────────────────────────────────────────────────────
-  if (GEMINI_API_KEY) {
+  // ── Try Gemini first (model ID sourced from @/lib/gemini — not hardcoded) ──
+  if (process.env.GEMINI_API_KEY) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: [{ role: 'user', parts: [{ text: question }] }],
-          generationConfig: { maxOutputTokens: 80 },
-        }),
-        signal: AbortSignal.timeout(15_000),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-        if (text) {
-          return NextResponse.json({ reply: trimForWhatsApp(text) });
-        }
-      }
+      const text = await geminiText(
+        SYSTEM_PROMPT,
+        [{ role: 'user', content: question }],
+        { max_tokens: 200 },  // ~150 words — enough for a useful coaching reply
+      );
+      if (text) return NextResponse.json({ reply: trimForWhatsApp(text) });
     } catch {
-      // Fall through to Anthropic
+      // Fall through to Anthropic fallback
     }
   }
 
@@ -97,7 +84,7 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           model:      'claude-haiku-4-5-20251001',   // cheapest Claude — fine for short WhatsApp replies
-          max_tokens: 80,
+          max_tokens: 200,
           system:     SYSTEM_PROMPT,
           messages: [{ role: 'user', content: question }],
         }),
