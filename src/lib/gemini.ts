@@ -20,10 +20,23 @@ interface Message {
   content: string;
 }
 
+// Trim text back to the last complete sentence (ends with . ! ?).
+// Used when Gemini returns finishReason=MAX_TOKENS to avoid mid-sentence cuts.
+function trimToLastSentence(text: string): string {
+  const re = /[.!?](?=\s|$)/g;
+  let lastBoundary = -1;
+  let m = re.exec(text);
+  while (m !== null) {
+    lastBoundary = m.index + 1; // include the punctuation
+    m = re.exec(text);
+  }
+  return lastBoundary > 20 ? text.slice(0, lastBoundary).trim() : text.trim();
+}
+
 export async function geminiText(
   systemPrompt: string,
   messages: Message[],
-  options: { max_tokens?: number; temperature?: number; model?: string } = {},
+  options: { max_tokens?: number; temperature?: number; model?: string; timeout_ms?: number } = {},
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured in Vercel environment variables.");
@@ -43,7 +56,7 @@ export async function geminiText(
     }
   }
 
-  const res = await fetch(url, {
+  const fetchOptions: RequestInit = {
     method:  "POST",
     headers: { "Content-Type": "application/json" },
     body:    JSON.stringify({
@@ -54,16 +67,37 @@ export async function geminiText(
         temperature:     options.temperature ?? 0.7,
       },
     }),
-  });
+  };
+  if (options.timeout_ms) fetchOptions.signal = AbortSignal.timeout(options.timeout_ms);
+
+  const res = await fetch(url, fetchOptions);
 
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`Gemini error ${res.status}: ${err}`);
   }
 
-  const data  = await res.json();
-  const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined;
-  if (!reply) throw new Error("Gemini returned an empty response.");
+  const data         = await res.json();
+  const candidate    = data?.candidates?.[0];
+  const finishReason = candidate?.finishReason as string | undefined;
+  const parts        = (candidate?.content?.parts ?? []) as { text?: string }[];
+  const tokenCount   = data?.usageMetadata?.candidatesTokenCount as number | undefined;
+
+  // Join ALL text parts — Gemini can split output across multiple parts
+  let reply = parts.map((p) => p.text ?? "").join("");
+
+  console.log(
+    `[gemini] finishReason=${finishReason ?? "none"} parts=${parts.length}` +
+    ` tokens=${tokenCount ?? "?"} replyLen=${reply.length}`,
+  );
+
+  if (finishReason === "MAX_TOKENS") {
+    reply = trimToLastSentence(reply);
+  }
+  if (finishReason === "SAFETY" || finishReason === "RECITATION") {
+    throw new Error(`Gemini blocked response: finishReason=${finishReason}`);
+  }
+  if (!reply) throw new Error(`Gemini returned empty response (finishReason=${finishReason ?? "unknown"})`);
   return reply;
 }
 

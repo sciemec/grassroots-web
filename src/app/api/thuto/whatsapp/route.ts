@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
       const text = await geminiText(
         systemInstruction,
         messages,
-        { max_tokens: 400 },
+        { max_tokens: 600, timeout_ms: 12_000 },
       );
       if (text) return NextResponse.json({ reply: trimForWhatsApp(text) });
     } catch {
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           model:      'claude-haiku-4-5-20251001',
-          max_tokens: 400,
+          max_tokens: 600,
           system:     systemInstruction,
           messages:   messages.map((m) => ({ role: m.role, content: m.content })),
         }),
