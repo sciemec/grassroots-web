@@ -88,7 +88,7 @@ export async function geminiText(
 
   console.log(
     `[gemini] finishReason=${finishReason ?? "none"} parts=${parts.length}` +
-    ` tokens=${tokenCount ?? "?"} replyLen=${reply.length}`,
+    ` tokens=${tokenCount ?? "?"} replyLen=${reply.length} model=${model}`,
   );
 
   if (finishReason === "MAX_TOKENS") {

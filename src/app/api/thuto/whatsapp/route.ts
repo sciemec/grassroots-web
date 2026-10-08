@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
       const text = await geminiText(
         systemInstruction,
         messages,
-        { max_tokens: 600, timeout_ms: 12_000 },
+        { max_tokens: 400, timeout_ms: 12_000 },
       );
       if (text) return NextResponse.json({ reply: trimForWhatsApp(text) });
     } catch {
