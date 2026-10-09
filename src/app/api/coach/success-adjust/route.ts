@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { GEMINI_TEXT_MODEL } from "@/lib/gemini";
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +28,7 @@ Respond in 3 short sections:
 
 Keep it under 150 words. Write directly to the coach (use "you").`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${apiKey}`;
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

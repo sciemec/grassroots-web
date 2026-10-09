@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { GEMINI_TEXT_MODEL } from "@/lib/gemini";
 
 export const maxDuration = 120;
 
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
     `If video quality is too poor to assess a metric reliably, score it 50. Be honest — do not fabricate observations.`;
 
   const genRes = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

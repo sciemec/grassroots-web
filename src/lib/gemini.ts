@@ -8,10 +8,10 @@
  * Same API key used by the Laravel GeminiAnalysisService on Render.
  */
 
-// gemini-3.5-flash: confirmed working with generateContent as of July 2026.
-// gemini-2.5-flash returns 404 for new API keys — use gemini-3.5-flash instead.
-export const GEMINI_TEXT_MODEL   = "gemini-3.5-flash";
-export const GEMINI_VISION_MODEL = "gemini-3.5-flash";
+// Model is overridable via GEMINI_TEXT_MODEL / GEMINI_VISION_MODEL env vars.
+// Default: gemini-3.8-flash (update the env var on Render to change without a deploy).
+export const GEMINI_TEXT_MODEL   = process.env.GEMINI_TEXT_MODEL   ?? "gemini-3.8-flash";
+export const GEMINI_VISION_MODEL = process.env.GEMINI_VISION_MODEL ?? "gemini-3.8-flash";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -63,9 +63,9 @@ export async function geminiText(
       systemInstruction: { parts: [{ text: systemPrompt }] },
       contents,
       generationConfig: {
-        maxOutputTokens: options.max_tokens  ?? 1024,
-        temperature:     options.temperature ?? 0.7,
-        ...(options.thinkingConfig ? { thinkingConfig: options.thinkingConfig } : {}),
+        maxOutputTokens: options.max_tokens ?? 1024,
+        thinkingConfig:  options.thinkingConfig ?? { thinkingLevel: "low" },
+        ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
       },
     }),
   };
@@ -139,7 +139,7 @@ export async function geminiVision(
       contents: [{ role: "user", parts }],
       generationConfig: {
         maxOutputTokens: options.max_tokens ?? 2000,
-        temperature:     0.7,
+        thinkingConfig:  { thinkingLevel: "low" },
       },
     }),
   });
@@ -149,8 +149,9 @@ export async function geminiVision(
     throw new Error(`Gemini vision error ${res.status}: ${err}`);
   }
 
-  const data  = await res.json();
-  const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined;
+  const data      = await res.json();
+  const rawParts  = (data?.candidates?.[0]?.content?.parts ?? []) as { text?: string }[];
+  const reply     = rawParts.map((p) => p.text ?? "").join("") || undefined;
   if (!reply) throw new Error("Gemini returned an empty vision response.");
   return reply;
 }
