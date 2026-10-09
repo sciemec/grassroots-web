@@ -112,7 +112,7 @@ async function callGemini(
   systemPrompt: string,
   messages: { role: "user" | "assistant"; content: string }[],
 ): Promise<string> {
-  return geminiText(systemPrompt, messages, { max_tokens: 1500 });
+  return geminiText(systemPrompt, messages, { max_tokens: 1500, timeout_ms: 12_000 });
 }
 
 async function callDeepSeekFallback(

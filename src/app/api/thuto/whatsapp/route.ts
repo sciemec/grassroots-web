@@ -64,7 +64,7 @@ const BASE_SYSTEM_PROMPT =
   'You are THUTO, a friendly AI sports coach for Grassroots Sports in Zimbabwe. ' +
   'You give short, practical coaching advice to young athletes via WhatsApp. ' +
   'Keep replies concise — plain sentences only, no bullet points. Be encouraging and specific. ' +
-  'Answer in 2 to 4 complete sentences only. ' +
+  'Answer in 3 short sentences maximum. ' +
   'If the player sends "continue", "more", or "why?", use the conversation history to continue or expand on your previous answer. ' +
   'Reply in the same language the player is writing in (English, Shona, or Ndebele).';
 
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
       const text = await geminiText(
         systemInstruction,
         messages,
-        { max_tokens: 400, timeout_ms: 12_000 },
+        { max_tokens: 1024, timeout_ms: 12_000, thinkingConfig: { thinkingLevel: "low" } },
       );
       if (text) return NextResponse.json({ reply: trimForWhatsApp(text) });
     } catch {

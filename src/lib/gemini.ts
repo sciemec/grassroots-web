@@ -36,7 +36,7 @@ function trimToLastSentence(text: string): string {
 export async function geminiText(
   systemPrompt: string,
   messages: Message[],
-  options: { max_tokens?: number; temperature?: number; model?: string; timeout_ms?: number } = {},
+  options: { max_tokens?: number; temperature?: number; model?: string; timeout_ms?: number; thinkingConfig?: { thinkingLevel: "low" | "medium" | "high" } } = {},
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured in Vercel environment variables.");
@@ -65,6 +65,7 @@ export async function geminiText(
       generationConfig: {
         maxOutputTokens: options.max_tokens  ?? 1024,
         temperature:     options.temperature ?? 0.7,
+        ...(options.thinkingConfig ? { thinkingConfig: options.thinkingConfig } : {}),
       },
     }),
   };
@@ -81,14 +82,15 @@ export async function geminiText(
   const candidate    = data?.candidates?.[0];
   const finishReason = candidate?.finishReason as string | undefined;
   const parts        = (candidate?.content?.parts ?? []) as { text?: string }[];
-  const tokenCount   = data?.usageMetadata?.candidatesTokenCount as number | undefined;
+  const tokenCount     = data?.usageMetadata?.candidatesTokenCount as number | undefined;
+  const thoughtsTokens = data?.usageMetadata?.thoughtsTokenCount  as number | undefined;
 
   // Join ALL text parts — Gemini can split output across multiple parts
   let reply = parts.map((p) => p.text ?? "").join("");
 
   console.log(
     `[gemini] finishReason=${finishReason ?? "none"} parts=${parts.length}` +
-    ` tokens=${tokenCount ?? "?"} replyLen=${reply.length} model=${model}`,
+    ` tokens=${tokenCount ?? "?"} thoughts=${thoughtsTokens ?? 0} replyLen=${reply.length} model=${model}`,
   );
 
   if (finishReason === "MAX_TOKENS") {
