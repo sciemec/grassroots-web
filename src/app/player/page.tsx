@@ -26,6 +26,7 @@ import {
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
+import WaButton from "@/components/ui/WaButton";
 
 // ─── Section label ────────────────────────────────────────────────────────────
 
@@ -313,6 +314,11 @@ export default function PlayerHubPage() {
             </button>
           </div>
         )}
+
+        {/* WhatsApp — THUTO on WhatsApp */}
+        <div style={{ marginTop: 16 }}>
+          <WaButton label="Chat with THUTO on WhatsApp" showQr={false} />
+        </div>
 
         {/* Section 1 — Build my profile */}
         <SectionLabel label="Build my profile" />

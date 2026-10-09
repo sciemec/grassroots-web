@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Dumbbell, Camera, Upload, User } from "lucide-react";
+import WaButton from "@/components/ui/WaButton";
 import { normalizePhone } from "@/lib/phone-normalize";
 import { COUNTRIES } from "@/lib/countries";
 import { useAuthStore } from "@/lib/auth-store";
@@ -311,7 +312,7 @@ export default function RegisterPlayerPage() {
         }
       }
 
-      router.push("/player/profile");
+      // Stay on page — registered=true renders the success screen below
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong.";
       setError(msg);
@@ -415,6 +416,24 @@ export default function RegisterPlayerPage() {
                 className="w-full bg-[#1a5c2a] text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
               >
                 Go to my profile <ArrowRight size={16} />
+              </button>
+            </div>
+          )}
+
+          {/* ── Registration done, clean success ──────────────────── */}
+          {registered && !photoUploadError && (
+            <div className="space-y-4">
+              <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <CheckCircle size={15} /> Account created — welcome to GrassRoots Sports!
+                </p>
+              </div>
+              <WaButton />
+              <button
+                onClick={() => router.push("/player")}
+                className="w-full bg-[#1a5c2a] text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+              >
+                Go to my hub <ArrowRight size={16} />
               </button>
             </div>
           )}
