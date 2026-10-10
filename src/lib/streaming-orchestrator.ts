@@ -125,8 +125,8 @@ export class CommentaryConsumer {
   private audioQueue: string[] = [];
   private isProcessing = false;
   private icecastStream: any = null;
-  private speechModel = genAI.getGenerativeModel({ 
-    model: 'gemini-2.5-flash-preview-tts' 
+  private speechModel = genAI.getGenerativeModel({
+    model: process.env.NEXT_PUBLIC_GEMINI_TTS_MODEL ?? 'gemini-2.5-flash-preview-tts',
   });
 
   constructor(icecastUrl?: string) {
