@@ -98,6 +98,7 @@ const schema = z.object({
   bio:            z.string().max(500).optional(),
   area:           z.string().max(100).optional(),
   date_of_birth:  z.string().optional(),
+  phone:          z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -205,6 +206,7 @@ function PlayerProfilePage() {
           bio:            res.data.profile?.bio              ?? "",
           area:           res.data.profile?.area             ?? "",
           date_of_birth:  res.data.profile?.date_of_birth    ?? "",
+          phone:          res.data.phone                     ?? "",
         });
       })
       .catch(() => setLoadError("Unable to load your profile. Please try refreshing the page."))
@@ -1072,6 +1074,15 @@ If no AI analysis data is provided, write a strong profile from position and spo
                       <input {...register("school")} type="text" placeholder="e.g. Prince Edward High"
                         className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground" />
                     </div>
+                  </div>
+
+                  <div id="phone">
+                    <label className="mb-1.5 block text-sm font-medium">
+                      WhatsApp / Phone number <span className="font-normal text-muted-foreground">(optional)</span>
+                    </label>
+                    <input {...register("phone")} type="tel" placeholder="e.g. 0771 234 567"
+                      className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground" />
+                    <p className="mt-1 text-xs text-muted-foreground">Used for training reminders and AI coaching via WhatsApp.</p>
                   </div>
 
                   <div>
