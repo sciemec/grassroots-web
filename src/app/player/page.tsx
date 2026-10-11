@@ -180,6 +180,7 @@ export default function PlayerHubPage() {
   const token = useAuthStore((s) => s.token);
   const [profilePct, setProfilePct] = useState<number>(0);
   const [showProfileBanner, setShowProfileBanner] = useState(false);
+  const [showPhoneBanner, setShowPhoneBanner] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -198,6 +199,11 @@ export default function PlayerHubPage() {
         const missingProvince = !raw.province;
         const dismissed = localStorage.getItem("grs_profile_nudge_dismissed");
         if (!dismissed && (missingPosition || missingProvince)) setShowProfileBanner(true);
+
+        // Show WhatsApp banner once for players with no phone number
+        const missingPhone = !raw.phone && !raw.whatsapp_number;
+        const phoneDismissed = localStorage.getItem("grs_phone_nudge_dismissed");
+        if (!phoneDismissed && missingPhone) setShowPhoneBanner(true);
 
         // Write context snapshot so THUTO can give personalised, data-driven advice
         localStorage.setItem(
@@ -302,6 +308,67 @@ export default function PlayerHubPage() {
                 background: "none",
                 border: "none",
                 color: "#b89050",
+                fontSize: 16,
+                cursor: "pointer",
+                flexShrink: 0,
+                padding: "0 2px",
+                lineHeight: 1,
+              }}
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {/* WhatsApp number nudge — shown once for players with no phone */}
+        {showPhoneBanner && (
+          <div
+            style={{
+              background: "#0d2e1a",
+              border: "1px solid #25a244",
+              borderRadius: 12,
+              padding: "12px 14px",
+              marginTop: 16,
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+            }}
+          >
+            <span style={{ fontSize: 18, flexShrink: 0 }}>📱</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: "#4ade80", fontSize: 13, fontWeight: 700 }}>
+                Add your WhatsApp number
+              </div>
+              <div style={{ color: "#6db88a", fontSize: 11.5, marginTop: 3, lineHeight: 1.4 }}>
+                Get training reminders and AI coaching messages directly on WhatsApp.
+              </div>
+              <a
+                href="/player/profile#phone"
+                style={{
+                  display: "inline-block",
+                  marginTop: 8,
+                  background: "#25a244",
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  borderRadius: 8,
+                  padding: "5px 14px",
+                  textDecoration: "none",
+                }}
+              >
+                Add number →
+              </a>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem("grs_phone_nudge_dismissed", "1");
+                setShowPhoneBanner(false);
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#6db88a",
                 fontSize: 16,
                 cursor: "pointer",
                 flexShrink: 0,
