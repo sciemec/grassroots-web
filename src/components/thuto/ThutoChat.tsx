@@ -597,6 +597,16 @@ const PAGE_CONTEXT: Record<string, PageCtx> = {
     description: "Talent Passport — your complete player profile for scouts, scholarships and trials — includes skill readings, showcase clips and academic record",
     suggested: ["How do I make my passport stand out to scouts?", "What should I complete first on my passport?", "Can I share my passport with a coach?"],
   },
+  "/player/pathway": {
+    description: "Scholarship Pathway — academic profile, pathway timeline, NCAA/NAIA registration tracker, coach outreach log, and AI-matched scholarship programs showing how close the player is to qualifying",
+    suggested: [
+      "Which scholarship programs am I closest to qualifying for?",
+      "What do I need to improve to unlock more opportunities?",
+      "How do I write a cold email to a US college coach?",
+      "When should I start outreach for NCAA D2?",
+      "What is the difference between NCAA D1, D2, and NAIA?",
+    ],
+  },
 };
 
 // ── Formation data (same coordinates as /coach/tactics) ──────────────────────
