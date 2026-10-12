@@ -1108,7 +1108,26 @@ export default function ThutoChat() {
     parts.push(`\nCURRENT PAGE: ${pageCtx.description}`);
     try {
       const pageData = localStorage.getItem("thuto_page_data");
-      if (pageData) parts.push(`\nPAGE DATA: ${pageData}`);
+      if (pageData) {
+        parts.push(`\nPAGE DATA: ${pageData}`);
+        // Parse scholarship matches and inject as readable block so THUTO gives specific answers
+        const parsed = JSON.parse(pageData) as {
+          scholarship_matches?: Array<{
+            institution: string; division: string; country: string;
+            fit_label: string; score: number; blockers: string[];
+          }>;
+        };
+        if (parsed.scholarship_matches && parsed.scholarship_matches.length > 0) {
+          const lines: string[] = ["", "== YOUR SCHOLARSHIP MATCHES (use these exact numbers when answering) =="];
+          parsed.scholarship_matches.forEach((m, i) => {
+            lines.push(`#${i + 1} ${m.institution} — ${m.division} · ${m.country}`);
+            lines.push(`   Fit: ${m.fit_label} · ${m.score}% match`);
+            if (m.blockers.length > 0) lines.push(`   Next step to improve: ${m.blockers[0]}`);
+          });
+          lines.push("When asked about scholarships, always cite these specific institutions, fit percentages, and next steps. Never say you cannot see the player's data.");
+          parts.push(lines.join("\n"));
+        }
+      }
     } catch { /* ignore */ }
 
     // Inject FIFA age-bracket coaching rules based on player's actual age group
