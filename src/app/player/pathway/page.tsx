@@ -9,6 +9,7 @@ import { ChevronLeft, Save, Plus, Trash2, ExternalLink, CheckCircle2, Circle } f
 import { useAuthStore } from '@/lib/auth-store';
 import { useSubscription } from '@/lib/use-subscription';
 import { postToArena } from '@/lib/arena-poster';
+import { matchPlayerToScholarships } from '@/lib/scholarship-matcher';
 
 const G   = '#1a5c2a';
 const GO  = '#c8962a';
@@ -214,6 +215,38 @@ function PathwayPageInner() {
     scholarship_applied:       "Applied for a scholarship — pathway checkpoint reached.",
   };
 
+  // These checkpoints trigger a WhatsApp scholarship nudge from THUTO
+  const NUDGE_CHECKPOINTS = new Set([
+    'scholarship_reel_complete',
+    'ncaa_registered',
+    'coach_outreach_started',
+    'scholarship_applied',
+  ]);
+
+  const sendScholarshipNudge = (checkpoint: string) => {
+    const phone = (user as { phone?: string })?.phone;
+    if (!phone) return;
+    // Rate-limit: one nudge per 24 hours
+    const lastSent = Number(localStorage.getItem('scholarship_nudge_sent_at') ?? 0);
+    if (Date.now() - lastSent < 24 * 60 * 60 * 1000) return;
+    localStorage.setItem('scholarship_nudge_sent_at', String(Date.now()));
+    fetch('/api/scholarship-nudge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone,
+        sport:          profile.pathway_sport ?? (user as { sport?: string })?.sport ?? 'Football',
+        position:       (user as { position?: string })?.position ?? '',
+        province:       (user as { province?: string })?.province ?? '',
+        thuto_score:    65,
+        reel_complete:  !!(profile.pathway_checkpoints?.scholarship_reel_complete),
+        ncaa_id:        !!profile.ncaa_id,
+        target_pathway: profile.target_pathway ?? '',
+        checkpoint,
+      }),
+    }).catch(() => {});
+  };
+
   const toggleCheckpoint = (key: string) => {
     const wasDone = !!(profile.pathway_checkpoints?.[key]);
     setProfile(prev => ({
@@ -231,10 +264,46 @@ function PathwayPageInner() {
         activityData: { checkpoint: key },
       });
     }
+    // Send WhatsApp scholarship nudge for key milestones
+    if (!wasDone && NUDGE_CHECKPOINTS.has(key)) {
+      sendScholarshipNudge(key);
+    }
   };
 
   const completedCount = CHECKPOINTS.filter(c => profile.pathway_checkpoints?.[c.key]).length;
   const progressPct    = Math.round((completedCount / CHECKPOINTS.length) * 100);
+
+  // Write scholarship matches to thuto_page_data so THUTO can advise on opportunities
+  useEffect(() => {
+    if (!user || !profile.pathway_sport) return;
+    try {
+      const matches = matchPlayerToScholarships({
+        sport:          profile.pathway_sport ?? (user.sport as string) ?? 'Football',
+        position:       (user.position as string) ?? '',
+        province:       (user.province as string) ?? '',
+        thuto_score:    65,
+        reel_complete:  !!(profile.pathway_checkpoints?.scholarship_reel_complete),
+        ncaa_id:        !!profile.ncaa_id,
+        target_pathway: profile.target_pathway ?? '',
+      });
+      const top3 = matches.slice(0, 3);
+      localStorage.setItem('thuto_page_data', JSON.stringify({
+        page:                'scholarship_pathway',
+        pathway_sport:       profile.pathway_sport,
+        target_pathway:      profile.target_pathway,
+        school_year:         profile.school_year,
+        progress_pct:        progressPct,
+        scholarship_matches: top3.map(m => ({
+          institution: m.program.institution,
+          division:    m.program.division,
+          country:     m.program.country,
+          fit_label:   m.label,
+          score:       Math.round(m.score),
+          blockers:    m.blockers,
+        })),
+      }));
+    } catch { /* silent */ }
+  }, [profile, user, progressPct]);
 
   if (!hydrated) return null;
 
