@@ -2,8 +2,9 @@
 // src/app/player/pathway/page.tsx
 // Scholarship Pathway — Academic Profile + Timeline + Coach Outreach Tracker
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, Save, Plus, Trash2, ExternalLink, CheckCircle2, Circle } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { useSubscription } from '@/lib/use-subscription';
@@ -97,16 +98,17 @@ const CHECKPOINTS = [
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 function authHeaders(token: string) {
-  return { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` };
+  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 }
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 
-export default function PathwayPage() {
+function PathwayPageInner() {
   const user     = useAuthStore(s => s.user);
   const token    = useAuthStore(s => s.token);
   const hydrated = useAuthStore(s => s._hasHydrated);
   const { isPro } = useSubscription();
+  const searchParams = useSearchParams();
 
   const [profile,     setProfile]     = useState<Partial<PathwayProfile>>({});
   const [outreach,    setOutreach]    = useState<OutreachEntry[]>([]);
@@ -143,6 +145,16 @@ export default function PathwayPage() {
       setNewEntry(prev => ({ ...prev, sport: user.sport as string }));
     }
   }, [user]);
+
+  // Pre-populate outreach form from ?program= URL param (e.g. from ScholarshipAlertCard)
+  useEffect(() => {
+    const program = searchParams.get('program');
+    if (program) {
+      setTab('outreach');
+      setNewEntry(prev => ({ ...prev, institution_name: program }));
+      setAddingEntry(true);
+    }
+  }, [searchParams]);
 
   const saveProfile = useCallback(async () => {
     if (!token) return;
@@ -274,25 +286,19 @@ export default function PathwayPage() {
               {completedCount}/{CHECKPOINTS.length} steps complete · {progressPct}% ready
             </div>
           </div>
-          {isPro ? (
-            <button
-              onClick={saveProfile}
-              disabled={saving}
-              style={{
-                padding: '8px 16px', borderRadius: 20, border: 'none',
-                background: saved ? '#16a34a' : GO,
-                color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 6,
-              }}
-            >
-              <Save size={14} />
-              {saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save'}
-            </button>
-          ) : (
-            <Link href="/player/subscription" style={{ padding: '8px 16px', borderRadius: 20, background: '#c8962a', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-              🔒 Unlock
-            </Link>
-          )}
+          <button
+            onClick={saveProfile}
+            disabled={saving}
+            style={{
+              padding: '8px 16px', borderRadius: 20, border: 'none',
+              background: saved ? '#16a34a' : GO,
+              color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            <Save size={14} />
+            {saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save'}
+          </button>
         </div>
       </div>
 
@@ -786,5 +792,13 @@ export default function PathwayPage() {
         <div style={{ height: 40 }} />
       </div>
     </div>
+  );
+}
+
+export default function PathwayPage() {
+  return (
+    <Suspense fallback={null}>
+      <PathwayPageInner />
+    </Suspense>
   );
 }

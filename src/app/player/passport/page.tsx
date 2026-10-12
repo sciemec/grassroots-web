@@ -24,6 +24,7 @@ import {
 const LS_ACADEMIC     = "gs_passport_academic";
 const LS_ENDORSEMENTS = "gs_passport_endorsements";
 const LS_AI_SUMMARY   = "gs_passport_ai_summary";
+const LS_TERM_HISTORY = "gs_passport_terms";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Profile {
@@ -64,6 +65,12 @@ interface Academic {
   gradeLevel: string;
   average: string;
   year: string;
+}
+
+interface TermResult {
+  id: string;
+  term: string;
+  grade: string;
 }
 
 interface Endorsement {
@@ -121,6 +128,7 @@ export default function PassportPage() {
   const [academic, setAcademic] = useState<Academic>({
     schoolName: "", gradeLevel: "", average: "", year: new Date().getFullYear().toString(),
   });
+  const [termHistory, setTermHistory] = useState<TermResult[]>([]);
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
   const [aiSummary, setAiSummary] = useState("");
   const [provenance, setProvenance] = useState<ProvenanceRecord[]>([]);
@@ -169,6 +177,8 @@ export default function PassportPage() {
       if (r && typeof r === "object") setReel(r as ReelState);
       const s = localStorage.getItem(LS_AI_SUMMARY);
       if (s) setAiSummary(s);
+      const t = JSON.parse(localStorage.getItem(LS_TERM_HISTORY) ?? "[]");
+      if (Array.isArray(t)) setTermHistory(t);
     } catch {}
 
     // Fetch AI analysis history (Match Eye, Drill Analysis, Biomechanics, Assessment)
@@ -239,6 +249,7 @@ export default function PassportPage() {
     localStorage.setItem(LS_ACADEMIC, JSON.stringify(academic));
     localStorage.setItem(LS_ENDORSEMENTS, JSON.stringify(endorsements));
     localStorage.setItem(REEL_STORAGE_KEY, JSON.stringify(reel));
+    localStorage.setItem(LS_TERM_HISTORY, JSON.stringify(termHistory));
     api.patch("/profile", {
       school_name:          academic.schoolName,
       grade_level:          academic.gradeLevel,
@@ -246,6 +257,7 @@ export default function PassportPage() {
       academic_year:        academic.year,
       coach_endorsements:   endorsements,
     }).catch(() => {});
+    api.post("/player/academic-terms", termHistory).catch(() => {});
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -775,6 +787,65 @@ Output exactly 3 sentences. No bullet points. No headers.`,
                 />
               </div>
             </div>
+
+            {/* ── Term History ── */}
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Term History</p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTermHistory((prev) => [
+                      ...prev,
+                      { id: crypto.randomUUID(), term: "", grade: "" },
+                    ])
+                  }
+                  className="flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs font-semibold text-zinc-300 hover:bg-zinc-700 transition-colors"
+                >
+                  <Plus className="h-3 w-3" /> Add Term
+                </button>
+              </div>
+
+              {termHistory.length === 0 && (
+                <p className="text-xs text-zinc-600 italic">No terms added yet — click "Add Term" to record individual results.</p>
+              )}
+
+              {termHistory.map((row) => (
+                <div key={row.id} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={row.term}
+                    onChange={(e) =>
+                      setTermHistory((prev) =>
+                        prev.map((r) => r.id === row.id ? { ...r, term: e.target.value } : r)
+                      )
+                    }
+                    placeholder="e.g. Term 1 2026"
+                    className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-[#f0b429]/60"
+                  />
+                  <input
+                    type="text"
+                    value={row.grade}
+                    onChange={(e) =>
+                      setTermHistory((prev) =>
+                        prev.map((r) => r.id === row.id ? { ...r, grade: e.target.value } : r)
+                      )
+                    }
+                    placeholder="Grade / %"
+                    className="w-24 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-[#f0b429]/60"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTermHistory((prev) => prev.filter((r) => r.id !== row.id))
+                    }
+                    className="rounded-lg border border-zinc-700 bg-zinc-800 p-1.5 text-zinc-500 hover:text-red-400 hover:border-red-500/40 transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* ── AI Performance Summary ── */}
@@ -1125,6 +1196,17 @@ Output exactly 3 sentences. No bullet points. No headers.`,
                 localStorage.setItem(REEL_STORAGE_KEY, JSON.stringify(next));
               }}
             />
+            {Object.values(reel).some((v) => v !== null) && (
+              <div className="mt-3 text-center">
+                <Link
+                  href="/player/scholarship-reel"
+                  className="text-sm font-semibold"
+                  style={{ color: "#1a5c2a" }}
+                >
+                  ▶ Watch Video Reel →
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* ── Save + Action bar ── */}
