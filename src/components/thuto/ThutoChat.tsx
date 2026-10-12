@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Volume2, VolumeX, FileText } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -1187,6 +1187,7 @@ export default function ThutoChat() {
   const [unread,          setUnread]          = useState(0);
   const [dnaCompleteness, setDnaCompleteness] = useState(0);
   const [commandToast,    setCommandToast]    = useState<string | null>(null);
+  const [reportLoading,   setReportLoading]   = useState(false);
 
   const inputRef  = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -1293,7 +1294,14 @@ export default function ThutoChat() {
     api.get("/thuto/context")
       .then((res) => {
         const raw = res.data?.history ?? res.data?.data ?? [];
-        const serverMessages: Message[] = Array.isArray(raw) ? raw : [];
+        const serverMessages: Message[] = Array.isArray(raw)
+          ? raw.map((t: { role: string; content: string }) => ({
+              id: crypto.randomUUID(),
+              role: (t.role === "model" ? "assistant" : "user") as "user" | "assistant",
+              content: t.content,
+              timestamp: Date.now(),
+            }))
+          : [];
         if (serverMessages.length > 0) {
           setMessages(serverMessages.slice(-MAX_STORED));
           try {
@@ -1439,6 +1447,10 @@ export default function ThutoChat() {
       if (voiceMode) speakThutoResponse(answer);
       if (!open) setUnread((n) => n + 1);
 
+      // Persist this exchange to backend memory (fire-and-forget — never blocks chat)
+      api.post("/thuto/turns", { role: "user",  content: text   }).catch(() => {});
+      api.post("/thuto/turns", { role: "model", content: answer }).catch(() => {});
+
       // Re-fetch DNA completeness — backend may have updated it
       api.get("/player/dna")
         .then((res) => setDnaCompleteness(res.data?.data?.profile_completeness ?? 0))
@@ -1459,6 +1471,33 @@ export default function ThutoChat() {
       if (voiceMode) speakThutoResponse(content);
     } finally {
       setThinking(false);
+    }
+  };
+
+  const generateReport = async () => {
+    if (reportLoading) return;
+    setReportLoading(true);
+    setMessages((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), role: "assistant", content: "Generating your Player Development Report… this takes a few seconds.", timestamp: Date.now() },
+    ]);
+    try {
+      const res = await api.post("/thuto/report");
+      const { report, profile_gaps } = res.data as { report: string; generated_at: string; profile_gaps: string[] };
+      const gapsNote = profile_gaps?.length
+        ? `\n\n---\n_Profile gaps: ${profile_gaps.join(", ")} — complete these to make future reports more accurate._`
+        : "";
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: "assistant", content: report + gapsNote, timestamp: Date.now() },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: "assistant", content: "I couldn't generate the report right now. Try again in a moment.", timestamp: Date.now() },
+      ]);
+    } finally {
+      setReportLoading(false);
     }
   };
 
@@ -1518,7 +1557,17 @@ export default function ThutoChat() {
                 </p>
               </div>
               <div className="flex items-center gap-1">
-                {/* Voice mode toggle — THUTO reads responses aloud */}
+                {/* Generate development report */}
+                <button
+                  onClick={generateReport}
+                  disabled={reportLoading}
+                  title="Generate Player Development Report"
+                  aria-label="Generate Player Development Report"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/10 hover:text-[#f0b429] disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <FileText className="h-4 w-4" />
+                </button>
+              {/* Voice mode toggle — THUTO reads responses aloud */}
                 <button
                   onClick={() => { if (isSpeaking) cancelSpeech(); toggleVoiceMode(); }}
                   className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
