@@ -1290,9 +1290,10 @@ export default function ThutoChat() {
     } catch { /* ignore */ }
 
     // Then fetch real persistent history from backend and replace
-    api.get("/thuto/history")
+    api.get("/thuto/context")
       .then((res) => {
-        const serverMessages: Message[] = res.data?.data ?? [];
+        const raw = res.data?.history ?? res.data?.data ?? [];
+        const serverMessages: Message[] = Array.isArray(raw) ? raw : [];
         if (serverMessages.length > 0) {
           setMessages(serverMessages.slice(-MAX_STORED));
           try {
@@ -1425,6 +1426,10 @@ export default function ThutoChat() {
         const data = await resp.json();
         answer = data.response ?? data.answer ?? "Ndiri here — I'm here, let's talk.";
       }
+
+      // Persist this exchange to the backend (fire-and-forget — never blocks the chat)
+      api.post("/thuto/turns", { role: "user",  content: text   }).catch(() => {});
+      api.post("/thuto/turns", { role: "model", content: answer }).catch(() => {});
 
       setMessages((prev) => [
         ...prev,
