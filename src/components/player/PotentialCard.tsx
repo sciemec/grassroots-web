@@ -301,11 +301,13 @@ function PotentialCardInner({ playerId, playerName, isPublicView = false }: {
               </span>
             )}
           </div>
+          {/* platform_rank hidden — not a real population comparison (score maps 1:1 to percentile).
+               Restore when TalentPredictionService queries an actual player cohort.
           {prediction.platform_rank && (
             <p className="text-xs text-muted-foreground mt-1">
               {prediction.platform_rank}
             </p>
-          )}
+          )} */}
         </div>
 
         {/* STATS GRID */}
