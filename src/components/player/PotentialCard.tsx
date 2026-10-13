@@ -28,6 +28,8 @@ interface Comparable {
 interface Prediction {
   peak_level: string;
   peak_level_label: string;
+  meets_threshold: boolean;
+  disclosure?: string | null;
   percentile: number | null;
   platform_rank: string | null;
   upside_rating: number | null;
@@ -289,25 +291,26 @@ function PotentialCardInner({ playerId, playerName, isPublicView = false }: {
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
             Projected Peak Level
           </p>
-          <div className="flex items-center justify-between">
-            <p className="text-xl font-bold text-foreground">
-              {prediction.peak_level_label ?? '—'}
+          {prediction.meets_threshold ? (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-xl font-bold text-foreground">
+                  {prediction.peak_level_label ?? '—'}
+                </p>
+                {/* percentile badge hidden — not a real cohort comparison.
+                    Restore when TalentPredictionService queries an actual player cohort. */}
+              </div>
+              {prediction.disclosure && (
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  {prediction.disclosure}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-amber-400 font-medium">
+              Not enough data yet — rate more drills to see your projection.
             </p>
-            {prediction.percentile != null && (
-              <span
-                className={`text-xs font-bold px-2 py-1 rounded-full ${colours.badge} ${colours.text}`}
-              >
-                {prediction.percentile}th percentile
-              </span>
-            )}
-          </div>
-          {/* platform_rank hidden — not a real population comparison (score maps 1:1 to percentile).
-               Restore when TalentPredictionService queries an actual player cohort.
-          {prediction.platform_rank && (
-            <p className="text-xs text-muted-foreground mt-1">
-              {prediction.platform_rank}
-            </p>
-          )} */}
+          )}
         </div>
 
         {/* STATS GRID */}
@@ -389,20 +392,20 @@ function PotentialCardInner({ playerId, playerName, isPublicView = false }: {
           )}
         </div>
 
-        {/* DATA QUALITY NOTE */}
-        {prediction.data_quality === 'low' && (
+        {/* DATA QUALITY / THRESHOLD NOTE */}
+        {!prediction.meets_threshold && (
           <div className="flex items-start gap-2 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
             <span aria-hidden="true">🚀</span>
             <div>
-              <p className="font-semibold mb-0.5">This is your starting point.</p>
+              <p className="font-semibold mb-0.5">Build your projection.</p>
               <p>
-                Upload drill videos, complete assessments, and share clips to the Arena.
-                Every piece of activity THUTO sees improves the accuracy of your prediction.
+                Rate drills across at least 3 different skill types to unlock your peak level forecast.
+                Every rated drill makes THUTO&apos;s prediction more accurate.
               </p>
             </div>
           </div>
         )}
-        {prediction.data_quality === 'medium' && (
+        {prediction.meets_threshold && prediction.data_quality === 'medium' && (
           <div className="flex items-start gap-2 text-xs text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
             <span aria-hidden="true">⚠</span>
             <span>
