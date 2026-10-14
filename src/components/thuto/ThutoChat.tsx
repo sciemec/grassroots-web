@@ -1202,6 +1202,25 @@ export default function ThutoChat() {
       }
     } catch { /* ignore */ }
 
+    // Scholarship eligibility nudge for U16–U21 age groups
+    try {
+      const ctxRaw = localStorage.getItem("thuto_player_context");
+      if (ctxRaw) {
+        const ctx = JSON.parse(ctxRaw) as { age_group?: string };
+        const eligibleGroups = ["16", "17", "18", "19", "20", "21"];
+        const ag = (ctx.age_group ?? "").toLowerCase().replace(/\s/g, "");
+        if (eligibleGroups.some(g => ag.includes(g))) {
+          const lastSeen = localStorage.getItem("gs_scholarship_reminder_seen");
+          const sevenDays = 7 * 24 * 60 * 60 * 1000;
+          const shouldRemind = !lastSeen || Date.now() - Number(lastSeen) > sevenDays;
+          if (shouldRemind) {
+            parts.push(`\n== SCHOLARSHIP ELIGIBILITY PROACTIVE NUDGE ==\nThis player is age group ${ctx.age_group} and is in the prime scholarship eligibility window (U16–U21). If they have not yet asked about scholarships in this conversation, proactively mention: "By the way — players in your age group are exactly who scouts and scholarship programmes are looking for. Would you like me to show you your top scholarship matches?" Do this naturally in your first response, not as a separate announcement.`);
+            localStorage.setItem("gs_scholarship_reminder_seen", String(Date.now()));
+          }
+        }
+      }
+    } catch { /* ignore */ }
+
     return parts.join("");
   };
 
