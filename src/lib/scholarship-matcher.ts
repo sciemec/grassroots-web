@@ -693,7 +693,7 @@ function normPos(s: string): string {
 
 // ── Main matcher ──────────────────────────────────────────────────────────────
 
-export function matchPrograms(player: PlayerMatchData): MatchResult[] {
+export function matchPlayerToScholarships(player: PlayerMatchData): MatchResult[] {
   const playerSport = normSport(player.sport);
   const playerPos   = normPos(player.position);
 
