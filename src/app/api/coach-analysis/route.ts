@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ detail: `Unknown analysis endpoint: ${endpoint}` }, { status: 400 });
   }
 
-  const aiUrl = process.env.AI_URL ?? process.env.NEXT_PUBLIC_AI_URL ?? "";
+  const aiUrl = process.env.AI_URL ?? "";
   if (!aiUrl) {
     return Response.json(
       { detail: "AI service URL not configured (AI_URL env var missing)" },

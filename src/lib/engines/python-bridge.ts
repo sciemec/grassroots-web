@@ -137,37 +137,3 @@ export async function pollJob<T>(jobId: string): Promise<T | null> {
   return null; // timed out
 }
 
-// ── Custom zone counting ───────────────────────────────────────────────────────
-// NOTE: v3 server does not expose a /zones endpoint.
-// This function is kept for local dev compatibility (scripts/grs-ai-server/main.py).
-// Returns null gracefully when the endpoint is absent.
-
-export interface ZoneDef {
-  name:    string;
-  polygon: Array<{ x: number; y: number }>; // normalised 0–1 coords
-}
-
-export async function countCustomZones(
-  file:  File,
-  zones: ZoneDef[],
-): Promise<Record<string, number> | null> {
-  const available = await isPythonServerAvailable();
-  if (!available) return null;
-
-  try {
-    const form = new FormData();
-    form.append('file', file);
-    form.append('zones_json', JSON.stringify(zones));
-
-    const res = await fetch(`${SERVER}/zones`, {
-      method: 'POST',
-      body:   form,
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-    if (!res.ok) return null;
-    const body = (await res.json()) as { counts?: Record<string, number> };
-    return body.counts ?? null;
-  } catch {
-    return null;
-  }
-}
