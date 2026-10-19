@@ -1093,6 +1093,16 @@ If no AI analysis data is provided, write a strong profile from position and spo
                       placeholder="Tell scouts about yourself — your strengths, ambitions, teams you've played for…"
                       className="w-full resize-none rounded-xl border bg-card px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground" />
                     {errors.bio && <p className="mt-1 text-xs text-destructive">{errors.bio.message}</p>}
+                    {(watchedValues.age_group === "under_13" || watchedValues.age_group === "13_17") && (
+                      <p className="mt-1.5 flex items-start gap-1.5 text-xs text-blue-600">
+                        <span>🔒</span>
+                        <span>
+                          {watchedValues.age_group === "under_13"
+                            ? "Your bio is only visible to your coach and guardian — not to scouts."
+                            : "Your bio will only be visible to scouts after a parent or guardian approves sharing via the Guardian Dashboard."}
+                        </span>
+                      </p>
+                    )}
                   </div>
 
                   {error && (
