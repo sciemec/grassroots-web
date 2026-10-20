@@ -201,6 +201,7 @@ export default function ArenaPage() {
   const [uploadingMedia,    setUploadingMedia]     = useState(false);
   const [uploadProgress,    setUploadProgress]     = useState(0);
   const [mediaError,        setMediaError]         = useState<string | null>(null);
+  const [visibilityNotice,  setVisibilityNotice]   = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const playRef       = useRef<HTMLDivElement>(null);
@@ -702,6 +703,7 @@ export default function ArenaPage() {
       const json = await res.json();
       setNewPostBody("");
       clearMedia();
+      setVisibilityNotice(json.visibility_notice ?? null);
       // Prepend the new post so pagination state is preserved
       const created: Post = json.post ?? json.data ?? { ...json, liked: 0, like_count: 0, comment_count: 0, created_at: new Date().toISOString() };
       if (created?.id) {
@@ -1224,6 +1226,24 @@ export default function ArenaPage() {
                     {/* File size error */}
                     {mediaError && (
                       <p className="mt-2 text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{mediaError}</p>
+                    )}
+                    {/* DOB missing — age cannot be verified */}
+                    {!user.age_group && (
+                      <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                        <span className="text-amber-600 text-base leading-none mt-px">⚠️</span>
+                        <p className="text-xs text-amber-700">
+                          Your age hasn&apos;t been verified yet. Posts may be set to private until you{" "}
+                          <a href="/player/profile" className="underline font-semibold">add your date of birth</a>.
+                        </p>
+                      </div>
+                    )}
+                    {/* Visibility notice — returned by backend when post was forced private */}
+                    {visibilityNotice && (
+                      <div className="mt-2 flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                        <span className="text-blue-500 text-base leading-none mt-px">🔒</span>
+                        <p className="text-xs text-blue-700 flex-1">{visibilityNotice}</p>
+                        <button onClick={() => setVisibilityNotice(null)} className="text-blue-400 hover:text-blue-600 text-xs font-bold shrink-0">✕</button>
+                      </div>
                     )}
                     <div className="flex justify-between items-center mt-2">
                       <div className="flex gap-2 items-center">

@@ -34,16 +34,21 @@ export interface ArenaVideoPost {
   created_at:    string;
 }
 
+export interface ShareVideoResult {
+  post:               ArenaVideoPost | null;
+  visibility_notice?: string;
+}
+
 /**
  * Share a video to the Arena feed.
  * Used by: player vault "Share to Arena" button, test session completion.
  * Calls POST /api/v1/arena/posts/share-video.
- * Returns the created post, or null on failure (never throws).
+ * Returns the created post and any safeguarding notice. Never throws.
  */
 export async function shareVideoToArena(
   token: string,
   payload: ArenaVideoSharePayload,
-): Promise<ArenaVideoPost | null> {
+): Promise<ShareVideoResult> {
   try {
     const res = await fetch(`${API}/arena/posts/share-video`, {
       method:  'POST',
@@ -63,11 +68,14 @@ export async function shareVideoToArena(
       }),
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) return { post: null };
     const json = await res.json();
-    return (json.post as ArenaVideoPost) ?? null;
+    return {
+      post:               (json.post as ArenaVideoPost) ?? null,
+      visibility_notice: json.visibility_notice as string | undefined,
+    };
   } catch {
-    return null;
+    return { post: null };
   }
 }
 

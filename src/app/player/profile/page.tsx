@@ -174,7 +174,7 @@ function PlayerProfilePage() {
   const [showPlaysLikePanel, setShowPlaysLikePanel] = useState(false);
   const [skillScores, setSkillScores] = useState<{ skill: string; score: number }[]>([]);
 
-  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
@@ -245,6 +245,10 @@ function PlayerProfilePage() {
       const payload = { ...rest, position_primary: position || undefined, dominant_foot: preferred_foot || undefined };
       const res = await api.patch("/profile", payload);
       if (res.data?.profile?.profile_complete_pct != null) setServerPct(res.data.profile.profile_complete_pct);
+      // Keep age_group in sync when the server recomputes it from date_of_birth
+      if (res.data?.age_group) {
+        setValue("age_group", res.data.age_group);
+      }
       reset(data);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -822,22 +826,44 @@ If no AI analysis data is provided, write a strong profile from position and spo
             </div>
 
             {/* Scout visibility toggle */}
-            <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
-              <div className="flex items-center gap-2.5">
-                {profile?.scout_visible
-                  ? <Eye className="h-4 w-4 text-green-500" />
-                  : <EyeOff className="h-4 w-4 text-muted-foreground" />}
-                <div>
-                  <p className="text-sm font-medium">Scout visibility</p>
-                  <p className="text-xs text-muted-foreground">
-                    {profile?.scout_visible ? "Open to scout searches" : "Hidden from scouts"}
-                  </p>
+            <div className="mt-5 border-t border-white/10 pt-4">
+              {watchedValues.age_group === "under_13" ? (
+                <div className="flex items-start gap-2.5">
+                  <EyeOff className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">Scout visibility</p>
+                    <p className="text-xs text-muted-foreground">Not available for players under 13.</p>
+                  </div>
                 </div>
-              </div>
-              <button onClick={toggleVisibility} disabled={togglingVisibility}
-                className={`relative h-6 w-11 rounded-full transition-colors ${profile?.scout_visible ? "bg-green-500" : "bg-muted"}`}>
-                <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${profile?.scout_visible ? "translate-x-6" : "translate-x-1"}`} />
-              </button>
+              ) : watchedValues.age_group === "13_17" ? (
+                <div className="flex items-start gap-2.5">
+                  <EyeOff className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">Scout visibility</p>
+                    <p className="text-xs text-muted-foreground">
+                      A parent or guardian must enable this via the Guardian Dashboard.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    {profile?.scout_visible
+                      ? <Eye className="h-4 w-4 text-green-500" />
+                      : <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                    <div>
+                      <p className="text-sm font-medium">Scout visibility</p>
+                      <p className="text-xs text-muted-foreground">
+                        {profile?.scout_visible ? "Open to scout searches" : "Hidden from scouts"}
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={toggleVisibility} disabled={togglingVisibility}
+                    className={`relative h-6 w-11 rounded-full transition-colors ${profile?.scout_visible ? "bg-green-500" : "bg-muted"}`}>
+                    <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${profile?.scout_visible ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1093,8 +1119,12 @@ If no AI analysis data is provided, write a strong profile from position and spo
                       placeholder="Tell scouts about yourself — your strengths, ambitions, teams you've played for…"
                       className="w-full resize-none rounded-xl border bg-card px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground" />
                     {errors.bio && <p className="mt-1 text-xs text-destructive">{errors.bio.message}</p>}
+                    <p className="mt-1.5 flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <span>ℹ️</span>
+                      <span>Do not include phone numbers, email addresses, or school names in your bio.</span>
+                    </p>
                     {(watchedValues.age_group === "under_13" || watchedValues.age_group === "13_17") && (
-                      <p className="mt-1.5 flex items-start gap-1.5 text-xs text-blue-600">
+                      <p className="mt-1 flex items-start gap-1.5 text-xs text-blue-600">
                         <span>🔒</span>
                         <span>
                           {watchedValues.age_group === "under_13"
