@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, XCircle, RefreshCw, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, CheckCircle2, XCircle, RefreshCw, AlertTriangle } from "lucide-react";
 
 interface HealthCheck {
   status: "healthy" | "degraded";
@@ -49,7 +50,7 @@ export default function HealthPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/health`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/health/full`);
       const json = await res.json();
       setData(json);
     } catch {
@@ -70,16 +71,26 @@ export default function HealthPage() {
     ...tables.filter(([, v]) => v.status !== "ok"),
     ...env.filter(([, v]) => v.status !== "ok"),
     ...services.filter(([, v]) => v.status !== "ok"),
+    ...(migrations && migrations.pending_count > 0
+      ? [["migrations", { status: `${migrations.pending_count} pending` }] as [string, { status: string }]]
+      : []),
   ];
 
   return (
-    <div className="p-6 max-w-4xl">
+    <main className="gs-watermark overflow-auto p-6">
+      <div className="max-w-4xl">
+
       <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">System Health</h1>
-          <p className="text-sm text-muted-foreground">
-            Every table, env var, and service — green means built and working
-          </p>
+        <div className="flex items-center gap-3">
+          <Link href="/admin" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-white">System Health</h1>
+            <p className="text-sm text-muted-foreground">
+              Every table, env var, and service — green means built and working
+            </p>
+          </div>
         </div>
         <button
           onClick={run}
@@ -93,6 +104,16 @@ export default function HealthPage() {
 
       {error && (
         <div className="mb-6 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+      )}
+
+      {loading && !data && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />)}
+          </div>
+          <div className="h-64 animate-pulse rounded-xl bg-muted" />
+          <div className="h-48 animate-pulse rounded-xl bg-muted" />
+        </div>
       )}
 
       {data && (
@@ -185,10 +206,12 @@ export default function HealthPage() {
           </div>
 
           <p className="mt-4 text-center text-xs text-muted-foreground">
-            Last checked: {new Date(data.checked_at).toLocaleString()}
+            Last checked: {new Date(data.checked_at).toLocaleString("en-ZW")}
           </p>
         </>
       )}
-    </div>
+
+      </div>
+    </main>
   );
 }
