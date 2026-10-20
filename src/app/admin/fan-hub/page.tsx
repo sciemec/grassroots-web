@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Film, CheckCircle, Trash2, Eye, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { Film, CheckCircle, Trash2, Eye, AlertTriangle, Loader2, RefreshCw, ArrowLeft } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -73,7 +74,7 @@ export default function AdminFanHubPage() {
   const videos = safeArray<FanHubVideo>(data);
 
   const approveMutation = useMutation({
-    mutationFn: (id: string) => api.patch(`/fan-hub/videos/${id}/approve`),
+    mutationFn: (id: string) => api.patch(`/admin/fan-hub/videos/${id}/approve`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-fan-hub"] });
     },
@@ -90,10 +91,13 @@ export default function AdminFanHubPage() {
   const previewVideo = videos.find((v) => v.id === previewId);
 
   return (
-    <main className="overflow-y-auto p-6">
+    <main className="gs-watermark overflow-auto p-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <Link href="/admin" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
             <Film className="h-6 w-6 text-[#f0b429]" />
             <div>
               <h1 className="text-xl font-bold text-white">Fan Hub Moderation</h1>

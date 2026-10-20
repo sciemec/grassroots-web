@@ -77,7 +77,7 @@ export default function AdminScoutRequestsPage() {
       const url =
         statusTab === "pending"
           ? "/admin/contact-requests/pending"
-          : "/admin/contact-requests/pending";
+          : "/admin/contact-requests";
       const res = await api.get(url, {
         params: statusTab !== "pending" ? { status: statusTab, per_page: 20 } : { per_page: 20 },
       });

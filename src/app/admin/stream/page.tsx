@@ -2,7 +2,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Play, StopCircle, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+import { Play, StopCircle, RefreshCw, ArrowLeft } from 'lucide-react';
 
 export default function StreamControlPage() {
   const [isStreaming, setIsStreaming] = useState(false);
@@ -26,8 +27,7 @@ export default function StreamControlPage() {
         setIsStreaming(true);
         setStatus('Streaming Live');
       }
-    } catch (error) {
-      console.error('Failed to start stream:', error);
+    } catch {
       setStatus('Error');
     } finally {
       setIsLoading(false);
@@ -46,23 +46,33 @@ export default function StreamControlPage() {
         setIsStreaming(false);
         setStatus('Stopped');
       }
-    } catch (error) {
-      console.error('Failed to stop stream:', error);
+    } catch {
+      // silently handled
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Stream Control</h1>
-        
-        <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-200">
+    <main className="gs-watermark overflow-auto p-6">
+      <div className="max-w-4xl">
+
+        {/* Header */}
+        <div className="mb-6 flex items-center gap-3">
+          <Link href="/admin" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Stream Control</h1>
+            <p className="text-sm text-muted-foreground">Live broadcast management</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-card p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-lg font-bold">Icecast Stream</h2>
-              <p className="text-sm text-gray-500">Server: 139.84.250.73:8000</p>
+              <p className="text-sm text-muted-foreground">Live audio broadcast server</p>
             </div>
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${isStreaming ? 'bg-green-500' : 'bg-gray-300'}`} />
@@ -79,7 +89,7 @@ export default function StreamControlPage() {
               <Play size={18} />
               Start Stream
             </button>
-            
+
             <button
               onClick={stopStream}
               disabled={!isStreaming || isLoading}
@@ -88,38 +98,27 @@ export default function StreamControlPage() {
               <StopCircle size={18} />
               Stop Stream
             </button>
-            
+
             <button
               onClick={() => window.location.reload()}
-              className="flex items-center gap-2 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+              className="flex items-center gap-2 px-4 py-3 rounded-lg border bg-muted text-muted-foreground hover:bg-muted/80 transition"
             >
               <RefreshCw size={18} />
               Refresh
             </button>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h3 className="text-sm font-bold text-gray-700 mb-2">Stream Info</h3>
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="text-sm font-semibold mb-2">Stream Info</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
-                <span className="text-gray-500">Mount Point:</span>
-                <span className="ml-2 font-mono text-gray-700">/live</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Listen URL:</span>
-                <a 
-                  href="http://139.84.250.73:8000/live"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-2 text-blue-600 hover:underline font-mono text-xs"
-                >
-                  http://139.84.250.73:8000/live
-                </a>
+                <span className="text-muted-foreground">Mount Point:</span>
+                <span className="ml-2 font-mono">/live</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

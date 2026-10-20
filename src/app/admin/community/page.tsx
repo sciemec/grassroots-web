@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, ArrowLeft } from "lucide-react";
 
 interface District {
   id: string;
@@ -52,12 +53,18 @@ export default function CommunityPage() {
   ];
 
   return (
-    <div className="p-6 max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-balance">Community Access</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage poverty districts — players in these areas get free premium access
-        </p>
+    <main className="gs-watermark overflow-auto p-6">
+      <div className="max-w-4xl">
+      <div className="mb-6 flex items-center gap-3">
+        <Link href="/admin" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-white">Community Access</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage poverty districts — players in these areas get free premium access
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -133,6 +140,7 @@ export default function CommunityPage() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </main>
   );
 }

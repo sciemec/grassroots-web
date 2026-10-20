@@ -1,7 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Smartphone, Monitor, Tablet, Globe, TrendingUp, Calendar, Download, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -34,13 +32,6 @@ const DEVICE_ICON = { mobile: Smartphone, desktop: Monitor, tablet: Tablet };
 export default function PwaStatsPage() {
   const user = useAuthStore((s) => s.user);
   const _hasHydrated = useAuthStore((s) => s._hasHydrated);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!_hasHydrated) return;
-    if (!user) router.push("/login");
-    else if (user.role !== "admin") router.push("/dashboard");
-  }, [_hasHydrated, user, router]);
 
   const { data, isLoading } = useQuery<PwaStats>({
     queryKey: ["admin-pwa-stats"],

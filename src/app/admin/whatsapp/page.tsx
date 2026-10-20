@@ -2,7 +2,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Send, Users, DollarSign } from 'lucide-react';
+import Link from 'next/link';
+import { Send, Users, DollarSign, ArrowLeft } from 'lucide-react';
 
 export default function WhatsAppAdminPage() {
   const [message, setMessage] = useState('');
@@ -13,7 +14,7 @@ export default function WhatsAppAdminPage() {
   const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch('/api/whatsapp/match-update?action=stats')
+    fetch('/api/whatsapp/stats')
       .then((r) => r.json())
       .then((d) => setSubscriberCount(d.totalSubscribers ?? 0))
       .catch(() => {});
@@ -32,11 +33,10 @@ export default function WhatsAppAdminPage() {
     setSendError(null);
 
     try {
-      const response = await fetch('/api/whatsapp/match-update', {
+      const response = await fetch('/api/whatsapp/broadcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'broadcast_custom',
           message: message,
           filterPremium: target === 'premium',
         }),
@@ -51,7 +51,6 @@ export default function WhatsAppAdminPage() {
       setMessage('');
 
     } catch (error) {
-      console.error('Broadcast failed:', error);
       setSendError(error instanceof Error ? error.message : 'Broadcast failed.');
     } finally {
       setIsSending(false);
@@ -59,8 +58,19 @@ export default function WhatsAppAdminPage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-black mb-6">WhatsApp Broadcast</h1>
+    <main className="gs-watermark overflow-auto p-6">
+      <div className="max-w-4xl">
+
+      {/* Header */}
+      <div className="mb-6 flex items-center gap-3">
+        <Link href="/admin" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-white">WhatsApp Broadcast</h1>
+          <p className="text-sm text-muted-foreground">Send messages via Meta Cloud API</p>
+        </div>
+      </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <h2 className="text-lg font-bold mb-4">Send Broadcast</h2>
@@ -160,6 +170,7 @@ export default function WhatsAppAdminPage() {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </main>
   );
 }

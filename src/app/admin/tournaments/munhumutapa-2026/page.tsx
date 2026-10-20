@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
 import {
   Trophy,
   Users,
@@ -17,6 +18,7 @@ import {
   MapPin,
   Calendar,
   Shield,
+  ArrowLeft,
 } from "lucide-react";
 
 interface TournamentPlayer {
@@ -149,6 +151,9 @@ export default function MunhumutapaAdminPage() {
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-3">
+            <Link href="/admin" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
             <div className="rounded-xl bg-[#f0b429]/20 p-2.5">
               <Trophy className="h-6 w-6 text-[#f0b429]" />
             </div>
