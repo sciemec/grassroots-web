@@ -104,7 +104,8 @@ export default function AdminDashboardPage() {
           <HubCard href="/admin/users"          icon={Users}      label="Users"             desc="All accounts, roles & access"      accent />
           <HubCard href="/admin/verifications"  icon={ShieldCheck} label="Verifications"    desc="Identity queue & document review"  />
           <HubCard href="/admin/scout-requests" icon={Search}     label="Scout Requests"    desc="Accreditation & contact approvals" />
-          <HubCard href="/admin/player-preview" icon={Sparkles}   label="Player Preview"    desc="Preview player profiles as admin"  />
+          <HubCard href="/admin/player-preview"     icon={Sparkles} label="Player Preview"      desc="Preview player profiles as admin"  />
+          <HubCard href="/admin/coach-credentials" icon={Lock}     label="Coach Credentials"  desc="Review & verify coaching badges"   />
         </div>
 
         {/* ── 2. Revenue & Subscriptions ───────────────────────────────── */}
@@ -135,7 +136,6 @@ export default function AdminDashboardPage() {
           <HubCard href="/admin/stream"  icon={Radio}      label="Stream Control"   desc="Live broadcast management"         />
           <HubCard href="/admin/pwa"     icon={Smartphone} label="PWA Stats"        desc="Install rates & offline usage"     />
           <HubCard href="/settings"      icon={Settings}   label="Settings"         desc="Platform configuration"            />
-          <HubCard href="/admin/health"  icon={Lock}       label="Security"         desc="Access logs & audit trail"         />
         </div>
 
         {/* ── 5. View as User ──────────────────────────────────────────── */}

@@ -344,7 +344,7 @@ export default function AdminStatsPage() {
 
             {/* Daily posts — last 14 days */}
             <div className="rounded-xl border bg-card p-5">
-              <p className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Daily Posts (last 30 days)</p>
+              <p className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Daily Posts (last 14 days)</p>
               {arenaLoading ? <SectionSkeleton /> : !arena?.daily_posts?.length ? (
                 <p className="text-sm text-muted-foreground">No data</p>
               ) : (
