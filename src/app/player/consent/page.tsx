@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { IconChevronLeft, IconEye, IconAtom } from "@tabler/icons-react";
+import { IconChevronLeft, IconEye, IconAtom, IconBuilding } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -82,12 +82,14 @@ export default function ConsentPage() {
   const token  = useAuthStore((s) => s.token);
   const user   = useAuthStore((s) => s.user);
 
-  const [scoutVisible,   setScoutVisible]   = useState(false);
-  const [chemConsent,    setChemConsent]     = useState(false);
-  const [loadingScout,   setLoadingScout]    = useState(false);
-  const [loadingChem,    setLoadingChem]     = useState(false);
-  const [toast,          setToast]           = useState<string | null>(null);
-  const [pageLoading,    setPageLoading]     = useState(true);
+  const [scoutVisible,     setScoutVisible]     = useState(false);
+  const [chemConsent,      setChemConsent]       = useState(false);
+  const [partnerVisible,   setPartnerVisible]    = useState(false);
+  const [loadingScout,     setLoadingScout]      = useState(false);
+  const [loadingChem,      setLoadingChem]       = useState(false);
+  const [loadingPartner,   setLoadingPartner]    = useState(false);
+  const [toast,            setToast]             = useState<string | null>(null);
+  const [pageLoading,      setPageLoading]       = useState(true);
 
   // ── Load current values from profile ──────────────────────────────────────
   useEffect(() => {
@@ -100,6 +102,7 @@ export default function ConsentPage() {
         const d = json?.data ?? json;
         setScoutVisible(!!d.open_for_scouting);
         setChemConsent(!!d.safeguarding_consent_chemistry);
+        setPartnerVisible(!!d.partner_visible);
       })
       .catch(() => {})
       .finally(() => setPageLoading(false));
@@ -129,6 +132,33 @@ export default function ConsentPage() {
       showToast("Network error. Please try again.");
     } finally {
       setLoadingScout(false);
+    }
+  }
+
+  // ── Toggle partner visibility ─────────────────────────────────────────────
+  async function togglePartner() {
+    setLoadingPartner(true);
+    const next = !partnerVisible;
+    try {
+      const res = await fetch(`${API}/player/partner-visibility`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ visible: next }),
+      });
+      if (res.ok) {
+        setPartnerVisible(next);
+        showToast(next ? "You can now appear in partner discovery." : "Hidden from partner discovery.");
+      } else {
+        const json = await res.json();
+        showToast(json.message ?? "Failed to update.");
+      }
+    } catch {
+      showToast("Network error. Please try again.");
+    } finally {
+      setLoadingPartner(false);
     }
   }
 
@@ -267,6 +297,31 @@ export default function ConsentPage() {
               checked={chemConsent}
               onChange={toggleChem}
               loading={loadingChem}
+            />
+
+            {/* Partner Discovery */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 10,
+                marginTop: 24,
+                paddingLeft: 2,
+              }}
+            >
+              <IconBuilding size={13} color="#777" />
+              <span style={{ color: "#777", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Verified Partners
+              </span>
+            </div>
+
+            <ToggleRow
+              label="Partner Discovery"
+              description="Allow verified clubs, academies, and scouts registered with GRS to find your profile. They must request contact through GRS — your personal details are never shared directly."
+              checked={partnerVisible}
+              onChange={togglePartner}
+              loading={loadingPartner}
             />
 
             {/* Info note */}

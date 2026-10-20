@@ -6,6 +6,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import {
   Shield, UserPlus, Users, Link as LinkIcon, LogOut,
   ChevronRight, AlertTriangle, Trash2, Clock, X, SlidersHorizontal,
+  MessageSquare,
 } from "lucide-react";
 
 interface Dependent {
@@ -834,6 +835,30 @@ export default function GuardianPage() {
             </div>
           )}
         </div>
+
+        {/* Partner Requests */}
+        <a href="/guardian/requests" style={{ textDecoration: "none", display: "block", marginBottom: 16 }}>
+          <div style={{
+            backgroundColor: "#fff", borderRadius: 16, border: "1px solid #e5e5e5",
+            padding: "16px 20px", display: "flex", alignItems: "center", gap: 14,
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 10, backgroundColor: "#dcfce7",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              <MessageSquare size={18} color="#1a5c2a" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: "#111", margin: 0 }}>
+                Partner Requests
+              </p>
+              <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>
+                Review contact requests from verified sport partners
+              </p>
+            </div>
+            <ChevronRight size={16} color="#9ca3af" />
+          </div>
+        </a>
 
         {/* Footer note */}
         <p style={{ fontSize: 11, color: "#9ca3af", textAlign: "center" }}>

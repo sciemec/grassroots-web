@@ -118,7 +118,14 @@ export default function AdminDashboardPage() {
           <HubCard href="/admin/talent-database" icon={Database}    label="Talent Database"   desc="Registered players — profile & scout status" />
         </div>
 
-        {/* ── 3. Content & Community ───────────────────────────────────── */}
+        {/* ── 3. Safeguarding & Partners ───────────────────────────────── */}
+        <SectionLabel>3 · Safeguarding &amp; Partners</SectionLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
+          <HubCard href="/admin/partners"         icon={Building2}    label="Verified Partners"    desc="Review & approve partner applications"  accent />
+          <HubCard href="/admin/contact-requests" icon={MessageSquare} label="Contact Requests"   desc="Moderate requests before guardians see them" />
+        </div>
+
+        {/* ── 4. Content & Community ───────────────────────────────────── */}
         <SectionLabel>3 · Content &amp; Community</SectionLabel>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
           <HubCard href="/admin/announcements" icon={Megaphone}    label="Announcements"    desc="Platform notices & broadcasts"     accent />
