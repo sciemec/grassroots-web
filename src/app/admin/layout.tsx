@@ -25,11 +25,14 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (!hasHydrated) return;
-    
+
     if (!user) {
       router.push("/login");
-    } else if (user.role !== "admin") {
+      return;
+    }
+    if (user.role !== "admin") {
       router.push(`/${user.role}`);
+      return;
     }
     setIsLoading(false);
   }, [hasHydrated, user, router]);
