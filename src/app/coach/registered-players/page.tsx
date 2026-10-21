@@ -34,6 +34,7 @@ interface Registration {
   match_flagged_at: string | null;
   confirmed_at: string | null;
   created_at: string;
+  coach_name?: string | null; // only present in admin view
 }
 
 interface DuplicateWarning {
@@ -280,6 +281,7 @@ export default function RegisteredPlayersPage() {
   const user      = useAuthStore((s) => s.user);
   const token     = useAuthStore((s) => s.token);
   const coachName = (user as { name?: string } | null)?.name ?? "Coach";
+  const isAdmin   = (user as { role?: string } | null)?.role === "admin";
 
   const [form, setForm] = useState({
     first_name: "", surname: "", date_of_birth: "",
@@ -476,16 +478,18 @@ export default function RegisteredPlayersPage() {
               </Link>
               <div>
                 <div style={{ fontWeight: 800, fontSize: 15, color: "#111" }}>Player Registry</div>
-                <div style={{ fontSize: 11, color: "#6b7280" }}>Register players before they join the platform</div>
+                <div style={{ fontSize: 11, color: "#6b7280" }}>{isAdmin ? "All registrations across all coaches" : "Register players before they join the platform"}</div>
               </div>
             </div>
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white"
-              style={{ backgroundColor: "#1a5c2a" }}
-            >
-              <Plus size={13} /> Register Player
-            </button>
+            {!isAdmin && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white"
+                style={{ backgroundColor: "#1a5c2a" }}
+              >
+                <Plus size={13} /> Register Player
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -920,6 +924,7 @@ function RegistrationCard({
           )}
           <p className="text-[10px] text-gray-400 mt-0.5">
             Registered under <span className="font-semibold">{reg.organisation_name}</span>
+            {reg.coach_name ? <> by <span className="font-semibold">{reg.coach_name}</span></> : ""}
             {" "}on {new Date(reg.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
           </p>
           {reg.notes && (
