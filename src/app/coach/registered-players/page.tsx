@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Plus, CheckCircle2, Clock, X, UserCheck,
   Loader2, Trash2, ShieldCheck, AlertCircle, Download, Play, ChevronUp, Star,
-  Camera, AlertTriangle,
+  Camera, AlertTriangle, Pencil, Lock,
 } from "lucide-react";
 import api from "@/lib/api";
 import jsPDF from "jspdf";
@@ -29,6 +29,9 @@ interface Registration {
   photo_url: string | null;
   notes: string | null;
   video_url: string | null;
+  whatsapp_number: string | null;
+  number_owner: string | null;
+  consent_status: string | null;
   linked_user_id: string | null;
   match_status: "unmatched" | "pending_confirmation" | "confirmed" | "rejected" | "standalone_confirmed";
   match_flagged_at: string | null;
@@ -278,6 +281,21 @@ export default function RegisteredPlayersPage() {
   const [actionError, setActionError]       = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
+  // Edit form state
+  const [editingId, setEditingId]         = useState<string | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError]           = useState<string | null>(null);
+  const [editPhotoFile, setEditPhotoFile]   = useState<File | null>(null);
+  const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
+  const editPhotoInputRef = useRef<HTMLInputElement>(null);
+  const [editForm, setEditForm] = useState({
+    first_name: "", surname: "", date_of_birth: "",
+    sport: "", position: "", phone: "",
+    gender: "", province: "", school: "",
+    height_cm: "", weight_kg: "", dominant_foot: "",
+    notes: "", whatsapp_number: "", number_owner: "",
+  });
+
   const user      = useAuthStore((s) => s.user);
   const token     = useAuthStore((s) => s.token);
   const coachName = (user as { name?: string } | null)?.name ?? "Coach";
@@ -288,7 +306,7 @@ export default function RegisteredPlayersPage() {
     sport: "", position: "", phone: "",
     gender: "", province: "", school: "",
     height_cm: "", weight_kg: "", dominant_foot: "",
-    notes: "",
+    notes: "", whatsapp_number: "", number_owner: "",
   });
 
   useEffect(() => { load(); }, []);
@@ -354,15 +372,15 @@ export default function RegisteredPlayersPage() {
     setSubmitError(null);
     setDuplicateWarning(null);
     try {
-      // Upload photo first if one was selected
+      // Upload photo first if one was selected — hard stop on failure
       let photoUrl: string | undefined;
       if (photoFile) {
         const uploaded = await uploadPhoto(photoFile);
-        if (uploaded) {
-          photoUrl = uploaded;
-        } else {
-          setSubmitError("Photo upload failed — player will be registered without a photo.");
+        if (!uploaded) {
+          setSubmitError("Photo upload failed. Please try again — tap the submit button to retry. If it keeps failing, remove the photo selection first.");
+          return;
         }
+        photoUrl = uploaded;
       }
 
       const res = await api.post("/coach/registered-players", {
@@ -394,7 +412,7 @@ export default function RegisteredPlayersPage() {
         sport: "", position: "", phone: "",
         gender: "", province: "", school: "",
         height_cm: "", weight_kg: "", dominant_foot: "",
-        notes: "",
+        notes: "", whatsapp_number: "", number_owner: "",
       });
       setPhotoFile(null);
       setPhotoPreview(null);
@@ -458,6 +476,92 @@ export default function RegisteredPlayersPage() {
     } finally {
       setActionId(null);
     }
+  }
+
+  function openEdit(reg: Registration) {
+    setEditingId(reg.id);
+    setEditForm({
+      first_name:      reg.first_name,
+      surname:         reg.surname,
+      date_of_birth:   reg.date_of_birth?.slice(0, 10) ?? "",
+      sport:           reg.sport          ?? "",
+      position:        reg.position       ?? "",
+      phone:           reg.phone          ?? "",
+      gender:          reg.gender         ?? "",
+      province:        reg.province       ?? "",
+      school:          reg.school         ?? "",
+      height_cm:       reg.height_cm      != null ? String(reg.height_cm) : "",
+      weight_kg:       reg.weight_kg      != null ? String(reg.weight_kg) : "",
+      dominant_foot:   reg.dominant_foot  ?? "",
+      notes:           reg.notes          ?? "",
+      whatsapp_number: reg.whatsapp_number ?? "",
+      number_owner:    reg.number_owner   ?? "",
+    });
+    setEditError(null);
+    setEditPhotoFile(null);
+    setEditPhotoPreview(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingId) return;
+    setEditSubmitting(true);
+    setEditError(null);
+    try {
+      let photoUrl: string | undefined;
+      if (editPhotoFile) {
+        const uploaded = await uploadPhoto(editPhotoFile);
+        if (!uploaded) {
+          setEditError("Photo upload failed. Please try again.");
+          return;
+        }
+        photoUrl = uploaded;
+      }
+      const payload: Record<string, unknown> = {
+        sport:           editForm.sport          || undefined,
+        position:        editForm.position       || undefined,
+        phone:           editForm.phone          || undefined,
+        gender:          editForm.gender         || undefined,
+        province:        editForm.province       || undefined,
+        school:          editForm.school         || undefined,
+        height_cm:       editForm.height_cm      ? Number(editForm.height_cm)  : undefined,
+        weight_kg:       editForm.weight_kg      ? Number(editForm.weight_kg)  : undefined,
+        dominant_foot:   editForm.dominant_foot  || undefined,
+        notes:           editForm.notes          || undefined,
+        whatsapp_number: editForm.whatsapp_number || undefined,
+        number_owner:    editForm.number_owner   || undefined,
+      };
+      if (photoUrl) payload.photo_url = photoUrl;
+      // Include identity fields — server enforces the lock for non-admins
+      if (editForm.first_name)    payload.first_name    = editForm.first_name;
+      if (editForm.surname)       payload.surname       = editForm.surname;
+      if (editForm.date_of_birth) payload.date_of_birth = editForm.date_of_birth;
+
+      const res = await api.patch(`/coach/registered-players/${editingId}`, payload);
+      setRegs((prev) => prev.map((r) => (r.id === editingId ? { ...r, ...res.data.data } : r)));
+      setEditingId(null);
+      setEditPhotoFile(null);
+      setEditPhotoPreview(null);
+    } catch (err: unknown) {
+      const apiErr = err as { response?: { data?: { message?: string; locked_fields?: string[] } } };
+      const lockedMsg = apiErr?.response?.data?.locked_fields?.length
+        ? ` Locked: ${apiErr.response.data.locked_fields.join(", ")}.`
+        : "";
+      setEditError((apiErr?.response?.data?.message ?? "Update failed. Please try again.") + lockedMsg);
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
+  function handleEditPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert("Photo must be under 5 MB"); return; }
+    setEditPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setEditPhotoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
   }
 
   const pending   = regs.filter((r) => r.match_status === "pending_confirmation");
@@ -698,9 +802,40 @@ export default function RegisteredPlayersPage() {
               {/* Contact */}
               <div>
                 <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Contact</p>
-                <div>
-                  <label className="mb-1 block text-[11px] font-semibold text-gray-500">Player / Guardian Phone</label>
-                  <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="+263 77 123 4567" />
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">Player / Guardian Phone</label>
+                    <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="+263 77 123 4567" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">Parent / Guardian WhatsApp Number</label>
+                    <input value={form.whatsapp_number} onChange={(e) => setForm({ ...form, whatsapp_number: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="+263712345678 (E.164 format)" />
+                    <p className="mt-0.5 text-[10px] text-gray-400">Used to send guardian consent requests. Must start with + and country code.</p>
+                  </div>
+                  {form.whatsapp_number && (
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">WhatsApp number belongs to</label>
+                      <div className="flex gap-2">
+                        {[
+                          { value: "parent",   label: "Parent" },
+                          { value: "guardian", label: "Guardian" },
+                        ].map(({ value, label }) => (
+                          <button
+                            key={value} type="button"
+                            onClick={() => setForm({ ...form, number_owner: form.number_owner === value ? "" : value })}
+                            className="flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors"
+                            style={{
+                              borderColor: form.number_owner === value ? "#1a5c2a" : "#e5e7eb",
+                              backgroundColor: form.number_owner === value ? "#f0fdf4" : "#fff",
+                              color: form.number_owner === value ? "#1a5c2a" : "#6b7280",
+                            }}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -728,6 +863,235 @@ export default function RegisteredPlayersPage() {
             </form>
           </div>
         )}
+
+        {/* ── Edit form ─────────────────────────────────────────────────────── */}
+        {editingId && (() => {
+          const editingReg = regs.find((r) => r.id === editingId);
+          if (!editingReg) return null;
+          const identityLocked = editingReg.match_status !== "unmatched" || editingReg.consent_status === "verified";
+          const editingPhotoUrl = editPhotoPreview ?? editingReg.photo_url;
+          return (
+            <div className="mb-6 rounded-2xl border-2 border-[#1a5c2a] bg-white p-5 shadow-md">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-wide text-gray-900">
+                    Edit — {editingReg.first_name} {editingReg.surname}
+                  </h3>
+                  {identityLocked && (
+                    <p className="mt-0.5 flex items-center gap-1 text-[11px] text-amber-600">
+                      <Lock size={10} /> Name and DOB are locked (record is matched or consent verified)
+                    </p>
+                  )}
+                </div>
+                <button onClick={() => setEditingId(null)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
+              </div>
+              <form onSubmit={handleUpdate} className="space-y-4">
+
+                {/* Photo */}
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Player Photo</label>
+                  <div className="flex items-center gap-3">
+                    <div
+                      onClick={() => editPhotoInputRef.current?.click()}
+                      className="flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-gray-200 bg-gray-50 hover:border-[#1a5c2a] transition-colors"
+                    >
+                      {editingPhotoUrl
+                        ? <img src={editingPhotoUrl} alt="preview" className="h-full w-full object-cover" />
+                        : <Camera size={18} className="text-gray-300" />
+                      }
+                    </div>
+                    <div>
+                      <button type="button" onClick={() => editPhotoInputRef.current?.click()} className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50">
+                        {editingPhotoUrl ? "Change photo" : "Add photo"}
+                      </button>
+                      <p className="mt-0.5 text-[10px] text-gray-400">JPG or PNG · max 5 MB</p>
+                    </div>
+                    <input ref={editPhotoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleEditPhotoSelect} />
+                  </div>
+                </div>
+
+                {/* Identity — locked or editable */}
+                <div>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">
+                    Identity {identityLocked && <span className="text-amber-500">· Locked</span>}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">First Name *</label>
+                      <input
+                        value={editForm.first_name}
+                        onChange={(e) => !identityLocked && setEditForm({ ...editForm, first_name: e.target.value })}
+                        required disabled={identityLocked}
+                        className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                        style={{ borderColor: identityLocked ? "#e5e7eb" : "#d1d5db" }}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">Surname *</label>
+                      <input
+                        value={editForm.surname}
+                        onChange={(e) => !identityLocked && setEditForm({ ...editForm, surname: e.target.value })}
+                        required disabled={identityLocked}
+                        className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                        style={{ borderColor: identityLocked ? "#e5e7eb" : "#d1d5db" }}
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">Date of Birth *</label>
+                      <input type="date" value={editForm.date_of_birth}
+                        onChange={(e) => !identityLocked && setEditForm({ ...editForm, date_of_birth: e.target.value })}
+                        required disabled={identityLocked}
+                        className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                        style={{ borderColor: identityLocked ? "#e5e7eb" : "#d1d5db" }}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">Gender</label>
+                      <select value={editForm.gender} onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none">
+                        <option value="">Select...</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Location & School</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">Province</label>
+                      <select value={editForm.province} onChange={(e) => setEditForm({ ...editForm, province: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none">
+                        <option value="">Select...</option>
+                        {ZW_PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">School / Club</label>
+                      <input value={editForm.school} onChange={(e) => setEditForm({ ...editForm, school: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="e.g. Harare High School" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sport Profile */}
+                <div>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Sport Profile</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">Sport</label>
+                      <select value={editForm.sport} onChange={(e) => setEditForm({ ...editForm, sport: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none">
+                        <option value="">Select...</option>
+                        {["Football", "Rugby", "Athletics", "Netball", "Basketball", "Cricket", "Swimming", "Tennis", "Volleyball", "Hockey"].map((s) => (
+                          <option key={s} value={s.toLowerCase()}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">Position</label>
+                      <input value={editForm.position} onChange={(e) => setEditForm({ ...editForm, position: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="e.g. Striker" />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">Dominant Foot</label>
+                    <div className="flex gap-2">
+                      {["Right", "Left", "Both"].map((f) => (
+                        <button key={f} type="button"
+                          onClick={() => setEditForm({ ...editForm, dominant_foot: editForm.dominant_foot === f.toLowerCase() ? "" : f.toLowerCase() })}
+                          className="flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors"
+                          style={{
+                            borderColor: editForm.dominant_foot === f.toLowerCase() ? "#1a5c2a" : "#e5e7eb",
+                            backgroundColor: editForm.dominant_foot === f.toLowerCase() ? "#f0fdf4" : "#fff",
+                            color: editForm.dominant_foot === f.toLowerCase() ? "#1a5c2a" : "#6b7280",
+                          }}
+                        >{f}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Physical */}
+                <div>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Physical</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">Height (cm)</label>
+                      <input type="number" min="50" max="250" value={editForm.height_cm} onChange={(e) => setEditForm({ ...editForm, height_cm: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="165" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">Weight (kg)</label>
+                      <input type="number" min="20" max="200" value={editForm.weight_kg} onChange={(e) => setEditForm({ ...editForm, weight_kg: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="60" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact */}
+                <div>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Contact</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">Player / Guardian Phone</label>
+                      <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="+263 77 123 4567" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-gray-500">Parent / Guardian WhatsApp Number</label>
+                      <input value={editForm.whatsapp_number} onChange={(e) => setEditForm({ ...editForm, whatsapp_number: e.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none" placeholder="+263712345678" />
+                      <p className="mt-0.5 text-[10px] text-amber-600">
+                        ⚠ Changing this number will cancel any pending consent request.
+                      </p>
+                    </div>
+                    {editForm.whatsapp_number && (
+                      <div>
+                        <label className="mb-1 block text-[11px] font-semibold text-gray-500">WhatsApp number belongs to</label>
+                        <div className="flex gap-2">
+                          {[{ value: "parent", label: "Parent" }, { value: "guardian", label: "Guardian" }].map(({ value, label }) => (
+                            <button key={value} type="button"
+                              onClick={() => setEditForm({ ...editForm, number_owner: editForm.number_owner === value ? "" : value })}
+                              className="flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors"
+                              style={{
+                                borderColor: editForm.number_owner === value ? "#1a5c2a" : "#e5e7eb",
+                                backgroundColor: editForm.number_owner === value ? "#f0fdf4" : "#fff",
+                                color: editForm.number_owner === value ? "#1a5c2a" : "#6b7280",
+                              }}
+                            >{label}</button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Coach Notes */}
+                <div>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Coach Notes</p>
+                  <textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} rows={2} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none resize-none" placeholder="e.g. Excellent pace, needs work on left foot" />
+                </div>
+
+                {editError && (
+                  <p style={{ fontSize: 12, color: "#dc2626", backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 12px" }}>
+                    {editError}
+                  </p>
+                )}
+
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setEditingId(null)} className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={editSubmitting || uploadingPhoto}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                    style={{ backgroundColor: "#1a5c2a" }}
+                  >
+                    {(editSubmitting || uploadingPhoto) ? <Loader2 size={14} className="animate-spin" /> : <Pencil size={14} />}
+                    {uploadingPhoto ? "Uploading photo..." : editSubmitting ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          );
+        })()}
 
         {loading && (
           <div className="flex justify-center py-16">
@@ -760,6 +1124,7 @@ export default function RegisteredPlayersPage() {
                   onDelete={handleDelete}
                   onStandaloneConfirm={handleStandaloneConfirm}
                   onCertificate={() => generateCertificate(r, coachName)}
+                  onEdit={openEdit}
                 />
               ))}
             </div>
@@ -783,6 +1148,7 @@ export default function RegisteredPlayersPage() {
                   onDelete={handleDelete}
                   onStandaloneConfirm={handleStandaloneConfirm}
                   onCertificate={() => generateCertificate(r, coachName)}
+                  onEdit={openEdit}
                 />
               ))}
             </div>
@@ -806,6 +1172,7 @@ export default function RegisteredPlayersPage() {
                   onDelete={handleDelete}
                   onStandaloneConfirm={handleStandaloneConfirm}
                   onCertificate={() => generateCertificate(r, coachName)}
+                  onEdit={openEdit}
                 />
               ))}
             </div>
@@ -829,6 +1196,7 @@ export default function RegisteredPlayersPage() {
                   onDelete={handleDelete}
                   onStandaloneConfirm={handleStandaloneConfirm}
                   onCertificate={() => generateCertificate(r, coachName)}
+                  onEdit={openEdit}
                 />
               ))}
             </div>
@@ -840,7 +1208,7 @@ export default function RegisteredPlayersPage() {
 }
 
 function RegistrationCard({
-  reg, actionId, onConfirm, onReject, onDelete, onStandaloneConfirm, onCertificate,
+  reg, actionId, onConfirm, onReject, onDelete, onStandaloneConfirm, onCertificate, onEdit,
 }: {
   reg: Registration;
   actionId: string | null;
@@ -849,6 +1217,7 @@ function RegistrationCard({
   onDelete: (id: string) => void;
   onStandaloneConfirm: (id: string) => void;
   onCertificate: () => void;
+  onEdit: (reg: Registration) => void;
 }) {
   const busy = actionId === reg.id;
   const [playing, setPlaying] = useState(false);
@@ -942,6 +1311,13 @@ function RegistrationCard({
               {playing ? <ChevronUp size={13} /> : <Play size={13} />}
             </button>
           )}
+          <button
+            onClick={() => onEdit(reg)}
+            title="Edit player details"
+            className="rounded-lg p-1.5 text-gray-300 hover:bg-blue-50 hover:text-blue-500 transition-colors"
+          >
+            <Pencil size={13} />
+          </button>
           <button
             onClick={onCertificate}
             title="Download Provenance Certificate"
