@@ -18,6 +18,7 @@ import { usePathname } from "next/navigation";
 import { X, Send, Sparkles, ChevronDown, Mic, MicOff } from "lucide-react";
 import api from "@/lib/api";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
+import { useAuthStore } from "@/lib/auth-store";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,47 @@ interface Message {
 
 const STORAGE_KEY = "thuto_coach_chat_history";
 const MAX_STORED  = 10;
+
+// ── Coach context types ───────────────────────────────────────────────────────
+
+interface CoachProfile {
+  name?: string;
+  club?: string;
+  coaching_level?: string;
+  years_experience?: number;
+}
+
+interface RegisteredPlayer {
+  consent_status?: string;
+  talent_passport_complete?: boolean;
+}
+
+interface MatchResult {
+  home_team?: string;
+  away_team?: string;
+  home_score?: number;
+  away_score?: number;
+  match_date?: string;
+}
+
+interface CoachVars {
+  coach_name: string;
+  organisation_name: string;
+  school_or_academy: string;
+  squad_size: number;
+  age_groups: string;
+  players_missing_tests: number;
+  players_pending_consent: number;
+  recent_match_reports_summary: string;
+  drill_catalog_names: string;
+}
+
+const DRILL_CATALOG_NAMES =
+  "Rondo 4v2, Possession 7v4, Pressing Triggers 5v3, Finishing 1v1 GK, " +
+  "Crossing & Finishing, Corner Routines, Transition 8v8 Attack→Defence, " +
+  "High Press Organisation 10v7, Short Passing Circuit, Small-Sided Games 3v3, " +
+  "Defensive Shape 11v8, Sprint & Recovery Circuit, " +
+  "Goalkeeper Distribution Drills, Attacking Third Combinations";
 
 // ── Base system prompt ────────────────────────────────────────────────────────
 
@@ -220,6 +262,71 @@ const BASE_PROMPT =
   "THUTO weaves this into answers naturally — never reads the JSON out loud. Never says 'According to page data...'\n" +
   "Example: coach asks 'How do I get my players noticed?' → THUTO responds referencing their specific province and squad size.\n\n" +
   "ALWAYS END WITH: 'Train anywhere in Zimbabwe. Use AI to get recognised. 🇿🇼'";
+
+// ── Structured coach-mode system prompt with real data injected ───────────────
+
+function buildSystemPromptFromVars(vars: CoachVars): string {
+  const structured =
+    `You are THUTO — the AI coaching assistant on GrassRoots Sports, Zimbabwe's AI sports platform.\n\n` +
+    `You are speaking directly to a coach.\n` +
+    `Coach name: ${vars.coach_name}\n` +
+    `Academy / school: ${vars.school_or_academy} (${vars.organisation_name})\n` +
+    `Squad size: ${vars.squad_size} players   |   Age groups: ${vars.age_groups}\n` +
+    `Players with outstanding Talent Passport tests: ${vars.players_missing_tests}\n` +
+    `Players with guardian consent pending: ${vars.players_pending_consent}\n` +
+    `Recent matches: ${vars.recent_match_reports_summary}\n` +
+    `Platform drill catalog: ${vars.drill_catalog_names}\n\n` +
+
+    `== WHO COACHES ARE ==\n` +
+    `Most coaches on GrassRoots Sports are schoolteachers, community volunteers, and part-time coaches.\n` +
+    `They are passionate, time-poor, and operating under real constraints: no assistant coaches, no physios,\n` +
+    `no video analysts, often no reliable internet on the training ground.\n` +
+    `THUTO treats every coach as a professional who deserves professional-grade tools.\n\n` +
+
+    `== YOUR 5 JOBS AS THUTO (COACH MODE) ==\n\n` +
+
+    `1. SESSION PLANNING\n` +
+    `   Help coaches plan training sessions immediately — format, duration, drill names, organisation, coaching points.\n` +
+    `   Always ask: How many players? What age group? What problem does this session fix?\n` +
+    `   Suggest drills from the platform catalog when relevant: ${vars.drill_catalog_names}.\n` +
+    `   Output sessions in a format the coach can read pitchside — numbered, short, actionable.\n\n` +
+
+    `2. TALENT PASSPORT TESTING\n` +
+    `   Guide coaches through GRS Talent Passport fitness tests (sprint, jump, endurance, agility, strength).\n` +
+    `   ${vars.players_missing_tests} players on this squad currently have outstanding tests — remind the coach.\n` +
+    `   Help coaches run and record tests on the platform.\n` +
+    `   Explain WHY each test matters: "A 40m sprint time is the first thing Dynamos scouts ask for."\n\n` +
+
+    `3. SQUAD QUESTIONS\n` +
+    `   Answer any question about squad management: selection, formation, rotation, injuries,\n` +
+    `   motivation, discipline, player development.\n` +
+    `   Always reference this coach's squad size (${vars.squad_size} players) and age groups (${vars.age_groups})\n` +
+    `   when giving advice — never give generic answers.\n\n` +
+
+    `4. MATCH EYE REPORTS\n` +
+    `   Help coaches understand their Match Eye AI analysis reports.\n` +
+    `   Translate data into coaching actions: "Your xG was 2.4 but you scored 0 — your finishing is the issue, not your chance creation."\n` +
+    `   Help coaches write match reports their club committees and parents will understand.\n\n` +
+
+    `5. TEACH THE COACH\n` +
+    `   When appropriate, explain the principle behind the advice.\n` +
+    `   Keep it brief — one teaching point per response maximum.\n\n` +
+
+    `== SAFEGUARDING RULES ==\n` +
+    `Players aged 13-17: never share player contact details or location without active guardian consent.\n` +
+    `Players under 13: always route communications through the registered guardian.\n` +
+    `${vars.players_pending_consent} players on this squad currently have guardian consent pending — do not advise bypassing this.\n` +
+    `If a coach reports a welfare concern about a player: direct them immediately to their school safeguarding officer or the GRS admin team.\n\n` +
+
+    `== STYLE GUIDELINES ==\n` +
+    `- Be direct. Coaches need answers, not essays. Maximum 150 words per response unless writing a full session plan.\n` +
+    `- Use numbered lists for session plans. Use plain text for advice.\n` +
+    `- End every response with one specific action the coach can take TODAY.\n` +
+    `- Never say "It depends" without immediately naming what it depends on and giving two clear options.\n` +
+    `- Speak like the most knowledgeable person in the coaching community — warm, confident, grounded in Zimbabwe.\n\n`;
+
+  return structured + BASE_PROMPT;
+}
 
 // ── Page-aware context map ────────────────────────────────────────────────────
 // Maps each coach route to: what the coach is doing + relevant suggested questions
@@ -492,12 +599,18 @@ function useVoiceInput(onTranscript: (text: string) => void) {
 
 export default function ThutoChatCoach() {
   const pathname = usePathname();
-  const [open,     setOpen]     = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input,    setInput]    = useState("");
-  const [thinking, setThinking] = useState(false);
-  const [unread,   setUnread]   = useState(0);
-  const [squad,    setSquad]    = useState<SquadMember[]>([]);
+  const user = useAuthStore((s) => s.user);
+
+  const [open,              setOpen]              = useState(false);
+  const [messages,          setMessages]          = useState<Message[]>([]);
+  const [input,             setInput]             = useState("");
+  const [thinking,          setThinking]          = useState(false);
+  const [unread,            setUnread]            = useState(0);
+  const [squad,             setSquad]             = useState<SquadMember[]>([]);
+  const [coachProfile,      setCoachProfile]      = useState<CoachProfile | null>(null);
+  const [orgName,           setOrgName]           = useState<string>("");
+  const [registeredPlayers, setRegisteredPlayers] = useState<RegisteredPlayer[]>([]);
+  const [recentMatches,     setRecentMatches]     = useState<MatchResult[]>([]);
 
   const inputRef  = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -514,11 +627,45 @@ export default function ThutoChatCoach() {
     ?? Object.entries(PAGE_CONTEXT).find(([k]) => (pathname ?? '').startsWith(k) && k !== "/coach")?.[1]
     ?? PAGE_CONTEXT["/coach"];
 
-  // ── Load squad for context ───────────────────────────────────────────────
+  // ── Load coach context data ───────────────────────────────────────────────
   useEffect(() => {
     api.get("/coach/squad")
       .then((res) => setSquad(res.data?.data ?? res.data ?? []))
       .catch(() => {});
+
+    api.get("/profile")
+      .then((res) => {
+        const d = res.data?.data ?? res.data;
+        setCoachProfile({
+          name:             d?.name,
+          club:             d?.club,
+          coaching_level:   d?.coaching_level,
+          years_experience: d?.years_experience,
+        });
+      })
+      .catch(() => {});
+
+    api.get("/organisation")
+      .then((res) => {
+        const d = res.data?.data ?? res.data;
+        setOrgName(d?.name ?? "");
+      })
+      .catch(() => {});
+
+    api.get("/coach/registered-players?per_page=100")
+      .then((res) => {
+        const rows = res.data?.data ?? res.data?.players ?? [];
+        setRegisteredPlayers(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => {});
+
+    api.get("/matches?per_page=5")
+      .then((res) => {
+        const rows = res.data?.data ?? res.data?.matches ?? [];
+        setRecentMatches(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => {});
+
     // Preload offline knowledge base so it's ready if connection drops
     preloadOfflineAI();
   }, []);
@@ -550,6 +697,42 @@ export default function ThutoChatCoach() {
     } catch { /* ignore */ }
 
     return parts.join("");
+  };
+
+  // ── Build coach context vars for system prompt injection ────────────────
+  const getCoachVars = (): CoachVars => {
+    const pending = registeredPlayers.filter(
+      (p) => !p.consent_status || p.consent_status === "not_requested" || p.consent_status === "pending"
+    ).length;
+
+    const missingTests = registeredPlayers.filter(
+      (p) => !p.talent_passport_complete
+    ).length;
+
+    const matchSummary = recentMatches.length > 0
+      ? recentMatches
+          .slice(0, 3)
+          .map((m) =>
+            `${m.home_team ?? "Us"} ${m.home_score ?? "?"}-${m.away_score ?? "?"} ${m.away_team ?? "Them"}` +
+            (m.match_date ? ` (${m.match_date})` : "")
+          )
+          .join("; ")
+      : "No recent matches logged yet";
+
+    const coachName = coachProfile?.name ?? (user as { name?: string } | null)?.name ?? "Coach";
+    const academy   = coachProfile?.club ?? (orgName || "your academy");
+
+    return {
+      coach_name:                   coachName,
+      organisation_name:            orgName || academy,
+      school_or_academy:            academy,
+      squad_size:                   squad.length,
+      age_groups:                   squad.length > 0 ? "mixed" : "unknown",
+      players_missing_tests:        missingTests,
+      players_pending_consent:      pending,
+      recent_match_reports_summary: matchSummary,
+      drill_catalog_names:          DRILL_CATALOG_NAMES,
+    };
   };
 
   // ── Load chat history ────────────────────────────────────────────────────
@@ -602,7 +785,7 @@ export default function ThutoChatCoach() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message:       text,
-          system_prompt: BASE_PROMPT + buildContext(),
+          system_prompt: buildSystemPromptFromVars(getCoachVars()) + buildContext(),
           history:       messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
         }),
       });
