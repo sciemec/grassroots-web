@@ -9,7 +9,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 import {
   Users, Eye, Play, CheckCircle2, MessageSquare,
-  Search, TrendingUp, ArrowLeft, RefreshCw, MapPin,
+  Search, TrendingUp, ArrowLeft, RefreshCw,
   Activity, Smartphone,
 } from "lucide-react";
 
@@ -134,7 +134,8 @@ function SkeletonCard() {
 // ── Main ───────────────────────────────────────────────────────────────────
 
 export default function AdminEngagementPage() {
-  const user = useAuthStore((s) => s.user);
+  const user         = useAuthStore((s) => s.user);
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
   const [tab, setTab] = useState<"live" | "history">("live");
 
   const { data: liveData, isLoading: liveLoading, refetch: refetchLive, dataUpdatedAt } = useQuery<LiveData>({
@@ -144,7 +145,7 @@ export default function AdminEngagementPage() {
     refetchInterval: 30_000,
   });
 
-  const { data: snapData, isLoading: snapLoading } = useQuery<{ data: Snapshot[] }>({
+  const { data: snapData, isLoading: snapLoading, refetch: refetchSnapshots } = useQuery<{ data: Snapshot[] }>({
     queryKey: ["admin-engagement-snapshots"],
     queryFn: async () => { const res = await api.get("/admin/engagement/snapshots"); return res.data; },
     enabled: !!user && tab === "history",
@@ -197,6 +198,8 @@ export default function AdminEngagementPage() {
 
   const updatedTime = dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString() : "—";
 
+  if (!_hasHydrated || !user) return null;
+
   return (
     <div style={{ minHeight: "100vh", backgroundColor: BG }}>
 
@@ -215,7 +218,7 @@ export default function AdminEngagementPage() {
           <div style={{ fontSize: 11, color: TEXT_MUTED }}>Sponsor & partnership reporting</div>
         </div>
         <button
-          onClick={() => refetchLive()}
+          onClick={() => tab === "live" ? refetchLive() : refetchSnapshots()}
           style={{
             display: "flex", alignItems: "center", gap: 5,
             padding: "6px 12px", borderRadius: 8,
