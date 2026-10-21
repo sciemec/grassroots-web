@@ -173,7 +173,7 @@ export default function PlayerPreviewPage() {
   };
 
   return (
-    <main className="flex flex-col overflow-hidden" style={{ height: "100%" }}>
+    <main className="flex flex-col overflow-hidden h-[calc(100dvh-80px)] lg:h-dvh">
 
         {/* ── Top bar ── */}
         <div className="flex items-center gap-3 border-b border-[#f0b429]/10 bg-card/60 px-5 py-3 shrink-0">
@@ -232,7 +232,7 @@ export default function PlayerPreviewPage() {
         </div>
 
         {/* ── Chat area ── */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
 
           {/* Empty state */}
           {messages.length === 0 && (
