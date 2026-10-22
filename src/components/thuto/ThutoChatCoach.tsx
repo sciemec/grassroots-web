@@ -611,6 +611,8 @@ export default function ThutoChatCoach() {
   const [orgName,           setOrgName]           = useState<string>("");
   const [registeredPlayers, setRegisteredPlayers] = useState<RegisteredPlayer[]>([]);
   const [recentMatches,     setRecentMatches]     = useState<MatchResult[]>([]);
+  const [trainingPlans,     setTrainingPlans]     = useState<{ title?: string; sport?: string }[]>([]);
+  const [setPieces,         setSetPieces]         = useState<{ type?: string; title?: string; situation?: string }[]>([]);
 
   const inputRef  = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -666,6 +668,20 @@ export default function ThutoChatCoach() {
       })
       .catch(() => {});
 
+    api.get("/coach/training-plans")
+      .then((res) => {
+        const rows = res.data?.data ?? res.data ?? [];
+        setTrainingPlans(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => {});
+
+    api.get("/coach/set-pieces")
+      .then((res) => {
+        const rows = res.data?.data ?? res.data ?? [];
+        setSetPieces(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => {});
+
     // Preload offline knowledge base so it's ready if connection drops
     preloadOfflineAI();
   }, []);
@@ -673,6 +689,9 @@ export default function ThutoChatCoach() {
   // ── Build full context string: page + squad + any page data ─────────────
   const buildContext = () => {
     const parts: string[] = [];
+
+    // 0. Role clarification — always first so the AI knows its audience
+    parts.push(`\nCURRENT ROLE: You are talking to a COACH (not a player). Tailor all advice to squad management, session planning, player development strategy, match preparation, and administrative readiness. Do not give personal player development or scholarship advice meant for individual athletes.`);
 
     // 1. Page context
     parts.push(`\n\nCURRENT PAGE: ${pageCtx.description}`);
@@ -690,7 +709,20 @@ export default function ThutoChatCoach() {
       );
     }
 
-    // 3. Page-specific data written by individual pages (optional)
+    // 3. Training plans
+    if (trainingPlans.length > 0) {
+      const planNames = trainingPlans.slice(0, 3).map(p => p.title ?? "Untitled").join("; ");
+      parts.push(`\nSAVED TRAINING PLANS (${trainingPlans.length} total): ${planNames}`);
+    }
+
+    // 4. Set pieces
+    if (setPieces.length > 0) {
+      const attackingCount = setPieces.filter(s => s.situation === "attacking").length;
+      const defendingCount = setPieces.filter(s => s.situation === "defending").length;
+      parts.push(`\nSET PIECE ROUTINES LOGGED: ${setPieces.length} total (${attackingCount} attacking, ${defendingCount} defending)`);
+    }
+
+    // 5. Page-specific data written by individual pages (optional)
     try {
       const pageData = localStorage.getItem("thuto_page_data");
       if (pageData) parts.push(`\nPAGE DATA: ${pageData}`);
