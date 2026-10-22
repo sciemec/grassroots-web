@@ -1105,6 +1105,7 @@ export default function ThutoChat() {
 
   const buildContext = () => {
     const parts: string[] = [];
+    parts.push(`\nCURRENT ROLE: You are talking to a PLAYER (not a coach). Tailor all advice, language, and suggestions to a player's perspective — personal development, performance, mindset, and getting recognised by scouts. Do not give squad management, coaching certification, or team tactics owner advice.`);
     parts.push(`\nCURRENT PAGE: ${pageCtx.description}`);
     try {
       const pageData = localStorage.getItem("thuto_page_data");
@@ -1197,6 +1198,31 @@ export default function ThutoChat() {
           });
           const latest = events[events.length - 1];
           lines.push(`\nWhen the player asks about their performance or what to work on, reference these real AI analysis results. Most recent session: ${TOOL_LABELS[latest.tool] ?? latest.tool} on ${fmt(latest.timestamp)}.`);
+          parts.push(lines.join("\n"));
+        }
+      }
+    } catch { /* ignore */ }
+
+    // Inject active Mission Mode goal from localStorage
+    try {
+      const goalRaw = localStorage.getItem("gs_player_goal");
+      if (goalRaw) {
+        const goal = JSON.parse(goalRaw) as {
+          goal_type?: string; goal_text?: string; timeline_months?: number;
+          sport?: string; position?: string; target_date?: string;
+          committed?: boolean; phases?: unknown[];
+        };
+        if (goal.goal_text && goal.committed !== false) {
+          const daysLeft = goal.target_date
+            ? Math.max(0, Math.ceil((new Date(goal.target_date).getTime() - Date.now()) / 86_400_000))
+            : null;
+          const lines = [`\n== PLAYER'S ACTIVE MISSION GOAL ==`];
+          lines.push(`Goal: ${goal.goal_text}`);
+          if (goal.timeline_months) lines.push(`Timeline: ${goal.timeline_months} months`);
+          if (goal.sport)           lines.push(`Sport focus: ${goal.sport}`);
+          if (goal.position)        lines.push(`Position focus: ${goal.position}`);
+          if (daysLeft !== null)    lines.push(`Days remaining: ${daysLeft}`);
+          lines.push(`When the player asks for advice, training plans, or next steps, connect your response to this goal. If they seem off-track, gently remind them. If they are making progress, celebrate it.`);
           parts.push(lines.join("\n"));
         }
       }
