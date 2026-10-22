@@ -45,6 +45,15 @@ interface PlayerStats {
   streak_days: number;
 }
 
+interface FieldTest {
+  id: string;
+  position: string;
+  test_date: string | null;
+  results: Record<string, number | string>;
+  position_verified: boolean;
+  created_at: string;
+}
+
 interface Guardian {
   id: string;
   guardian_name: string;
@@ -72,6 +81,7 @@ export default function CoachPlayerDetailPage() {
   const [guardiansPayload, setGuardiansPayload] = useState<GuardiansPayload | null>(null);
   const [skillRatings, setSkillRatings] = useState<{ skill_code: string; rating: number; notes: string | null }[]>([]);
   const [biometricScore, setBiometricScore] = useState<{ drill: string; resilience_index: number; flags: string[]; created_at: string } | null>(null);
+  const [fieldTests, setFieldTests] = useState<FieldTest[]>([]);
   const [aiReport, setAiReport] = useState("");
   const [loadingAi, setLoadingAi] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -93,10 +103,13 @@ export default function CoachPlayerDetailPage() {
         setGuardiansPayload(guardiansRes.data);
       }
       setSkillRatings(Array.isArray(ratingsRes.data?.data) ? ratingsRes.data.data : []);
-      const bioRows = bioRes.data?.data ?? [];
-      if (Array.isArray(bioRows) && bioRows.length > 0) {
+      const bioPayload = bioRes.data?.data ?? {};
+      const bioRows  = Array.isArray(bioPayload.biometric_scores) ? bioPayload.biometric_scores : [];
+      const ftRows   = Array.isArray(bioPayload.field_tests)      ? bioPayload.field_tests      : [];
+      if (bioRows.length > 0) {
         setBiometricScore(bioRows[0] as { drill: string; resilience_index: number; flags: string[]; created_at: string });
       }
+      setFieldTests(ftRows as FieldTest[]);
     }).catch(() => {}).finally(() => setLoading(false));
   }, [user, router, memberId]);
 
@@ -379,6 +392,64 @@ export default function CoachPlayerDetailPage() {
                 </div>
               );
             })()}
+
+            {/* Field Tests */}
+            <div className="rounded-xl border bg-card p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-semibold flex items-center gap-2">
+                  <Target className="h-4 w-4 text-blue-500" /> Field Tests
+                </h2>
+                {fieldTests.length > 0 && (
+                  <span className="text-xs text-muted-foreground">{fieldTests.length} test{fieldTests.length !== 1 ? "s" : ""}</span>
+                )}
+              </div>
+              {fieldTests.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-5 text-center">
+                  <Target className="mx-auto mb-2 h-6 w-6 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">No field tests recorded yet.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Run a field test from the registration record to capture position-specific benchmarks.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {fieldTests.map((ft) => {
+                    const resultEntries = Object.entries(ft.results ?? {});
+                    return (
+                      <div key={ft.id} className="rounded-lg border bg-muted/20 p-4">
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="text-sm font-semibold capitalize">{ft.position}</span>
+                          <div className="flex items-center gap-2">
+                            {ft.position_verified && (
+                              <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-bold text-green-700">
+                                Verified
+                              </span>
+                            )}
+                            {ft.test_date && (
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(ft.test_date).toLocaleDateString("en-ZW")}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {resultEntries.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-x-6 gap-y-1">
+                            {resultEntries.map(([key, val]) => (
+                              <div key={key} className="flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground capitalize">{key.replace(/_/g, " ")}</span>
+                                <span className="text-xs font-semibold tabular-nums">{String(val)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No result data.</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {/* Recent sessions */}
             <div className="rounded-xl border bg-card p-5">

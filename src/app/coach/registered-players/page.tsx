@@ -5,8 +5,9 @@ import Link from "next/link";
 import {
   ArrowLeft, Plus, CheckCircle2, Clock, X, UserCheck,
   Loader2, Trash2, ShieldCheck, AlertCircle, Download, Play, ChevronUp, Star,
-  Camera, AlertTriangle, Pencil, Lock,
+  Camera, AlertTriangle, Pencil, Lock, Users,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import jsPDF from "jspdf";
 import { useAuthStore } from "@/lib/auth-store";
@@ -268,9 +269,11 @@ function generateCertificate(reg: Registration, coachName: string) {
 }
 
 export default function RegisteredPlayersPage() {
+  const router = useRouter();
   const [regs, setRegs]         = useState<Registration[]>([]);
   const [loading, setLoading]   = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [lastConfirmed, setLastConfirmed] = useState<{ name: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [actionId, setActionId]     = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<DuplicateWarning | null>(null);
@@ -400,6 +403,7 @@ export default function RegisteredPlayersPage() {
         notes:         form.notes         || undefined,
       });
 
+      const addedName = `${form.first_name} ${form.surname}`;
       setRegs((prev) => [res.data.data, ...prev]);
 
       // Show duplicate warnings if backend found any — but don't block
@@ -417,6 +421,7 @@ export default function RegisteredPlayersPage() {
       setPhotoFile(null);
       setPhotoPreview(null);
       setShowForm(false);
+      setLastConfirmed({ name: addedName });
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })
         ?.response?.data?.message ?? "Registration failed. Please try again.";
@@ -599,6 +604,53 @@ export default function RegisteredPlayersPage() {
       </header>
 
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "20px 16px 56px" }}>
+
+        {/* Confirmation screen — shown immediately after a successful registration */}
+        {lastConfirmed && (
+          <div style={{
+            backgroundColor: "#fff", border: "1px solid #bbf7d0", borderRadius: 16,
+            padding: "40px 24px", textAlign: "center", marginBottom: 24,
+          }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: "50%", backgroundColor: "#dcfce7",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 16px",
+            }}>
+              <CheckCircle2 size={32} color="#16a34a" />
+            </div>
+            <h2 style={{ fontWeight: 800, fontSize: 20, color: "#111", margin: "0 0 6px" }}>
+              {lastConfirmed.name} added to your squad
+            </h2>
+            <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 28px" }}>
+              Their registration certificate is ready to download from the list below.
+              When they join the platform, you&apos;ll get a notification to confirm the match.
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+              <button
+                onClick={() => { setLastConfirmed(null); setShowForm(true); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  backgroundColor: "#1a5c2a", color: "#fff",
+                  border: "none", borderRadius: 10, padding: "12px 22px",
+                  fontWeight: 700, fontSize: 14, cursor: "pointer",
+                }}
+              >
+                <Plus size={16} /> Register another
+              </button>
+              <button
+                onClick={() => router.push("/coach/squad")}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  backgroundColor: "#fff", color: "#1a5c2a",
+                  border: "2px solid #1a5c2a", borderRadius: 10, padding: "12px 22px",
+                  fontWeight: 700, fontSize: 14, cursor: "pointer",
+                }}
+              >
+                <Users size={16} /> Go to My Squad
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Action error banner */}
         {actionError && (
