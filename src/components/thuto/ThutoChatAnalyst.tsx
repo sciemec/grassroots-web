@@ -361,11 +361,34 @@ export default function ThutoChatAnalyst() {
     PAGE_CONTEXT["/analyst"];
 
   const buildContext = () => {
-    const parts: string[] = [`\n\nCURRENT PAGE: ${pageCtx.description}`];
+    const parts: string[] = [];
+
+    // 0. Role clarification — always first
+    parts.push(`\nCURRENT ROLE: You are talking to a MATCH ANALYST (not a player or coach). Tailor all advice to data collection, interpreting analytics tools, explaining results clearly to coaching staff, and improving data quality. Do not give personal player development or squad management advice.`);
+
+    // 1. Page context
+    parts.push(`\n\nCURRENT PAGE: ${pageCtx.description}`);
+
+    // 2. Touch Tracker match history summary (feeds Season Intelligence)
+    try {
+      const ttRaw = localStorage.getItem("gs_touch_tracker_history");
+      if (ttRaw) {
+        const sessions: { homeTeam?: string; awayTeam?: string; homeScore?: number; awayScore?: number; date?: string }[] = JSON.parse(ttRaw);
+        if (Array.isArray(sessions) && sessions.length > 0) {
+          const recent = sessions.slice(-5).map(s =>
+            `${s.homeTeam ?? "Home"} ${s.homeScore ?? "?"}–${s.awayScore ?? "?"} ${s.awayTeam ?? "Away"}${s.date ? ` (${s.date})` : ""}`
+          ).join("; ");
+          parts.push(`\nTOUCH TRACKER HISTORY (${sessions.length} match${sessions.length !== 1 ? "es" : ""} logged): ${recent}`);
+        }
+      }
+    } catch { /* ignore */ }
+
+    // 3. Page-specific data written by individual pages (optional)
     try {
       const pageData = localStorage.getItem("thuto_page_data");
       if (pageData) parts.push(`\nPAGE DATA: ${pageData}`);
     } catch { /* ignore */ }
+
     return parts.join("");
   };
 
