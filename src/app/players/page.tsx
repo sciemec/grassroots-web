@@ -18,6 +18,7 @@ interface PlayerCard {
   province: string | null;
   age_group: string | null;
   gender: "Male" | "Female" | null;
+  source?: "platform" | "registered";
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -135,6 +136,18 @@ function PlayerTile({ player }: { player: PlayerCard }) {
         {formatAgeGroup(player.age_group) && (
           <span className="px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700 font-medium">
             {formatAgeGroup(player.age_group)}
+          </span>
+        )}
+        {player.source === "registered" && (
+          <span className="px-2 py-0.5 rounded-full text-xs font-medium"
+            style={{ background: "#fef3c7", color: "#92400e" }}>
+            Coach Registered
+          </span>
+        )}
+        {player.source === "platform" && (
+          <span className="px-2 py-0.5 rounded-full text-xs font-medium"
+            style={{ background: "#dcfce7", color: "#166534" }}>
+            Self Registered
           </span>
         )}
       </div>
