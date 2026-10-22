@@ -141,7 +141,7 @@ export default function CoachPlayerDetailPage() {
             <div className="rounded-2xl border bg-card p-6">
               <div className="flex items-start gap-5">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-2xl font-black">
-                  {member.shirt_no}
+                  {member.shirt_no ?? "—"}
                 </div>
                 <div className="flex-1">
                   <h2 className="text-xl font-bold">{member.name ?? "—"}</h2>

@@ -104,7 +104,7 @@ export interface SquadMember {
   id: string;
   name: string;
   position: string;
-  shirt_no: number;
+  shirt_no: number | null;
   age_phase: string | null;
   status: PlayerStatus;
   status_note: string | null;

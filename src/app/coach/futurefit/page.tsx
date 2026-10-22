@@ -951,7 +951,7 @@ interface SquadMember {
   id: string;
   name: string;
   position: string;
-  shirt_no: number;
+  shirt_no: number | null;
   player_user_id: string | null;
 }
 
@@ -1088,7 +1088,7 @@ function AssignModal({
                             {checked && <Check className="h-3 w-3 text-[#1a3a1a]" />}
                           </div>
                           <span className="text-sm text-white font-medium flex-1">{m.name}</span>
-                          <span className="text-xs text-white/40">#{m.shirt_no} · {m.position}</span>
+                          <span className="text-xs text-white/40">{m.shirt_no != null ? `#${m.shirt_no} · ` : ""}{m.position}</span>
                         </button>
                       );
                     })}

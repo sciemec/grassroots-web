@@ -26,7 +26,7 @@ interface SquadMember {
   id: string;
   name: string;
   position: string;
-  shirt_no: number;
+  shirt_no: number | null;
   player_user_id: string | null;
 }
 
@@ -445,7 +445,7 @@ Brief analysis: overall rating out of 10, 2 key strengths, 2 areas to improve, 4
               <option value="">Choose a player…</option>
               {squad.map((m) => (
                 <option key={m.id} value={m.id}>
-                  #{m.shirt_no} {m.name} — {m.position}
+                  {m.shirt_no != null ? `#${m.shirt_no} ` : ""}{m.name} — {m.position}
                 </option>
               ))}
             </select>

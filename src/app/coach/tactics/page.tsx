@@ -285,7 +285,7 @@ export default function TacticsPage() {
 
   const getMemberName = useCallback((memberId: string) => {
     const m = squad.find((s) => s.id === memberId);
-    return m ? `#${m.shirt_no} ${m.name?.split(" ")[0] ?? "—"}` : "";
+    return m ? `${m.shirt_no != null ? `#${m.shirt_no} ` : ""}${m.name?.split(" ")[0] ?? "—"}` : "";
   }, [squad]);
 
   const assignedIds = new Set(Object.values(lineup));
@@ -852,7 +852,7 @@ export default function TacticsPage() {
                         }`}
                       >
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold flex-shrink-0">
-                          {m.shirt_no}
+                          {m.shirt_no ?? "—"}
                         </span>
                         <span className="flex-1 truncate font-medium">{m.name ?? "—"}</span>
                         <span className="text-xs text-muted-foreground capitalize">{m.position}</span>
@@ -938,7 +938,7 @@ export default function TacticsPage() {
                 <div className="space-y-1.5">
                   {squad.filter((m) => m.status === "injured").map((m) => (
                     <div key={m.id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold">{m.shirt_no}</span>
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold">{m.shirt_no ?? "—"}</span>
                       <span>{m.name?.split(" ")[0] ?? "—"}</span>
                       <span className="ml-auto rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-700">Injured</span>
                     </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trash2, Users, Search, UserPlus, Activity, Zap, AlertTriangle, ShieldCheck, AlertCircle } from "lucide-react";
+import { ArrowLeft, Trash2, Users, Search, Activity, Zap, AlertTriangle, ShieldCheck, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 import type { SquadMember } from "@/types";
@@ -20,18 +20,12 @@ const STATUS_STYLES: Record<string, string> = {
   caution: "bg-amber-500/15 text-amber-700",
 };
 
-interface AddForm { name: string; shirt_no: string; position: string }
-
 export default function CoachSquadPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const [squad, setSquad] = useState<SquadMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [showAdd, setShowAdd] = useState(false);
-  const [addForm, setAddForm] = useState<AddForm>({ name: "", shirt_no: "", position: "" });
-  const [addError, setAddError] = useState("");
-  const [adding, setAdding] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [activeTab, setActiveTab] = useState<"players" | "injuries" | "fatigue" | "chemistry">("players");
 
@@ -60,29 +54,6 @@ export default function CoachSquadPage() {
     if (!confirm("Remove this player from your squad?")) return;
     await api.delete(`/coach/squad/${id}`).catch(() => {});
     setSquad((prev) => prev.filter((m) => m.id !== id));
-  };
-
-  const addPlayer = async () => {
-    if (!addForm.name || !addForm.shirt_no || !addForm.position) {
-      setAddError("All fields are required."); return;
-    }
-    setAdding(true);
-    setAddError("");
-    try {
-      await api.post("/coach/squad", {
-        name: addForm.name,
-        shirt_no: Number(addForm.shirt_no),
-        position: addForm.position,
-      });
-      setAddForm({ name: "", shirt_no: "", position: "" });
-      setShowAdd(false);
-      fetchSquad();
-    } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setAddError(msg ?? "Failed to add player.");
-    } finally {
-      setAdding(false);
-    }
   };
 
   const filtered = squad.filter((m) => {
@@ -115,12 +86,12 @@ export default function CoachSquadPage() {
             </div>
           </div>
           {activeTab === "players" && (
-            <button
-              onClick={() => setShowAdd((v) => !v)}
+            <Link
+              href="/coach/registered-players"
               className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              <Plus className="h-4 w-4" /> Add player
-            </button>
+              Register player
+            </Link>
           )}
         </div>
 
@@ -142,66 +113,6 @@ export default function CoachSquadPage() {
             </button>
           ))}
         </div>
-
-        {/* Add player form */}
-        {activeTab === "players" && showAdd && (
-          <div className="mb-6 rounded-xl border bg-card p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-primary" />
-              <h2 className="font-semibold">Add player to squad</h2>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Player name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Takudzwa Musona"
-                  value={addForm.name}
-                  onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
-                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Shirt number</label>
-                <input
-                  type="number"
-                  min={1} max={99}
-                  placeholder="10"
-                  value={addForm.shirt_no}
-                  onChange={(e) => setAddForm((f) => ({ ...f, shirt_no: e.target.value }))}
-                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Position</label>
-                <select
-                  value={addForm.position}
-                  onChange={(e) => setAddForm((f) => ({ ...f, position: e.target.value }))}
-                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
-                >
-                  <option value="">Select position…</option>
-                  {POSITIONS.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-            </div>
-            {addError && <p className="mt-2 text-sm text-destructive">{addError}</p>}
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={addPlayer}
-                disabled={adding}
-                className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-              >
-                {adding ? "Adding…" : "Add to squad"}
-              </button>
-              <button
-                onClick={() => { setShowAdd(false); setAddError(""); }}
-                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* ── PLAYERS TAB ──────────────────────────────────────────── */}
         {activeTab === "players" && (<>
@@ -245,7 +156,7 @@ export default function CoachSquadPage() {
             <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <p className="font-medium">{squad.length === 0 ? "No players yet" : "No players match your filter"}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {squad.length === 0 ? "Add players using the button above" : "Try a different search or status filter"}
+              {squad.length === 0 ? "Register players at the Player Registration page" : "Try a different search or status filter"}
             </p>
           </div>
         ) : (
@@ -267,7 +178,7 @@ export default function CoachSquadPage() {
                       <tr key={m.id} className="hover:bg-muted/20 transition-colors">
                         <td className="px-4 py-3.5">
                           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                            {m.shirt_no}
+                            {m.shirt_no ?? "—"}
                           </span>
                         </td>
                         <td className="px-4 py-3.5 font-medium">
@@ -337,7 +248,7 @@ export default function CoachSquadPage() {
                   {players.map((m) => (
                     <li key={m.id} className="flex items-center gap-3 px-4 py-3">
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                        {m.shirt_no}
+                        {m.shirt_no ?? "—"}
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{m.name}</p>

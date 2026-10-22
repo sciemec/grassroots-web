@@ -14,7 +14,7 @@ interface SquadMember {
   id:             string;
   name:           string;
   position:       string;
-  shirt_no:       number;
+  shirt_no:       number | null;
   player_user_id: string | null;
 }
 
@@ -337,7 +337,7 @@ export default function AssessPlayerPage() {
                     <option value="">— Choose a player —</option>
                     {squad.map((m) => (
                       <option key={m.id} value={m.id}>
-                        #{m.shirt_no} {m.name} ({m.position || "No position"})
+                        {m.shirt_no != null ? `#${m.shirt_no} ` : ""}{m.name} ({m.position || "No position"})
                       </option>
                     ))}
                   </select>
