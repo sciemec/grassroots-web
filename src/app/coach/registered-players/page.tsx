@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import jsPDF from "jspdf";
 import Link from "next/link";
 import {
-  ArrowLeft, Plus, CheckCircle2,
-  Loader2, UserCheck, Camera, AlertTriangle, Users,
+  ArrowLeft, Plus, CheckCircle2, Loader2, UserCheck, Camera,
+  AlertTriangle, Users, Download, Trash2, Check, X, UserPlus,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
@@ -50,17 +51,169 @@ const ZW_PROVINCES = [
   "Matabeleland North", "Matabeleland South", "Midlands",
 ];
 
+const STATUS_CONFIG: Record<Registration["match_status"], { label: string; bg: string; color: string; border: string }> = {
+  unmatched:            { label: "Unmatched",            bg: "#f9fafb", color: "#6b7280", border: "#e5e7eb" },
+  pending_confirmation: { label: "Pending Match",        bg: "#fffbeb", color: "#b45309", border: "#fde68a" },
+  confirmed:            { label: "Confirmed",             bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
+  rejected:             { label: "Match Rejected",        bg: "#fef2f2", color: "#dc2626", border: "#fecaca" },
+  standalone_confirmed: { label: "Confirmed by Academy", bg: "#eff6ff", color: "#0369a1", border: "#bfdbfe" },
+};
+
+function generateCertificate(reg: Registration, coachName: string): void {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const W = 210, pageH = 297;
+  const grsRef = reg.id.slice(0, 8).toUpperCase();
+  const verifyUrl = `grassrootssports.live/verify/${reg.id}`;
+  const registeredAt = new Date(reg.created_at).toUTCString();
+  const statusLabel = STATUS_CONFIG[reg.match_status]?.label ?? reg.match_status;
+
+  // Green header bar
+  doc.setFillColor(26, 92, 42);
+  doc.rect(0, 0, W, 32, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.text("PLAYER REGISTRATION CERTIFICATE", W / 2, 12, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.text("GrassRoots Sports — Zimbabwe's First AI-Powered Sports Platform", W / 2, 20, { align: "center" });
+  doc.setFontSize(8);
+  doc.text(`GRS Reference: ${grsRef}`, W / 2, 27, { align: "center" });
+
+  // Gold accent line
+  doc.setFillColor(200, 150, 42);
+  doc.rect(0, 32, W, 2, "F");
+
+  let y = 43;
+
+  // Academy header
+  doc.setTextColor(26, 92, 42);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text(reg.organisation_name, W / 2, y, { align: "center" });
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(80, 80, 80);
+  doc.text("hereby certifies the registration of the following player:", W / 2, y, { align: "center" });
+  y += 11;
+
+  // Player details box
+  doc.setFillColor(240, 253, 244);
+  doc.setDrawColor(187, 247, 208);
+  doc.roundedRect(14, y, W - 28, 54, 3, 3, "FD");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(26, 92, 42);
+  doc.text("PLAYER DETAILS", 22, y + 8);
+  doc.setDrawColor(187, 247, 208);
+  doc.line(22, y + 10, W - 22, y + 10);
+
+  const playerRows: [string, string][] = [
+    ["Full Name",      `${reg.first_name} ${reg.surname}`],
+    ["Date of Birth",  new Date(reg.date_of_birth).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })],
+    ["Sport",          reg.sport ? reg.sport.charAt(0).toUpperCase() + reg.sport.slice(1) : "Not specified"],
+    ["Position",       reg.position ?? "Not specified"],
+    ["School / Club",  reg.school ?? "Not specified"],
+    ["Province",       reg.province ?? "Not specified"],
+  ];
+  let dy = y + 16;
+  for (const [label, value] of playerRows) {
+    doc.setFont("helvetica", "bold"); doc.setTextColor(80, 80, 80); doc.setFontSize(8);
+    doc.text(label + ":", 22, dy);
+    doc.setFont("helvetica", "normal"); doc.setTextColor(20, 20, 20);
+    doc.text(value, 76, dy);
+    dy += 6;
+  }
+  y += 58;
+
+  // Registration details box
+  y += 4;
+  doc.setFillColor(250, 250, 250);
+  doc.setDrawColor(229, 229, 229);
+  doc.roundedRect(14, y, W - 28, 44, 3, 3, "FD");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(80, 80, 80);
+  doc.text("REGISTRATION DETAILS", 22, y + 8);
+  doc.setDrawColor(229, 229, 229);
+  doc.line(22, y + 10, W - 22, y + 10);
+
+  const regRows: [string, string][] = [
+    ["Registered By",  coachName],
+    ["Academy",        reg.organisation_name],
+    ["Registered At",  registeredAt],
+    ["Status",         statusLabel],
+    ["GRS Reference",  grsRef],
+  ];
+  dy = y + 16;
+  for (const [label, value] of regRows) {
+    doc.setFont("helvetica", "bold"); doc.setTextColor(80, 80, 80); doc.setFontSize(8);
+    doc.text(label + ":", 22, dy);
+    doc.setFont("helvetica", "normal"); doc.setTextColor(20, 20, 20);
+    doc.text(value, 76, dy);
+    dy += 6;
+  }
+  y += 48;
+
+  // Provenance statement
+  y += 4;
+  doc.setFillColor(255, 251, 235);
+  doc.setDrawColor(253, 230, 138);
+  doc.roundedRect(14, y, W - 28, 28, 3, 3, "FD");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(146, 64, 14);
+  doc.text("PROVENANCE STATEMENT", 22, y + 8);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(120, 53, 15);
+  const lines = [
+    `This certificate was generated at ${registeredAt}`,
+    "and is permanently timestamped on the GrassRoots Sports platform.",
+    "This record cannot be backdated or altered.",
+    "It provides verified provenance for the player's Talent Passport.",
+  ];
+  let py = y + 14;
+  for (const line of lines) { doc.text(line, 22, py); py += 4.5; }
+  y += 32;
+
+  // Verify URL
+  y += 4;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(26, 92, 42);
+  doc.text("Verify this certificate online:", 14, y);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0, 100, 200);
+  doc.text(verifyUrl, 14, y + 5);
+
+  // Footer
+  doc.setFillColor(26, 92, 42);
+  doc.rect(0, pageH - 14, W, 14, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.text(
+    "GrassRoots Sports · Zimbabwe's First AI-Powered Sports Platform · grassrootssports.live",
+    W / 2, pageH - 6, { align: "center" }
+  );
+
+  doc.save(`GRS-Certificate-${reg.first_name}-${reg.surname}.pdf`);
+}
+
 export default function RegisteredPlayersPage() {
   const router = useRouter();
-  const [regs, setRegs]         = useState<Registration[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [lastConfirmed, setLastConfirmed] = useState<{ name: string } | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [regs, setRegs]                       = useState<Registration[]>([]);
+  const [loading, setLoading]                 = useState(true);
+  const [lastConfirmed, setLastConfirmed]     = useState<{ name: string } | null>(null);
+  const [submitting, setSubmitting]           = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<DuplicateWarning | null>(null);
-  const [photoFile, setPhotoFile]   = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [submitError, setSubmitError]       = useState<string | null>(null);
+  const [photoFile, setPhotoFile]             = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview]       = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto]   = useState(false);
+  const [submitError, setSubmitError]         = useState<string | null>(null);
+  const [actionLoading, setActionLoading]     = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const user      = useAuthStore((s) => s.user);
@@ -92,10 +245,7 @@ export default function RegisteredPlayersPage() {
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Photo must be under 5 MB");
-      return;
-    }
+    if (file.size > 5 * 1024 * 1024) { alert("Photo must be under 5 MB"); return; }
     setPhotoFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
@@ -107,7 +257,6 @@ export default function RegisteredPlayersPage() {
       setUploadingPhoto(true);
       const ext = file.name.split(".").pop() ?? "jpg";
       const key = `player-photos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
       const presignRes = await fetch("/api/upload/presigned", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -115,12 +264,7 @@ export default function RegisteredPlayersPage() {
       });
       if (!presignRes.ok) return null;
       const { url, publicUrl } = await presignRes.json();
-
-      const putRes = await fetch(url, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
+      const putRes = await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
       if (!putRes.ok) return null;
       return publicUrl as string;
     } catch {
@@ -148,28 +292,28 @@ export default function RegisteredPlayersPage() {
       }
 
       const res = await api.post("/coach/registered-players", {
-        first_name:    form.first_name,
-        surname:       form.surname,
-        date_of_birth: form.date_of_birth,
-        sport:         form.sport         || undefined,
-        position:      form.position      || undefined,
-        phone:         form.phone         || undefined,
-        gender:        form.gender        || undefined,
-        province:      form.province      || undefined,
-        school:        form.school        || undefined,
-        height_cm:     form.height_cm     ? Number(form.height_cm)   : undefined,
-        weight_kg:     form.weight_kg     ? Number(form.weight_kg)   : undefined,
-        dominant_foot: form.dominant_foot || undefined,
-        photo_url:     photoUrl           || undefined,
-        notes:         form.notes         || undefined,
+        first_name:      form.first_name,
+        surname:         form.surname,
+        date_of_birth:   form.date_of_birth,
+        sport:           form.sport           || undefined,
+        position:        form.position        || undefined,
+        phone:           form.phone           || undefined,
+        gender:          form.gender          || undefined,
+        province:        form.province        || undefined,
+        school:          form.school          || undefined,
+        height_cm:       form.height_cm       ? Number(form.height_cm)  : undefined,
+        weight_kg:       form.weight_kg       ? Number(form.weight_kg)  : undefined,
+        dominant_foot:   form.dominant_foot   || undefined,
+        photo_url:       photoUrl             || undefined,
+        notes:           form.notes           || undefined,
+        whatsapp_number: form.whatsapp_number || undefined,
+        number_owner:    form.number_owner    || undefined,
       });
 
       const addedName = `${form.first_name} ${form.surname}`;
       setRegs((prev) => [res.data.data, ...prev]);
 
-      if (res.data.warnings) {
-        setDuplicateWarning(res.data.warnings);
-      }
+      if (res.data.warnings) setDuplicateWarning(res.data.warnings);
 
       setForm({
         first_name: "", surname: "", date_of_birth: "",
@@ -180,6 +324,8 @@ export default function RegisteredPlayersPage() {
       });
       setPhotoFile(null);
       setPhotoPreview(null);
+      // Reset file input so the same file can be re-selected for the next player
+      if (photoInputRef.current) photoInputRef.current.value = "";
       setLastConfirmed({ name: addedName });
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })
@@ -189,6 +335,59 @@ export default function RegisteredPlayersPage() {
       setSubmitting(false);
     }
   }
+
+  async function handleConfirm(id: string) {
+    setActionLoading(id);
+    try {
+      const res = await api.post(`/coach/registered-players/${id}/confirm`);
+      setRegs((prev) => prev.map((r) => (r.id === id ? res.data.data : r)));
+    } catch {
+      alert("Could not confirm match. Please try again.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleReject(id: string) {
+    setActionLoading(id);
+    try {
+      const res = await api.post(`/coach/registered-players/${id}/reject`);
+      setRegs((prev) => prev.map((r) => (r.id === id ? res.data.data : r)));
+    } catch {
+      alert("Could not reject match. Please try again.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleStandaloneConfirm(id: string) {
+    setActionLoading(id);
+    try {
+      const res = await api.post(`/coach/registered-players/${id}/standalone-confirm`);
+      setRegs((prev) => prev.map((r) => (r.id === id ? res.data.data : r)));
+    } catch {
+      alert("Could not confirm record. Please try again.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Archive this registration? The record will be hidden but not permanently deleted.")) return;
+    setActionLoading(id);
+    try {
+      await api.delete(`/coach/registered-players/${id}`);
+      setRegs((prev) => prev.filter((r) => r.id !== id));
+    } catch {
+      alert("Could not archive this record. Confirmed registrations cannot be deleted.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  // Split list: pending first (needs action), then the rest newest-first
+  const pending  = regs.filter((r) => r.match_status === "pending_confirmation");
+  const rest     = regs.filter((r) => r.match_status !== "pending_confirmation");
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
@@ -230,8 +429,7 @@ export default function RegisteredPlayersPage() {
           }}>
             <div style={{
               width: 64, height: 64, borderRadius: "50%", backgroundColor: "#dcfce7",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 16px",
+              display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px",
             }}>
               <CheckCircle2 size={32} color="#16a34a" />
             </div>
@@ -239,8 +437,7 @@ export default function RegisteredPlayersPage() {
               {lastConfirmed.name} added to your squad
             </h2>
             <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 28px" }}>
-              A certificate is ready to download from their squad profile.
-              When they join the platform, you&apos;ll get a notification to confirm the match.
+              Download their certificate below. When they join the platform, you&apos;ll get a notification to confirm the match.
             </p>
             <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
               <button
@@ -276,8 +473,7 @@ export default function RegisteredPlayersPage() {
             Register a player now — even if they don&apos;t have a GrassRoots account yet.
             When they sign up with the same name and date of birth, you&apos;ll get a notification
             to confirm the match. Once confirmed, your academy&apos;s name appears permanently
-            on their Talent Passport as a provenance record. You can manage and edit players
-            from <Link href="/coach/squad" className="font-semibold underline">My Squad</Link>.
+            on their Talent Passport as a provenance record.
           </p>
         </div>
 
@@ -290,7 +486,7 @@ export default function RegisteredPlayersPage() {
                 <p className="text-xs font-bold text-amber-800">Duplicate Alert</p>
                 {duplicateWarning.has_platform_account && (
                   <p className="mt-0.5 text-xs text-amber-700">
-                    This player already has a GrassRoots account. Go to My Squad — they may already appear as a pending match.
+                    This player already has a GrassRoots account. A match notification has been sent to you — check below.
                   </p>
                 )}
                 {duplicateWarning.other_clubs && duplicateWarning.other_clubs.length > 0 && (
@@ -300,7 +496,7 @@ export default function RegisteredPlayersPage() {
                       <p key={i} className="mt-0.5 text-xs font-semibold text-amber-800">· {c.organisation_name}</p>
                     ))}
                     <p className="mt-1 text-[11px] text-amber-600">
-                      The player&apos;s Talent Passport will show all academies that registered them — this is intentional for provenance purposes.
+                      The player&apos;s Talent Passport will show all academies that registered them.
                     </p>
                   </div>
                 )}
@@ -312,7 +508,7 @@ export default function RegisteredPlayersPage() {
           </div>
         )}
 
-        {/* Add form — always visible for coaches */}
+        {/* Add form */}
         {!isAdmin && !lastConfirmed && (
           <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="mb-4">
@@ -321,7 +517,7 @@ export default function RegisteredPlayersPage() {
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
 
-              {/* Photo upload */}
+              {/* Photo */}
               <div>
                 <label className="mb-1 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Player Photo</label>
                 <div className="flex items-center gap-3">
@@ -335,26 +531,16 @@ export default function RegisteredPlayersPage() {
                     }
                   </div>
                   <div>
-                    <button
-                      type="button"
-                      onClick={() => photoInputRef.current?.click()}
-                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50"
-                    >
+                    <button type="button" onClick={() => photoInputRef.current?.click()} className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50">
                       {photoPreview ? "Change photo" : "Choose photo"}
                     </button>
                     <p className="mt-0.5 text-[10px] text-gray-400">JPG or PNG · max 5 MB</p>
                   </div>
-                  <input
-                    ref={photoInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handlePhotoSelect}
-                  />
+                  <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSelect} />
                 </div>
               </div>
 
-              {/* Identity — required */}
+              {/* Identity */}
               <div>
                 <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">Identity *</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -473,10 +659,7 @@ export default function RegisteredPlayersPage() {
                     <div>
                       <label className="mb-1 block text-[11px] font-semibold text-gray-500">WhatsApp number belongs to</label>
                       <div className="flex gap-2">
-                        {[
-                          { value: "parent",   label: "Parent" },
-                          { value: "guardian", label: "Guardian" },
-                        ].map(({ value, label }) => (
+                        {[{ value: "parent", label: "Parent" }, { value: "guardian", label: "Guardian" }].map(({ value, label }) => (
                           <button
                             key={value} type="button"
                             onClick={() => setForm({ ...form, number_owner: form.number_owner === value ? "" : value })}
@@ -521,20 +704,207 @@ export default function RegisteredPlayersPage() {
           </div>
         )}
 
-        {/* Admin view — loading / empty state */}
-        {isAdmin && loading && (
-          <div className="flex justify-center py-16">
+        {/* Loading state */}
+        {loading && (
+          <div className="flex justify-center py-12">
             <Loader2 size={24} className="animate-spin text-gray-300" />
           </div>
         )}
 
-        {isAdmin && !loading && regs.length === 0 && (
-          <div className="flex flex-col items-center py-16 text-center">
+        {/* Empty state */}
+        {!loading && regs.length === 0 && (
+          <div className="flex flex-col items-center py-12 text-center">
             <UserCheck size={40} className="mb-3 text-gray-200" />
             <p className="text-sm font-semibold text-gray-400">No players registered yet</p>
+            <p className="text-xs text-gray-400 mt-1">Use the form above to register your first player</p>
           </div>
         )}
 
+        {/* Pending matches — needs action */}
+        {!loading && pending.length > 0 && (
+          <div className="mb-2">
+            <div className="mb-2 flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-amber-500" />
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-700">
+                Needs Your Review ({pending.length})
+              </p>
+            </div>
+            {pending.map((reg) => (
+              <RegistrationCard
+                key={reg.id}
+                reg={reg}
+                coachName={coachName}
+                onConfirm={handleConfirm}
+                onReject={handleReject}
+                onStandaloneConfirm={handleStandaloneConfirm}
+                onDelete={handleDelete}
+                actionLoading={actionLoading}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* All other registrations */}
+        {!loading && rest.length > 0 && (
+          <div>
+            {pending.length > 0 && (
+              <p className="mb-2 mt-4 text-xs font-bold uppercase tracking-widest text-gray-400">
+                All Players ({rest.length})
+              </p>
+            )}
+            {rest.map((reg) => (
+              <RegistrationCard
+                key={reg.id}
+                reg={reg}
+                coachName={reg.coach_name ?? coachName}
+                onConfirm={handleConfirm}
+                onReject={handleReject}
+                onStandaloneConfirm={handleStandaloneConfirm}
+                onDelete={handleDelete}
+                actionLoading={actionLoading}
+              />
+            ))}
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+// ─── Registration Card ────────────────────────────────────────────────────────
+
+function RegistrationCard({
+  reg, coachName, onConfirm, onReject, onStandaloneConfirm, onDelete, actionLoading,
+}: {
+  reg: Registration;
+  coachName: string;
+  onConfirm: (id: string) => void;
+  onReject: (id: string) => void;
+  onStandaloneConfirm: (id: string) => void;
+  onDelete: (id: string) => void;
+  actionLoading: string | null;
+}) {
+  const cfg       = STATUS_CONFIG[reg.match_status];
+  const initials  = `${reg.first_name[0] ?? "?"}${reg.surname[0] ?? "?"}`.toUpperCase();
+  const isLoading = actionLoading === reg.id;
+  const dob       = new Date(reg.date_of_birth).toLocaleDateString("en-GB");
+  const regDate   = new Date(reg.created_at).toLocaleDateString("en-GB");
+  const isDeletable = !["confirmed", "standalone_confirmed"].includes(reg.match_status);
+
+  return (
+    <div className="mb-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      {/* Status colour top bar */}
+      <div style={{ height: 3, backgroundColor: cfg.color, opacity: 0.5 }} />
+
+      <div className="p-4">
+        <div className="flex items-start gap-3">
+
+          {/* Avatar */}
+          {reg.photo_url
+            ? <img src={reg.photo_url} alt={reg.first_name} className="h-12 w-12 flex-shrink-0 rounded-full object-cover border border-gray-100" />
+            : (
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style={{ backgroundColor: "#1a5c2a" }}>
+                {initials}
+              </div>
+            )
+          }
+
+          {/* Main info */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-gray-900">{reg.first_name} {reg.surname}</p>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  {dob}
+                  {reg.sport && <> · <span className="capitalize">{reg.sport}</span></>}
+                  {reg.position && <> · {reg.position}</>}
+                </p>
+                {(reg.school || reg.province) && (
+                  <p className="mt-0.5 text-xs text-gray-400">
+                    {[reg.school, reg.province].filter(Boolean).join(", ")}
+                  </p>
+                )}
+              </div>
+
+              {/* Status badge */}
+              <span
+                className="flex-shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-bold"
+                style={{ backgroundColor: cfg.bg, color: cfg.color, borderColor: cfg.border }}
+              >
+                {cfg.label}
+              </span>
+            </div>
+
+            {/* Pending match alert */}
+            {reg.match_status === "pending_confirmation" && (
+              <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                A player with this name and date of birth just joined GrassRoots. Is this the right person?
+              </div>
+            )}
+
+            {/* Actions row */}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+
+              {reg.match_status === "pending_confirmation" && (
+                <>
+                  <button
+                    disabled={isLoading}
+                    onClick={() => onConfirm(reg.id)}
+                    className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                    style={{ backgroundColor: "#1a5c2a" }}
+                  >
+                    {isLoading ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                    Yes, confirm
+                  </button>
+                  <button
+                    disabled={isLoading}
+                    onClick={() => onReject(reg.id)}
+                    className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <X size={11} /> Not this player
+                  </button>
+                </>
+              )}
+
+              {reg.match_status === "unmatched" && (
+                <button
+                  disabled={isLoading}
+                  onClick={() => onStandaloneConfirm(reg.id)}
+                  className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                  style={{ borderColor: "#bfdbfe", backgroundColor: "#eff6ff", color: "#0369a1" }}
+                  title="Player doesn't need a platform account — close this record"
+                >
+                  {isLoading ? <Loader2 size={11} className="animate-spin" /> : <UserPlus size={11} />}
+                  Mark Confirmed
+                </button>
+              )}
+
+              <button
+                onClick={() => generateCertificate(reg, coachName)}
+                className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                <Download size={11} /> Certificate
+              </button>
+
+              {isDeletable && (
+                <button
+                  disabled={isLoading}
+                  onClick={() => onDelete(reg.id)}
+                  className="ml-auto flex items-center gap-1 rounded-lg border border-red-100 px-2.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-50 disabled:opacity-50"
+                  title="Archive this registration"
+                >
+                  <Trash2 size={11} />
+                </button>
+              )}
+            </div>
+
+            <p className="mt-2 text-[10px] text-gray-400">
+              Registered {regDate}
+              {reg.coach_name ? ` by ${reg.coach_name}` : ""}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
