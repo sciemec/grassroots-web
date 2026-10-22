@@ -9,7 +9,7 @@ import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import AdminBottomNav from "@/components/layout/AdminBottomNav";
 import dynamic from "next/dynamic";
 
-const ThutoChatCoach = dynamic(() => import("@/components/thuto/ThutoChatCoach"), { ssr: false });
+const ThutoChatAdmin = dynamic(() => import("@/components/thuto/ThutoChatAdmin"), { ssr: false });
 const GrassrootsNewsTicker = dynamic(() => import("@/components/ui/GrassrootsNewsTicker"), { ssr: false });
 
 export default function AdminLayout({
@@ -54,7 +54,7 @@ export default function AdminLayout({
         </main>
       </div>
       <AdminBottomNav />
-      <ThutoChatCoach />
+      <ThutoChatAdmin />
       <GrassrootsNewsTicker />
     </>
   );
