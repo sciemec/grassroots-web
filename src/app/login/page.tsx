@@ -162,6 +162,10 @@ function LoginForm() {
                 onChange={e => { setIdentifier(e.target.value); setError(null); }}
                 placeholder="email@example.com or 07X XXX XXXX"
                 required
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="username"
                 className="w-full px-4 py-3 rounded-xl bg-white/5 border border-[#f0b429]/10
                            text-white placeholder-white/20 text-sm
                            focus:outline-none focus:border-[#FFD700]/50 transition-all"
@@ -179,6 +183,10 @@ function LoginForm() {
                   onChange={e => { setPassword(e.target.value); setError(null); }}
                   placeholder="••••••••"
                   required
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoComplete="current-password"
                   className="w-full px-4 pr-10 py-3 rounded-xl bg-white/5 border border-[#f0b429]/10
                              text-white placeholder-white/20 text-sm
                              focus:outline-none focus:border-[#FFD700]/50 transition-all"

@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       clearTimeout(timeout);
     }
 
-    if (response.status >= 500) {
+    if (response.status === 503 || response.status === 504) {
       return NextResponse.json(
         { message: 'Server is waking up — please try again in 30 seconds.' },
         { status: 503 }

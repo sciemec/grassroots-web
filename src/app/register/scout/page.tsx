@@ -96,7 +96,7 @@ export default function RegisterScoutPage() {
       });
 
       if (!res.ok) {
-        if (res.status >= 500) throw new Error("__waking__");
+        if (res.status === 503 || res.status === 504) throw new Error("__waking__");
         const data = await res.json().catch(() => ({})) as {
           message?: string;
           errors?: Record<string, string[]>;
@@ -336,6 +336,10 @@ export default function RegisterScoutPage() {
                     value={form.email}
                     onChange={(e) => set("email", e.target.value)}
                     placeholder="you@example.com"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="email"
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
                   />
                 ) : (
@@ -365,6 +369,10 @@ export default function RegisterScoutPage() {
                     value={form.password}
                     onChange={(e) => set("password", e.target.value)}
                     placeholder="Min. 8 characters"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="new-password"
                     className="w-full px-3 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
                   />
                   <button
@@ -384,6 +392,10 @@ export default function RegisterScoutPage() {
                   value={form.confirmPassword}
                   onChange={(e) => set("confirmPassword", e.target.value)}
                   placeholder="Repeat password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoComplete="new-password"
                   className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-600 ${
                     form.confirmPassword && form.password !== form.confirmPassword
                       ? "border-red-300 bg-red-50"

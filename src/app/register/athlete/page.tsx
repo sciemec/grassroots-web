@@ -279,6 +279,10 @@ export default function RegisterAthletePage() {
                     value={form.email}
                     onChange={(e) => set("email", e.target.value)}
                     placeholder="you@example.com"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="email"
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 ) : (
@@ -300,6 +304,10 @@ export default function RegisterAthletePage() {
                     value={form.password}
                     onChange={(e) => set("password", e.target.value)}
                     placeholder="Min. 8 characters"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="new-password"
                     className="w-full px-3 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <button
@@ -319,6 +327,10 @@ export default function RegisterAthletePage() {
                   value={form.confirmPassword}
                   onChange={(e) => set("confirmPassword", e.target.value)}
                   placeholder="Repeat password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoComplete="new-password"
                   className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     form.confirmPassword && form.password !== form.confirmPassword
                       ? "border-red-300 bg-red-50"

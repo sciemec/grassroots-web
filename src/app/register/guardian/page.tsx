@@ -149,6 +149,7 @@ export default function GuardianRegisterPage() {
               <div>
                 <label style={labelStyle}>Email Address</label>
                 <input style={inputStyle} type="email" placeholder="your@email.com"
+                  autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="email"
                   value={form.email} onChange={(e) => set("email", e.target.value)} />
               </div>
 
@@ -158,6 +159,7 @@ export default function GuardianRegisterPage() {
                   <input style={{ ...inputStyle, paddingRight: 44 }}
                     type={showPw ? "text" : "password"}
                     placeholder="Create a password"
+                    autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="new-password"
                     value={form.password}
                     onChange={(e) => set("password", e.target.value)} />
                   <button type="button" onClick={() => setShowPw(!showPw)}
@@ -174,6 +176,7 @@ export default function GuardianRegisterPage() {
                 <input style={{ ...inputStyle,
                   borderColor: form.confirm && form.confirm !== form.password ? "#ef4444" : "#d1d5db" }}
                   type="password" placeholder="Repeat password"
+                  autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="new-password"
                   value={form.confirm} onChange={(e) => set("confirm", e.target.value)} />
                 {form.confirm && form.confirm !== form.password && (
                   <p style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>Passwords do not match</p>

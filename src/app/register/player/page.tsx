@@ -215,8 +215,8 @@ export default function RegisterPlayerPage() {
       }
 
       if (!res.ok) {
-        // Cold start / server crash — show amber retry prompt, not red error
-        if (res.status >= 500) {
+        // 503/504 = Render cold start or gateway timeout — show amber retry prompt
+        if (res.status === 503 || res.status === 504) {
           throw new Error("__waking__");
         }
 
@@ -723,6 +723,10 @@ export default function RegisterPlayerPage() {
                     value={form.email}
                     onChange={(e) => set("email", e.target.value)}
                     placeholder="you@example.com"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="email"
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]"
                   />
                 ) : (
@@ -759,6 +763,10 @@ export default function RegisterPlayerPage() {
                     value={form.password}
                     onChange={(e) => set("password", e.target.value)}
                     placeholder="Min. 8 characters"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="new-password"
                     className={`w-full px-3 py-2.5 pr-10 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a] ${
                       form.password.length > 0 && form.password.length < 8
                         ? "border-red-300 bg-red-50"
@@ -793,6 +801,10 @@ export default function RegisterPlayerPage() {
                   value={form.confirmPassword}
                   onChange={(e) => set("confirmPassword", e.target.value)}
                   placeholder="Repeat password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoComplete="new-password"
                   className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a] ${
                     form.confirmPassword && form.password !== form.confirmPassword
                       ? "border-red-300 bg-red-50"
