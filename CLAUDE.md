@@ -6396,7 +6396,7 @@ f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generat
 **Fix applied (`D:/bhora-ai/ai-service/main.py` line 969):**
 ```python
 # AFTER (fixed — live model):
-f"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=..."
+f"https://generativelanguage.googleapis.com/v1/models/gemini-3.8-flash:generateContent?key=..."
 ```
 
 **Committed:** `e46c8e0` — pushed to `github.com/sciemec/grassroots-ai-service` → Render auto-deploys.
@@ -6411,7 +6411,7 @@ Browser → XHR POST FormData → Python service /gemini-upload
 Browser → fetch POST → Python service /analyse  (returns { job_id } immediately)
             ↓ background: _analyse_background()
             ↓ polls Gemini v1beta/{fileName} until state = ACTIVE
-            ↓ calls gemini-2.0-flash generateContent with file_data  ← FIXED
+            ↓ calls gemini-3.8-flash generateContent with file_data  ← FIXED
             ↓ calls Claude claude-sonnet-4-6 for tactical narrative
             ↓ stores result in _jobs dict
 
@@ -8924,7 +8924,7 @@ Handles multipart form: `video`, `sport`, `drill`, `position`, `token`
 2. Return 402 if `can_analyse = false`
 3. Upload video to Gemini Files API (resumable: initiate → upload bytes)
 4. `sleep(5)` — wait for Gemini processing
-5. `generateContent` with `gemini-2.0-flash` model
+5. `generateContent` with `gemini-3.8-flash` model
 6. Record usage — `POST {API_URL}/video-analysis/record`
 7. Return `{ feedback, free_trial, is_pro }`
 
