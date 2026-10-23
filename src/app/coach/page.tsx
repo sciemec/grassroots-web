@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
+import WaButton from "@/components/ui/WaButton";
 import {
   Users, Calendar, Video,
   UserSearch, Globe, Bell, Layers,
@@ -111,6 +112,7 @@ export default function CoachHubPage() {
   const user  = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [showPhoneBanner, setShowPhoneBanner] = useState(false);
 
   // Write coach profile snapshot so THUTO can give personalised advice
   useEffect(() => {
@@ -135,6 +137,11 @@ export default function CoachHubPage() {
             years_experience:  prof.years_experience ?? null,
           })
         );
+
+        // Show WhatsApp banner once for coaches with no phone number
+        const missingPhone = !raw.phone && !raw.whatsapp_number;
+        const phoneDismissed = localStorage.getItem("grs_coach_phone_nudge_dismissed");
+        if (!phoneDismissed && missingPhone) setShowPhoneBanner(true);
       })
       .catch(() => {});
   }, [token]);
@@ -179,6 +186,72 @@ export default function CoachHubPage() {
             title="Live Match"
             sub="Start real-time match management"
           />
+        </div>
+
+        {/* WhatsApp number nudge — shown once for coaches with no phone */}
+        {showPhoneBanner && (
+          <div
+            style={{
+              background: "#0d2e1a",
+              border: "1px solid #25a244",
+              borderRadius: 12,
+              padding: "12px 14px",
+              marginBottom: 16,
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+            }}
+          >
+            <span style={{ fontSize: 18, flexShrink: 0 }}>📱</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: "#4ade80", fontSize: 13, fontWeight: 700 }}>
+                Add your WhatsApp number
+              </div>
+              <div style={{ color: "#6db88a", fontSize: 11.5, marginTop: 3, lineHeight: 1.4 }}>
+                Get match alerts, squad updates and THUTO coaching messages directly on WhatsApp.
+              </div>
+              <a
+                href="/coach/profile#phone"
+                style={{
+                  display: "inline-block",
+                  marginTop: 8,
+                  background: "#25a244",
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  borderRadius: 8,
+                  padding: "5px 14px",
+                  textDecoration: "none",
+                }}
+              >
+                Add number →
+              </a>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem("grs_coach_phone_nudge_dismissed", "1");
+                setShowPhoneBanner(false);
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#6db88a",
+                fontSize: 16,
+                cursor: "pointer",
+                flexShrink: 0,
+                padding: "0 2px",
+                lineHeight: 1,
+              }}
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {/* WhatsApp — connect to THUTO on WhatsApp */}
+        <div style={{ marginBottom: 24 }}>
+          <WaButton label="Chat with THUTO on WhatsApp" showQr={false} />
         </div>
 
         {/* ── 1. Squad & Players ─────────────────────────────────────── */}
