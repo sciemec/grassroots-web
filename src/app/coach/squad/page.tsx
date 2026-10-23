@@ -78,7 +78,10 @@ function SquadPageInner() {
         setSquad(Array.isArray(res.data?.data) ? res.data.data : []);
         if (!archived) setNeedsConfirmCount(res.data?.needs_confirmation_count ?? 0);
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error("Squad fetch error:", err?.response?.status, err?.response?.data);
+        setSquad([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
