@@ -2,6 +2,20 @@
 
 ---
 
+## 🔒 PROTECTED PAGE — /players (PERMANENT, set by Nigel Oct 2026)
+
+The `/players` page is the public player discovery page showing all athletes on the platform (341+ players confirmed Oct 2026). It is the destination for the "Discover Talent" CTA on the landing page and the navbar.
+
+### RULES — NO EXCEPTIONS:
+- **NEVER change the `/players` route or redirect it to another page** without Nigel's explicit approval
+- **NEVER rename, delete, or replace** `src/app/players/page.tsx` without Nigel's explicit approval
+- **NEVER change the "Discover Talent" nav/CTA links** away from `/players` without Nigel's explicit approval
+
+### WHY THIS RULE EXISTS:
+In October 2026, the "Discover Talent" links were incorrectly changed from `/players` to `/talent-database` based on a wrong assumption that `/players` didn't exist. It does exist and shows all 341+ platform players. The change was immediately reverted but this rule exists to prevent it happening again.
+
+---
+
 ## 🚫 NO SILENT REMOVAL OF WORKING FEATURES — MANDATORY (PERMANENT)
 
 This rule exists because the `NotificationBell` component (browser popup notifications) was
