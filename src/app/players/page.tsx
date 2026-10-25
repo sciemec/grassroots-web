@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { MapPin, ChevronRight, Search, Filter, User, ChevronDown, ArrowLeft } from "lucide-react";
+import { MapPin, ChevronRight, Search, Filter, User, ChevronDown, ArrowLeft, Bookmark, BookmarkCheck } from "lucide-react";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -46,7 +46,7 @@ function formatAgeGroup(ag: string | null): string | null {
     u12: "U12", u13: "U13", u14: "U14", u15: "U15",
     u16: "U16", u17: "U17", u18: "U18",
     u20: "U20", u21: "U21", u23: "U23",
-    senior: "Senior", adult: "Senior", "18_plus": "Senior",
+    senior: "Senior", adult: "Senior", "18_plus": "18+", "18plus": "18+",
     open: "Open",
   };
   return map[v] ?? null;
@@ -80,7 +80,17 @@ function CardSkeleton() {
 
 // ── Player Card ───────────────────────────────────────────────────────────────
 
-function PlayerTile({ player }: { player: PlayerCard }) {
+function PlayerTile({
+  player,
+  isScout,
+  shortlisted,
+  onShortlist,
+}: {
+  player: PlayerCard;
+  isScout: boolean;
+  shortlisted: boolean;
+  onShortlist: (id: string) => void;
+}) {
   const sportKey  = player.sport?.toLowerCase() ?? "";
   const sportLabel = player.sport
     ? player.sport.charAt(0).toUpperCase() + player.sport.slice(1)
@@ -114,7 +124,19 @@ function PlayerTile({ player }: { player: PlayerCard }) {
             {[player.position, sportLabel].filter(Boolean).join(" · ")}
           </p>
         </div>
-        <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors shrink-0" />
+        {isScout ? (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onShortlist(player.user_id); }}
+            className="shrink-0 p-1 rounded-full transition-colors hover:bg-amber-50"
+            title={shortlisted ? "Remove from shortlist" : "Add to shortlist"}
+          >
+            {shortlisted
+              ? <BookmarkCheck className="h-4 w-4" style={{ color: GOLD }} />
+              : <Bookmark className="h-4 w-4 text-gray-300 group-hover:text-amber-400 transition-colors" />}
+          </button>
+        ) : (
+          <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors shrink-0" />
+        )}
       </div>
 
       <div className="flex flex-wrap gap-1">
@@ -158,8 +180,10 @@ function PlayerTile({ player }: { player: PlayerCard }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function PlayersPage() {
-  const user = useAuthStore((s) => s.user);
+  const user  = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
   const isCoach = user?.role === "coach" || user?.role === "admin";
+  const isScout = user?.role === "scout";
 
   const [players, setPlayers]         = useState<PlayerCard[]>([]);
   const [loading, setLoading]         = useState(true);
@@ -168,7 +192,9 @@ export default function PlayersPage() {
   const [lastPage, setLastPage]       = useState(1);
   const [total, setTotal]             = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const [shortlisted, setShortlisted] = useState<Set<string>>(new Set());
 
+  const [search, setSearch]     = useState("");
   const [sport, setSport]       = useState("");
   const [province, setProvince] = useState("");
   const [position, setPosition] = useState("");
@@ -180,6 +206,7 @@ export default function PlayersPage() {
     setError(false);
     try {
       const params = new URLSearchParams({ page: String(pageNum) });
+      if (search)   params.set("search",   search.trim());
       if (sport)    params.set("sport",    sport);
       if (province) params.set("province", province);
       if (position) params.set("position", position);
@@ -199,22 +226,71 @@ export default function PlayersPage() {
     } finally {
       setLoading(false);
     }
-  }, [sport, province, position, gender, ageGroup]);
+  }, [search, sport, province, position, gender, ageGroup]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
     fetchPlayers(1);
-  }, [sport, province, position, gender, ageGroup]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [search, sport, province, position, gender, ageGroup]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (page === 1) return;
     fetchPlayers(page);
   }, [page, fetchPlayers]);
 
+  // Load scout shortlist on mount
+  useEffect(() => {
+    if (!isScout || !token) return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/scout/shortlist`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        const ids = (json.data ?? json ?? []).map((p: { user_id?: string; player_user_id?: string }) =>
+          p.user_id ?? p.player_user_id ?? ""
+        ).filter(Boolean);
+        setShortlisted(new Set(ids));
+      })
+      .catch(() => {/* silent */});
+  }, [isScout, token]);
+
+  const handleShortlist = async (playerId: string) => {
+    if (!token) return;
+    const isIn = shortlisted.has(playerId);
+    // Optimistic update
+    setShortlisted((prev) => {
+      const next = new Set(prev);
+      isIn ? next.delete(playerId) : next.add(playerId);
+      return next;
+    });
+    try {
+      if (isIn) {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/scout/shortlist/${playerId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/scout/shortlist`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ player_id: playerId }),
+        });
+      }
+    } catch {
+      // Revert on failure
+      setShortlisted((prev) => {
+        const next = new Set(prev);
+        isIn ? next.add(playerId) : next.delete(playerId);
+        return next;
+      });
+    }
+  };
+
   const activeFilters = [sport, province, position, gender, ageGroup].filter(Boolean).length;
 
   const clearFilters = () => {
+    setSearch("");
     setSport("");
     setProvince("");
     setPosition("");
@@ -248,8 +324,30 @@ export default function PlayersPage() {
           </div>
         )}
 
+        {/* Scout context banner */}
+        {isScout && (
+          <div
+            className="flex items-center justify-between rounded-2xl px-4 py-3 mb-4 mt-4 text-sm"
+            style={{ backgroundColor: "#fefce8", border: "1px solid #fde68a" }}
+          >
+            <p style={{ color: "#92400e" }}>
+              <strong>Scout view</strong> — tap{" "}
+              <BookmarkCheck className="inline h-3.5 w-3.5 mx-0.5" style={{ color: GOLD }} />
+              to shortlist · {shortlisted.size > 0 ? `${shortlisted.size} shortlisted` : "no players shortlisted yet"}
+            </p>
+            <Link
+              href="/scout/shortlist"
+              className="flex items-center gap-1.5 font-semibold text-xs"
+              style={{ color: "#92400e" }}
+            >
+              <Bookmark size={13} />
+              My Shortlist
+            </Link>
+          </div>
+        )}
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-4" style={{ marginTop: isCoach ? 0 : "1rem" }}>
+        <div className="flex items-center justify-between mb-3" style={{ marginTop: isCoach || isScout ? 0 : "1rem" }}>
           <div>
             <h1 className="text-xl font-bold text-gray-900">Discover Athletes</h1>
             <p className="text-sm text-gray-500">
@@ -276,6 +374,26 @@ export default function PlayersPage() {
               </span>
             )}
           </button>
+        </div>
+
+        {/* Search bar — always visible */}
+        <div className="relative mb-4">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name…"
+            className="w-full bg-white border border-gray-200 rounded-full pl-9 pr-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:border-transparent"
+            style={{ focusRingColor: GRS_GREEN } as React.CSSProperties}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         {/* Filters panel */}
@@ -371,8 +489,7 @@ export default function PlayersPage() {
                   { label: "All",   value: "" },
                   { label: "U13",   value: "under_13" },
                   { label: "13–17", value: "13_17" },
-                  { label: "18–25", value: "18_25" },
-                  { label: "26+",   value: "26_plus" },
+                  { label: "18+",   value: "18_plus" },
                 ] as const).map(({ label, value }) => {
                   const active = ageGroup === value;
                   return (
@@ -437,7 +554,13 @@ export default function PlayersPage() {
         {!loading && !error && players.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {players.map((p) => (
-              <PlayerTile key={p.user_id} player={p} />
+              <PlayerTile
+                key={p.user_id}
+                player={p}
+                isScout={isScout}
+                shortlisted={shortlisted.has(p.user_id)}
+                onShortlist={handleShortlist}
+              />
             ))}
           </div>
         )}
