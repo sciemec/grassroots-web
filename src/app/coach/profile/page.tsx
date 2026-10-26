@@ -133,7 +133,7 @@ export default function CoachProfilePage() {
               <input {...register("name", { required: true })} className={inputCls} />
               {errors.name && <p className="mt-1 text-xs text-destructive">Required</p>}
             </div>
-            <div>
+            <div id="phone">
               <label className={labelCls}>Phone number</label>
               <input {...register("phone")} className={inputCls} placeholder="+263 7…" />
             </div>
