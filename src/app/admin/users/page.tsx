@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Search, Loader2, Download, FileText, ExternalLink, ChevronDown, MapPin } from "lucide-react";
+import { ArrowLeft, Search, Loader2, Download, FileText, ExternalLink, ChevronDown, MapPin, TrendingUp, Users, UserCheck } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -40,6 +40,23 @@ interface ProvinceCount {
 interface UsersMeta {
   total: number;
   last_page: number;
+}
+
+interface WeeklySnapshotCoach {
+  coach_id: string;
+  coach_name: string;
+  coach_email: string;
+  org_name: string;
+  count: number;
+}
+
+interface WeeklySnapshot {
+  since: string;
+  new_coaches: number;
+  new_platform_players: number;
+  new_registered_players: number;
+  total_new_players: number;
+  by_coach: WeeklySnapshotCoach[];
 }
 
 const ROLE_TABS = ["all", "player", "coach", "scout", "fan", "analyst", "admin"] as const;
@@ -206,6 +223,16 @@ export default function AdminUsersPage() {
     },
   });
 
+  const { data: snapshotData } = useQuery<WeeklySnapshot>({
+    queryKey: ["admin-weekly-snapshot"],
+    queryFn: async () => {
+      const res = await api.get("/admin/users/weekly-snapshot");
+      return res.data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const { data: provincesData } = useQuery<{ data: ProvinceCount[] }>({
     queryKey: ["admin-users-provinces"],
     queryFn: async () => {
@@ -281,6 +308,74 @@ export default function AdminUsersPage() {
           )}
         </div>
       </div>
+
+      {/* Weekly snapshot */}
+      {snapshotData && (
+        <div className="mb-5 rounded-xl border bg-card p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <TrendingUp className="h-3.5 w-3.5 text-accent" />
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              This Week&nbsp;
+              <span className="normal-case font-normal">
+                (since {new Date(snapshotData.since).toLocaleDateString("en-ZW", { day: "numeric", month: "short" })})
+              </span>
+            </p>
+          </div>
+
+          {/* Stat chips */}
+          <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2.5">
+              <UserCheck className="h-4 w-4 shrink-0 text-green-400" />
+              <div>
+                <p className="text-lg font-bold text-white leading-none">{snapshotData.new_coaches}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">New coaches</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2.5">
+              <Users className="h-4 w-4 shrink-0 text-blue-400" />
+              <div>
+                <p className="text-lg font-bold text-white leading-none">{snapshotData.new_platform_players}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">Joined platform</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2.5 col-span-2 sm:col-span-1">
+              <Users className="h-4 w-4 shrink-0 text-amber-400" />
+              <div>
+                <p className="text-lg font-bold text-white leading-none">{snapshotData.new_registered_players}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">Coach-registered</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Per-coach breakdown */}
+          {snapshotData.by_coach.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No coach-registered players this week.</p>
+          ) : (
+            <>
+              <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Players added per coach</p>
+              <div className="space-y-1.5">
+                {snapshotData.by_coach.map((c) => (
+                  <div key={c.coach_id} className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <span className="block text-xs font-medium text-white truncate">{c.coach_name}</span>
+                      <span className="block text-[11px] text-muted-foreground truncate">{c.org_name || c.coach_email}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden" style={{ width: 80 }}>
+                        <div
+                          className="h-1.5 rounded-full bg-accent"
+                          style={{ width: `${Math.round((c.count / snapshotData.by_coach[0].count) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="w-5 text-right text-xs font-bold text-accent">{c.count}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Province breakdown */}
       {provinces.length > 0 && (
