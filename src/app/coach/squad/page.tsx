@@ -88,8 +88,13 @@ function SquadPageInner() {
   useEffect(() => { fetchSquad(showArchived); }, [showArchived, fetchSquad]);
 
   const updateStatus = async (id: string, status: string) => {
-    await api.patch(`/coach/squad/${id}`, { status }).catch(() => {});
+    const prevStatus = squad.find((m) => m.id === id)?.status;
     setSquad((prev) => prev.map((m) => m.id === id ? { ...m, status: status as SquadMemberFull["status"] } : m));
+    try {
+      await api.patch(`/coach/squad/${id}`, { status });
+    } catch {
+      setSquad((prev) => prev.map((m) => m.id === id ? { ...m, status: (prevStatus ?? "fit") as SquadMemberFull["status"] } : m));
+    }
   };
 
   const restorePlayer = async (id: string) => {
