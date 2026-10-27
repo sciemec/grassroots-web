@@ -1,10 +1,11 @@
 // src/app/api/whatsapp/route.ts
 // Meta Cloud API — WhatsApp webhook proxy
 // GET:  Meta webhook verification (stays in Next.js)
-// POST: verify HMAC-SHA256, forward raw payload to Laravel WhatsAppController
+// POST: verify HMAC-SHA256, intercept scholarship keywords, forward remainder to Laravel
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac } from 'crypto';
+import { isScholarshipIntent, handleScholarshipIntent } from '@/lib/whatsapp-scholarship';
 
 const LARAVEL = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
 
@@ -51,6 +52,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
   }
 
+  // ── Scholarship keyword interception ─────────────────────────────────────
+  // Parse the Meta payload to check for inbound text messages.
+  // If a player texts a scholarship-related keyword, handle it here in Next.js
+  // (the matcher is TypeScript-only) and skip the Laravel forward.
+  const inboundMessage = extractTextMessage(rawBody);
+  if (inboundMessage && isScholarshipIntent(inboundMessage.text)) {
+    console.log('[WhatsApp] Scholarship intent detected from', inboundMessage.from);
+    // Fire-and-forget — never block the 200 response
+    handleScholarshipIntent(inboundMessage.from).catch((err) =>
+      console.error('[WhatsApp] Scholarship handler error:', err),
+    );
+    return new NextResponse('OK', { status: 200 });
+  }
+
   // Forward raw payload to Laravel — pass signature header so Laravel can re-verify
   try {
     const resp = await fetch(`${LARAVEL}/whatsapp/webhook`, {
@@ -73,4 +88,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // Always return 200 — Meta retries on any non-2xx response
   return new NextResponse('OK', { status: 200 });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Extract the first inbound text message from a Meta Cloud API webhook payload.
+ * Returns null for non-message events (status updates, reactions, etc.).
+ */
+function extractTextMessage(rawBody: string): { from: string; text: string } | null {
+  try {
+    const payload = JSON.parse(rawBody);
+    const messages: unknown[] =
+      payload?.entry?.[0]?.changes?.[0]?.value?.messages;
+    if (!Array.isArray(messages) || messages.length === 0) return null;
+    const msg = messages[0] as Record<string, unknown>;
+    if (msg.type !== 'text') return null;
+    const from = typeof msg.from === 'string' ? msg.from : null;
+    const text = typeof (msg.text as Record<string, unknown>)?.body === 'string'
+      ? (msg.text as Record<string, unknown>).body as string
+      : null;
+    if (!from || !text) return null;
+    return { from, text };
+  } catch {
+    return null;
+  }
 }
