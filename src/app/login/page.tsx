@@ -160,7 +160,7 @@ function LoginForm() {
                 type="text"
                 value={identifier}
                 onChange={e => { setIdentifier(e.target.value); setError(null); }}
-                placeholder="email@example.com or 07X XXX XXXX"
+                placeholder="Email or phone (+263...)"
                 required
                 autoCapitalize="none"
                 autoCorrect="off"
