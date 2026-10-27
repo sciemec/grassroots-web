@@ -301,6 +301,7 @@ export default function CoachPlayerDetailPage() {
   // ── Archive dialog ─────────────────────────────────────────────────────────
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [archiving,      setArchiving]      = useState(false);
+  const [archiveError,   setArchiveError]   = useState<string | null>(null);
 
   // ── Load ───────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -476,20 +477,29 @@ export default function CoachPlayerDetailPage() {
   // ── Archive / restore ──────────────────────────────────────────────────────
   async function handleArchive() {
     setArchiving(true);
+    setArchiveError(null);
     try {
       await api.delete(`/coach/squad/${memberId}`);
       setMember((prev) => prev ? { ...prev, removed_at: new Date().toISOString() } as typeof prev : prev);
-    } catch { /* silent */ }
-    finally { setArchiving(false); setConfirmArchive(false); }
+      setConfirmArchive(false);
+    } catch {
+      setArchiveError("Archive failed. Please try again.");
+    } finally {
+      setArchiving(false);
+    }
   }
 
   async function handleRestore() {
     setArchiving(true);
+    setArchiveError(null);
     try {
       await api.post(`/coach/squad/${memberId}/restore`);
       setMember((prev) => prev ? { ...prev, removed_at: null } as typeof prev : prev);
-    } catch { /* silent */ }
-    finally { setArchiving(false); }
+    } catch {
+      setArchiveError("Restore failed. Please try again.");
+    } finally {
+      setArchiving(false);
+    }
   }
 
   const isArchived = !!(member as { removed_at?: string | null } | null)?.removed_at;
@@ -524,16 +534,21 @@ export default function CoachPlayerDetailPage() {
 
             {/* Archive banner */}
             {isArchived && (
-              <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                <p className="text-sm font-semibold text-amber-700">This player has been archived from your squad.</p>
-                <button
-                  onClick={handleRestore}
-                  disabled={archiving}
-                  className="flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-500 disabled:opacity-50"
-                >
-                  {archiving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
-                  Restore
-                </button>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-amber-700">This player has been archived from your squad.</p>
+                  <button
+                    onClick={handleRestore}
+                    disabled={archiving}
+                    className="flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-500 disabled:opacity-50"
+                  >
+                    {archiving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+                    Restore
+                  </button>
+                </div>
+                {archiveError && (
+                  <p className="mt-1.5 text-xs text-red-600">{archiveError}</p>
+                )}
               </div>
             )}
 
@@ -596,10 +611,13 @@ export default function CoachPlayerDetailPage() {
                     {archiving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                     Yes, archive
                   </button>
-                  <button onClick={() => setConfirmArchive(false)} className="rounded-lg border px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50">
+                  <button onClick={() => { setConfirmArchive(false); setArchiveError(null); }} className="rounded-lg border px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50">
                     Cancel
                   </button>
                 </div>
+                {archiveError && (
+                  <p className="mt-2 text-xs text-red-600">{archiveError}</p>
+                )}
               </div>
             )}
 
