@@ -274,6 +274,8 @@ export default function CoachPlayerDetailPage() {
   const [biometricScore,  setBiometricScore]  = useState<{ drill: string; resilience_index: number; flags: string[]; created_at: string } | null>(null);
   const [fieldTests,      setFieldTests]      = useState<FieldTest[]>([]);
   const [loading,         setLoading]         = useState(true);
+  const [fetchError,      setFetchError]      = useState(false);
+  const [retryCount,      setRetryCount]      = useState(0);
 
   // ── AI report ──────────────────────────────────────────────────────────────
   const [aiReport,   setAiReport]   = useState("");
@@ -305,6 +307,8 @@ export default function CoachPlayerDetailPage() {
 
   // ── Load ───────────────────────────────────────────────────────────────────
   useEffect(() => {
+    setLoading(true);
+    setFetchError(false);
     Promise.all([
       api.get(`/coach/squad/${memberId}`),
       api.get(`/coach/squad/${memberId}/sessions`).catch(() => ({ data: [] })),
@@ -326,9 +330,11 @@ export default function CoachPlayerDetailPage() {
       const ftRows   = Array.isArray(bioPayload.field_tests)      ? bioPayload.field_tests      : [];
       if (bioRows.length > 0) setBiometricScore(bioRows[0] as typeof biometricScore);
       setFieldTests(ftRows as FieldTest[]);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch(() => {
+      setFetchError(true);
+    }).finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memberId]);
+  }, [memberId, retryCount]);
 
   // ── AI report ──────────────────────────────────────────────────────────────
   const getAiReport = async () => {
@@ -523,6 +529,16 @@ export default function CoachPlayerDetailPage() {
         {loading ? (
           <div className="space-y-4">
             {[1,2,3].map((i) => <div key={i} className="h-32 rounded-xl border bg-muted/40 animate-pulse" />)}
+          </div>
+        ) : fetchError ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-12 text-center">
+            <p className="font-medium text-destructive mb-3">Could not load player profile</p>
+            <button
+              onClick={() => setRetryCount((c) => c + 1)}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Retry
+            </button>
           </div>
         ) : !member ? (
           <div className="rounded-xl border border-dashed p-12 text-center">
