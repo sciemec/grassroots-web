@@ -50,6 +50,8 @@ function SquadPageInner() {
   const [showArchived, setShowArchived]       = useState(false);
   const [activeTab, setActiveTab]             = useState<"players" | "injuries" | "fatigue" | "chemistry">("players");
   const [page, setPage]                       = useState(1);
+  const [fetchError, setFetchError]           = useState(false);
+  const [restoreError, setRestoreError]       = useState<string | null>(null);
 
   // Filters live in URL query string
   const search            = params.get("search") ?? "";
@@ -67,11 +69,13 @@ function SquadPageInner() {
   }, [params, pathname, router]);
 
   const clearFilters = useCallback(() => {
+    setPage(1);
     router.replace(pathname, { scroll: false });
   }, [pathname, router]);
 
   const fetchSquad = useCallback((archived: boolean) => {
     setLoading(true);
+    setFetchError(false);
     const url = archived ? "/coach/squad?include_archived=1" : "/coach/squad";
     api.get(url)
       .then((res) => {
@@ -80,7 +84,7 @@ function SquadPageInner() {
       })
       .catch((err) => {
         console.error("Squad fetch error:", err?.response?.status, err?.response?.data);
-        setSquad([]);
+        setFetchError(true);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -98,8 +102,13 @@ function SquadPageInner() {
   };
 
   const restorePlayer = async (id: string) => {
-    await api.post(`/coach/squad/${id}/restore`).catch(() => {});
-    setSquad((prev) => prev.filter((m) => m.id !== id));
+    setRestoreError(null);
+    try {
+      await api.post(`/coach/squad/${id}/restore`);
+      setSquad((prev) => prev.filter((m) => m.id !== id));
+    } catch {
+      setRestoreError(id);
+    }
   };
 
   const filtered = squad.filter((m) => {
@@ -295,6 +304,16 @@ function SquadPageInner() {
               <div key={i} className="h-[72px] animate-pulse rounded-xl bg-muted" />
             ))}
           </div>
+        ) : fetchError ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+            <p className="font-medium text-destructive mb-3">Could not load your squad</p>
+            <button
+              onClick={() => fetchSquad(showArchived)}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-xl border border-dashed p-12 text-center">
             <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
@@ -378,12 +397,17 @@ function SquadPageInner() {
                       </td>
                       <td className="px-4 py-3.5">
                         {showArchived ? (
-                          <button
-                            onClick={() => restorePlayer(m.id)}
-                            className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" /> Restore
-                          </button>
+                          <div className="flex flex-col items-start gap-1">
+                            <button
+                              onClick={() => restorePlayer(m.id)}
+                              className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" /> Restore
+                            </button>
+                            {restoreError === m.id && (
+                              <span className="text-[10px] text-destructive">Restore failed — try again</span>
+                            )}
+                          </div>
                         ) : (
                           <Link
                             href={`/coach/squad/${m.id}`}
