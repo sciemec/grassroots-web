@@ -550,9 +550,8 @@ export default function AdminUsersPage() {
     },
   });
 
-  // Reject = suspend until dedicated reject endpoint is built in commit 2
   const rejectMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/admin/users/${id}/toggle-active`),
+    mutationFn: (id: string) => api.post(`/admin/scout-approvals/${id}/reject`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-pending-scouts"] });
       qc.invalidateQueries({ queryKey: ["admin-users"] });
