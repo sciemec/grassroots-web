@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Search, Loader2, Download, FileText,
   ExternalLink, ChevronDown, MapPin, TrendingUp, Users,
@@ -400,8 +401,17 @@ async function exportPDF(users: AdminUser[]) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function AdminUsersPage() {
-  const user = useAuthStore((s) => s.user);
-  const qc = useQueryClient();
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const qc          = useQueryClient();
+
+  // Auth guard
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [hasHydrated, user, router]);
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -461,7 +471,7 @@ export default function AdminUsersPage() {
       });
       return res.data;
     },
-    enabled: !!user,
+    enabled: !!user && user.role === "admin",
   });
 
   // Per-role counts — 6 parallel queries each fetching 1 row for the meta.total
@@ -480,7 +490,7 @@ export default function AdminUsersPage() {
       );
     },
     staleTime: 5 * 60 * 1000,
-    enabled: !!user,
+    enabled: !!user && user.role === "admin",
   });
 
   // Pending scout approvals
@@ -491,7 +501,7 @@ export default function AdminUsersPage() {
       return res.data;
     },
     staleTime: 60_000,
-    enabled: !!user,
+    enabled: !!user && user.role === "admin",
   });
 
   const { data: snapshotData } = useQuery<WeeklySnapshot>({
@@ -500,7 +510,7 @@ export default function AdminUsersPage() {
       const res = await api.get("/admin/users/weekly-snapshot");
       return res.data;
     },
-    enabled: !!user,
+    enabled: !!user && user.role === "admin",
     staleTime: 5 * 60 * 1000,
   });
 
@@ -510,7 +520,7 @@ export default function AdminUsersPage() {
       const res = await api.get("/admin/users/provinces");
       return res.data;
     },
-    enabled: !!user,
+    enabled: !!user && user.role === "admin",
     staleTime: 5 * 60 * 1000,
   });
 
@@ -569,6 +579,8 @@ export default function AdminUsersPage() {
 
   const suspendedCount = useMemo(() => users.filter((u) => !u.is_active).length, [users]);
   const pendingVerifyCount = useMemo(() => users.filter((u) => u.is_active && !u.verified_at).length, [users]);
+
+  if (!hasHydrated || !user) return null;
 
   const setRoleFilter = (r: RoleTab) => {
     setRoleTab(r);
@@ -1076,7 +1088,7 @@ export default function AdminUsersPage() {
                           </Link>
                           <button
                             onClick={() => toggleMutation.mutate(u.id)}
-                            disabled={toggleMutation.isPending}
+                            disabled={toggleMutation.isPending && (toggleMutation.variables as string) === u.id}
                             className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium disabled:opacity-50 transition-colors ${
                               !u.is_active
                                 ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
