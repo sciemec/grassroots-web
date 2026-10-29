@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import api from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { Loader2, CheckCircle2, Save, ShieldCheck, ShieldAlert, Clock, Upload } from "lucide-react";
 
 const BADGE_TYPES = ["CAF A", "CAF B", "CAF C", "CAF D", "UEFA B", "COSAFA", "ZIFA Grassroots"];
@@ -50,6 +51,7 @@ interface CoachProfile {
 
 export default function CoachProfilePage() {
   const qc = useQueryClient();
+  const user = useAuthStore((s) => s.user);
   const [saved, setSaved] = useState(false);
   const [verifSubmitted, setVerifSubmitted] = useState(false);
 
@@ -59,6 +61,7 @@ export default function CoachProfilePage() {
       const res = await api.get("/profile");
       return res.data;
     },
+    enabled: !!user,
   });
 
   const { data: verifData, isLoading: verifLoading } = useQuery<VerificationStatus>({
@@ -67,6 +70,7 @@ export default function CoachProfilePage() {
       const res = await api.get("/coach/verification/status");
       return res.data;
     },
+    enabled: !!user,
   });
 
   const { register: regVerif, handleSubmit: handleVerif, formState: { errors: verifErrors } } = useForm<VerificationForm>();

@@ -43,7 +43,7 @@ const EMPTY_FORM = {
 };
 
 export default function CoachMatchesPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -424,7 +424,7 @@ export default function CoachMatchesPage() {
                         </button>
                         <button
                           onClick={() => deleteMatch.mutate(m.id)}
-                          disabled={deleteMatch.isPending}
+                          disabled={deleteMatch.isPending && deleteMatch.variables === m.id}
                           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-red-600 hover:bg-red-500/10 transition-colors"
                         >
                           <X className="h-3.5 w-3.5" /> Delete

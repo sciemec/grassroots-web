@@ -227,7 +227,7 @@ const GRADE_FILTERS = ["All", "Elite", "Advanced", "Progress", "Develop", "Build
 
 export default function ScoutingDashboardPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

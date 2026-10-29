@@ -124,7 +124,7 @@ function ResponseCard({ item }: { item: TacticalResponse }) {
 }
 
 export default function TacticalAnalysisPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [responses, setResponses] = useState<TacticalResponse[]>([]);
   const [customQuestion, setCustomQuestion] = useState("");

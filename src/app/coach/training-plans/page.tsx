@@ -278,7 +278,7 @@ type SportOption = typeof SPORT_OPTIONS[number]["key"];
 
 export default function TrainingPlansPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [sport, setSport] = useState<SportOption>("football");
   const [tab, setTab] = useState<"phases" | "programmes">("phases");
   const [phases, setPhases] = useState<Phase[]>([]);

@@ -25,7 +25,7 @@ const TYPE_CONFIG: Record<string, { label: string; badge: string; icon: React.El
 
 export default function CoachNotificationsPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "unread">("all");

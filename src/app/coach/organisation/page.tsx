@@ -54,7 +54,8 @@ const ORG_TYPES = ["School", "Academy", "Club"];
 
 export default function OrganisationPage() {
   const router = useRouter();
-  const { user, _hasHydrated } = useAuthStore();
+  const user         = useAuthStore((s) => s.user);
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   const [org, setOrg] = useState<Organisation | null>(null);
   const [loading, setLoading] = useState(true);

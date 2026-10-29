@@ -357,7 +357,7 @@ interface SquadMemberLite {
 }
 
 export default function StrategicPatternsPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [matches, setMatches]       = useState<CoachMatch[]>([]);
   const [eventRecords, setEventRecords] = useState<MatchEventRecord[]>([]);
   const [patterns, setPatterns]     = useState<Pattern[]>([]);

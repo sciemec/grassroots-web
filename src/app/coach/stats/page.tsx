@@ -167,7 +167,7 @@ function generateAttackZonePoints(goalsFor: number): HeatmapPoint[] {
 }
 
 export default function StatsPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
 
   useEffect(() => {
