@@ -302,7 +302,7 @@ function UserCard({
             </span>
             {u.age_group && (
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">
-                {minor ? "U18" : u.age_group}
+                {minor ? "Minor" : u.age_group}
               </span>
             )}
             {u.province && (
@@ -432,9 +432,21 @@ export default function AdminUsersPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Close role dropdown when clicking outside
+  useEffect(() => {
+    if (!roleDropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (!(e.target as Element).closest("[data-role-dropdown]")) {
+        setRoleDropdownOpen(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [roleDropdownOpen]);
+
   // ── Queries ────────────────────────────────────────────────────────────────
   const { data, isLoading, isError, refetch } = useQuery<{ data: AdminUser[]; meta: UsersMeta }>({
-    queryKey: ["admin-users", debouncedSearch, roleTab, page],
+    queryKey: ["admin-users", debouncedSearch, roleTab, filterStatus, page],
     queryFn: async () => {
       const res = await api.get("/admin/users", {
         params: {
@@ -608,13 +620,13 @@ export default function AdminUsersPage() {
                 onClick={() => { exportCSV(users); setExportOpen(false); }}
                 className="flex w-full items-center gap-2 rounded-t-xl px-3 py-2.5 text-left text-xs text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <Download className="h-3.5 w-3.5" /> CSV
+                <Download className="h-3.5 w-3.5" /> CSV (this page)
               </button>
               <button
                 onClick={() => { exportPDF(users); setExportOpen(false); }}
                 className="flex w-full items-center gap-2 rounded-b-xl px-3 py-2.5 text-left text-xs text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <FileText className="h-3.5 w-3.5" /> PDF
+                <FileText className="h-3.5 w-3.5" /> PDF (this page)
               </button>
             </div>
           )}
@@ -651,7 +663,7 @@ export default function AdminUsersPage() {
                 <div key={c.coach_id} className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <span className="block text-xs font-medium text-gray-800 truncate">{c.coach_name}</span>
-                    <span className="block text-[11px] text-gray-400 truncate">{c.org_name || c.coach_email}</span>
+                    <span className="block text-[11px] text-gray-400 truncate">{c.org_name || maskEmail(c.coach_email)}</span>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <div className="h-1.5 w-20 overflow-hidden rounded-full bg-gray-100">
@@ -773,7 +785,7 @@ export default function AdminUsersPage() {
                 : { backgroundColor: "#fef2f2", color: "#b91c1c", borderColor: "#fecaca" }
             }
           >
-            {suspendedCount} suspended
+            Suspended
           </button>
         )}
 
@@ -787,7 +799,7 @@ export default function AdminUsersPage() {
                 : { backgroundColor: "#fffbeb", color: "#b45309", borderColor: "#fde68a" }
             }
           >
-            {pendingVerifyCount} unverified
+            Unverified
           </button>
         )}
       </div>
@@ -984,7 +996,7 @@ export default function AdminUsersPage() {
                               <ExternalLink className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-50" />
                             </Link>
                             {u.age_group && (
-                              <span className="text-[11px] text-gray-400">{minor ? "Under 18" : u.age_group}</span>
+                              <span className="text-[11px] text-gray-400">{minor ? "Minor" : u.age_group}</span>
                             )}
                           </div>
                         </div>
@@ -998,7 +1010,7 @@ export default function AdminUsersPage() {
 
                       {/* Role with inline change */}
                       <td className="px-4 py-3">
-                        <div className="relative inline-block">
+                        <div className="relative inline-block" data-role-dropdown>
                           <button
                             onClick={() => setRoleDropdownOpen(roleDropdownOpen === u.id ? null : u.id)}
                             className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium capitalize"
@@ -1014,11 +1026,11 @@ export default function AdminUsersPage() {
                                   <button
                                     key={r}
                                     onClick={() => roleMutation.mutate({ id: u.id, role: r })}
-                                    disabled={roleMutation.isPending}
+                                    disabled={roleMutation.isPending && roleMutation.variables?.id === u.id}
                                     className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-xs capitalize hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl"
                                     style={{ color: rp2.text }}
                                   >
-                                    {roleMutation.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+                                    {roleMutation.isPending && roleMutation.variables?.id === u.id && <Loader2 className="h-3 w-3 animate-spin" />}
                                     {r}
                                   </button>
                                 );
