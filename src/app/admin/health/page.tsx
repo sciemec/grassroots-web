@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, XCircle, RefreshCw, AlertTriangle } from "lucide-react";
+import { useAuthStore } from "@/lib/auth-store";
 
 interface HealthCheck {
   status: "healthy" | "degraded";
@@ -42,9 +44,19 @@ function StatusRow({ name, label, status }: { name: string; label: string; statu
 }
 
 export default function HealthPage() {
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+
   const [data, setData]       = useState<HealthCheck | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [hasHydrated, user, router]);
 
   const run = async () => {
     setLoading(true);
@@ -60,7 +72,9 @@ export default function HealthPage() {
     }
   };
 
-  useEffect(() => { run(); }, []);
+  useEffect(() => { run(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!hasHydrated || !user) return null;
 
   const tables   = Object.entries(data?.checks?.tables   ?? {});
   const env      = Object.entries(data?.checks?.env      ?? {});

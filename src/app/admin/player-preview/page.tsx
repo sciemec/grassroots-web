@@ -2,7 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Send, RotateCcw, User, Sparkles } from "lucide-react";
+import { useAuthStore } from "@/lib/auth-store";
 
 // ── Persona system prompts (mirrors ThutoController.php) ─────────────────────
 
@@ -110,12 +112,24 @@ type Persona = "male" | "female";
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PlayerPreviewPage() {
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+
   const [persona, setPersona]     = useState<Persona>("female");
   const [messages, setMessages]   = useState<Message[]>([]);
   const [input, setInput]         = useState("");
   const [loading, setLoading]     = useState(false);
   const bottomRef                 = useRef<HTMLDivElement>(null);
   const inputRef                  = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [hasHydrated, user, router]);
+
+  if (!hasHydrated || !user) return null;
 
   const isAmara    = persona === "female";
   const agentName  = isAmara ? "AMARA" : "THUTO";

@@ -54,39 +54,108 @@ export default function GrassrootsSportsLanding() {
       {/* Live activity wire (client-only ticker) */}
       <LiveActivityWire />
 
-      {/* Hero */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-[#e2f0d9] via-[#f0f9e8] to-[#f4f2ee] border-b border-[#1c3d22]/10 py-16 lg:py-20 px-6 text-center">
-        <div className="max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 bg-white/80 border border-[#1c3d22]/10 rounded-full px-4 py-1.5 mb-2 shadow-3xs">
-            <Zap size={14} className="text-[#1c3d22]" />
-            <span className="text-xs font-black uppercase tracking-wider text-emerald-900">
-              Zimbabwe&apos;s #1 Talent Discovery Platform
-            </span>
+      {/* ── HERO — dark green with chevron pattern ─────────────────── */}
+      <header
+        className="relative overflow-hidden py-16 lg:py-20 px-6 text-center"
+        style={{ background: "#0d2e17" }}
+      >
+        {/* Chevron SVG pattern */}
+        <svg
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <pattern id="chevron-pat" x="0" y="0" width="40" height="20" patternUnits="userSpaceOnUse">
+              <polyline
+                points="0,20 20,0 40,20"
+                fill="none"
+                stroke="rgba(240,180,41,0.08)"
+                strokeWidth="1.5"
+              />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#chevron-pat)" />
+        </svg>
+
+        {/* Gold top accent line */}
+        <div className="absolute top-0 left-0 right-0 h-1" style={{ background: "#f0b429" }} />
+
+        <div className="relative max-w-3xl mx-auto space-y-4">
+          {/* Badge */}
+          <div
+            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 border text-xs font-black uppercase tracking-wider mb-2"
+            style={{
+              borderColor: "rgba(240,180,41,0.4)",
+              color: "#f0b429",
+              background: "rgba(240,180,41,0.08)",
+            }}
+          >
+            <Zap size={13} />
+            Zimbabwe&apos;s #1 Talent Discovery Platform
           </div>
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-gray-900 leading-none">
+
+          {/* Headline */}
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none text-white">
             Identify. Nurture.{" "}
-            <span className="text-[#1c3d22] border-b-4 border-[#f0b429]">Market.</span>
+            <span style={{ color: "#f0b429", borderBottom: "4px solid #f0b429" }}>Market.</span>
           </h1>
-          <p className="text-sm sm:text-base font-semibold text-zinc-600 max-w-2xl mx-auto leading-relaxed">
+
+          {/* Sub-headline */}
+          <p className="text-sm sm:text-base font-semibold text-green-200 max-w-2xl mx-auto leading-relaxed">
             AI-powered athletic scoring, personalised training curricula, and a
             digital Talent Passport built to get African grassroots athletes
             discovered by scouts &mdash; with nothing but a smartphone.
           </p>
+
+          {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
             <Link
               href="/register"
-              className="bg-[#f0b429] text-[#1c3d22] border-2 border-[#1c3d22] px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-amber-400 transition-colors flex items-center justify-center gap-2 shadow-xs"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-xs font-black uppercase tracking-wider transition-colors hover:brightness-110"
+              style={{ background: "#f0b429", color: "#0d2e17" }}
             >
               Get Started <ChevronRight size={14} />
             </Link>
             <Link
               href="/players"
-              className="bg-white border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shadow-3xs"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-xs font-black uppercase tracking-wider border transition-colors hover:bg-white/10"
+              style={{ borderColor: "rgba(255,255,255,0.25)", color: "white" }}
             >
               Discover Talent <Users size={14} />
             </Link>
           </div>
+
+          {/* Stat chips */}
+          <div className="flex flex-wrap justify-center gap-3 pt-4">
+            {[
+              { value: "354+", label: "Athletes" },
+              { value: "10",   label: "Sports" },
+              { value: "8",    label: "Provinces" },
+              { value: "Free", label: "to join" },
+            ].map(({ value, label }) => (
+              <div
+                key={label}
+                className="rounded-xl px-4 py-2 text-center"
+                style={{
+                  background: "rgba(255,255,255,0.07)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                }}
+              >
+                <p className="text-lg font-black text-white leading-none">{value}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider mt-0.5" style={{ color: "#f0b429" }}>
+                  {label}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* Bottom fade into page background */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-10"
+          style={{ background: "linear-gradient(to bottom, transparent, #f4f2ee)" }}
+        />
       </header>
 
       {/* Public athlete video grid */}
@@ -123,7 +192,7 @@ export default function GrassrootsSportsLanding() {
             <div key={step} className="flex flex-col items-center text-center gap-3">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black"
-                style={{ background: "#1c3d22", color: "#f0b429" }}
+                style={{ background: "#0d2e17", color: "#f0b429" }}
               >
                 {step}
               </div>
@@ -135,8 +204,8 @@ export default function GrassrootsSportsLanding() {
         <div className="mt-10 text-center">
           <Link
             href="/register"
-            className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-xs font-black uppercase tracking-wider transition-colors"
-            style={{ background: "#1c3d22", color: "#f0b429" }}
+            className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-xs font-black uppercase tracking-wider transition-colors hover:brightness-110"
+            style={{ background: "#0d2e17", color: "#f0b429" }}
           >
             Create your free profile <ChevronRight size={14} />
           </Link>
@@ -195,7 +264,7 @@ export default function GrassrootsSportsLanding() {
                   className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
                   style={{ background: "#e8f5e9" }}
                 >
-                  <Icon size={20} style={{ color: "#1c3d22" }} />
+                  <Icon size={20} style={{ color: "#0d2e17" }} />
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">{title}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">{body}</p>
@@ -221,7 +290,7 @@ export default function GrassrootsSportsLanding() {
                 name: "Free",
                 price: "$0",
                 period: "forever",
-                color: "#1c3d22",
+                color: "#0d2e17",
                 features: ["Player profile & Talent Passport", "Training log", "THUTO AI chat", "1 sport", "Public discovery listing"],
                 cta: "Get started free",
                 href: "/register",
@@ -241,7 +310,7 @@ export default function GrassrootsSportsLanding() {
                 name: "Pro-Local",
                 price: "$25",
                 period: "per month",
-                color: "#1c3d22",
+                color: "#0d2e17",
                 features: ["Everything in School", "All 10 sports", "Unlimited video", "Live match dashboard", "Scout recruitment tools"],
                 cta: "Start free trial",
                 href: "/register",
@@ -252,14 +321,14 @@ export default function GrassrootsSportsLanding() {
                 key={name}
                 className={`rounded-2xl border p-6 flex flex-col ${highlight ? "shadow-lg" : ""}`}
                 style={{
-                  borderColor:  highlight ? "#f0b429" : "#e5e7eb",
-                  background:   highlight ? "#fffbeb" : "white",
+                  borderColor: highlight ? "#f0b429" : "#e5e7eb",
+                  background:  highlight ? "#fffbeb" : "white",
                 }}
               >
                 {highlight && (
                   <span
                     className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full self-start mb-3"
-                    style={{ background: "#f0b429", color: "#1c3d22" }}
+                    style={{ background: "#f0b429", color: "#0d2e17" }}
                   >
                     Most popular
                   </span>
@@ -279,11 +348,11 @@ export default function GrassrootsSportsLanding() {
                 </ul>
                 <Link
                   href={href}
-                  className="block text-center rounded-xl py-2.5 text-sm font-bold transition-colors"
+                  className="block text-center rounded-xl py-2.5 text-sm font-bold transition-colors hover:brightness-110"
                   style={
                     highlight
-                      ? { background: "#f0b429", color: "#1c3d22" }
-                      : { background: "#1c3d22", color: "#f0b429" }
+                      ? { background: "#f0b429", color: "#0d2e17" }
+                      : { background: "#0d2e17", color: "#f0b429" }
                   }
                 >
                   {cta}
@@ -299,7 +368,7 @@ export default function GrassrootsSportsLanding() {
 
       {/* WhatsApp CTA */}
       {process.env.NEXT_PUBLIC_WHATSAPP_NUMBER && (
-        <section className="bg-[#1c3d22] py-10 px-4 text-center">
+        <section className="py-10 px-4 text-center" style={{ background: "#0d2e17" }}>
           <p className="text-white text-sm font-bold mb-1">Already have a smartphone?</p>
           <p className="text-green-200 text-xs mb-4">Chat with THUTO — your AI coach — directly on WhatsApp.</p>
           <a
@@ -319,7 +388,7 @@ export default function GrassrootsSportsLanding() {
       {/* Footer */}
       <footer className="border-t border-gray-200 bg-white py-8 px-4">
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-3">
-          <Award size={32} className="text-[#1c3d22]" />
+          <Award size={32} style={{ color: "#0d2e17" }} />
           <p className="text-[10px] font-black text-gray-800 uppercase tracking-widest text-center">
             Grassroots Sports Development Network &copy; 2026 &middot; Identify, Nurture, and Market Talent
           </p>

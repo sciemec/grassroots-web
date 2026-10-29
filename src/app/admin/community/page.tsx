@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { Trash2, Plus, ArrowLeft } from "lucide-react";
 
 interface District {
@@ -14,10 +16,19 @@ interface District {
 }
 
 export default function CommunityPage() {
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [province, setProvince] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [hasHydrated, user, router]);
 
   const { data: districts, isLoading } = useQuery<District[]>({
     queryKey: ["poverty-districts"],
@@ -25,6 +36,7 @@ export default function CommunityPage() {
       const res = await api.get("/admin/poverty-districts");
       return res.data?.data ?? res.data;
     },
+    enabled: !!user && user.role === "admin",
   });
 
   const add = useMutation({
@@ -51,6 +63,8 @@ export default function CommunityPage() {
     "Mashonaland East", "Mashonaland West", "Mashonaland Central",
     "Matabeleland North", "Matabeleland South", "Midlands",
   ];
+
+  if (!hasHydrated || !user) return null;
 
   return (
     <main className="gs-watermark overflow-auto p-6">

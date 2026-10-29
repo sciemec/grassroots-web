@@ -3,8 +3,9 @@
 // Admin: moderate partner contact requests before forwarding to guardians.
 // This is the safeguarding gate — no request reaches a guardian without admin approval.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Building2, CheckCircle2, XCircle, User, Clock,
   Loader2, AlertTriangle, MessageSquare, Search, AlertCircle,
@@ -69,8 +70,16 @@ function ListSkeleton() {
 }
 
 export default function AdminContactRequestsPage() {
-  const user = useAuthStore((s) => s.user);
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [hasHydrated, user, router]);
 
   const [statusTab, setStatusTab]   = useState<StatusFilter>("pending_admin");
   const [search, setSearch]         = useState("");
@@ -86,7 +95,7 @@ export default function AdminContactRequestsPage() {
   const { data, isLoading } = useQuery<{ data: ContactRequest[] }>({
     queryKey: ["admin-contact-requests", statusTab],
     queryFn: () => api.get("/admin/contact-requests", { params: { status: statusTab, per_page: 50 } }).then((r) => r.data),
-    enabled: !!user,
+    enabled: !!user && user.role === "admin",
   });
 
   const approveMutation = useMutation({
@@ -121,6 +130,8 @@ export default function AdminContactRequestsPage() {
   const isActing = (id: string) =>
     (approveMutation.isPending && approveMutation.variables?.id === id) ||
     (rejectMutation.isPending && rejectMutation.variables?.id === id);
+
+  if (!hasHydrated || !user) return null;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", paddingBottom: 48 }}>

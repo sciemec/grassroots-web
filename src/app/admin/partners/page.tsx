@@ -2,8 +2,9 @@
 // src/app/admin/partners/page.tsx
 // Admin: verify, monitor, and suspend Verified Partner accounts.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Building2, CheckCircle2, XCircle, ShieldCheck,
   Loader2, ExternalLink, Search, AlertCircle,
@@ -56,8 +57,16 @@ function ListSkeleton() {
 }
 
 export default function AdminPartnersPage() {
-  const user = useAuthStore((s) => s.user);
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [hasHydrated, user, router]);
 
   const [statusTab, setStatusTab] = useState<StatusTab>("pending");
   const [search, setSearch]       = useState("");
@@ -73,7 +82,7 @@ export default function AdminPartnersPage() {
   const { data, isLoading } = useQuery<{ data: Partner[] }>({
     queryKey: ["admin-partners", statusTab],
     queryFn: () => api.get("/admin/partners", { params: { status: statusTab, per_page: 50 } }).then((r) => r.data),
-    enabled: !!user,
+    enabled: !!user && user.role === "admin",
   });
 
   const verifyMutation = useMutation({
@@ -105,7 +114,11 @@ export default function AdminPartnersPage() {
     p.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const isPending = (id: string) => verifyMutation.isPending || suspendMutation.isPending;
+  const isPending = (id: string) =>
+    (verifyMutation.isPending && verifyMutation.variables?.id === id) ||
+    (suspendMutation.isPending && suspendMutation.variables?.id === id);
+
+  if (!hasHydrated || !user) return null;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", paddingBottom: 48 }}>

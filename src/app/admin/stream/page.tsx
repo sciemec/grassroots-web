@@ -1,14 +1,28 @@
 // src/app/admin/stream/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Play, StopCircle, RefreshCw, ArrowLeft } from 'lucide-react';
+import { useAuthStore } from '@/lib/auth-store';
 
 export default function StreamControlPage() {
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState('Idle');
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace('/login'); return; }
+    if (user.role !== 'admin') { router.replace('/dashboard'); }
+  }, [hasHydrated, user, router]);
+
+  if (!hasHydrated || !user) return null;
 
   const startStream = async () => {
     setIsLoading(true);

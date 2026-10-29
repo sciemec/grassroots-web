@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Film, CheckCircle, Trash2, Eye, AlertTriangle, Loader2, RefreshCw, ArrowLeft } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
@@ -57,10 +58,18 @@ function timeAgo(iso: string): string {
 }
 
 export default function AdminFanHubPage() {
-  const user = useAuthStore((s) => s.user);
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const queryClient = useQueryClient();
   const [statusTab, setStatusTab] = useState<StatusTab>("pending");
   const [previewId, setPreviewId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [hasHydrated, user, router]);
 
   const { data, isLoading, refetch, isRefetching } = useQuery<{ data: FanHubVideo[]; total?: number }>({
     queryKey: ["admin-fan-hub", statusTab],
@@ -68,7 +77,7 @@ export default function AdminFanHubPage() {
       const res = await api.get("/admin/fan-hub/videos", { params: { status: statusTab, per_page: 20 } });
       return res.data;
     },
-    enabled: !!user,
+    enabled: !!user && user.role === "admin",
   });
 
   const videos = safeArray<FanHubVideo>(data);
@@ -89,6 +98,8 @@ export default function AdminFanHubPage() {
   });
 
   const previewVideo = videos.find((v) => v.id === previewId);
+
+  if (!hasHydrated || !user) return null;
 
   return (
     <main className="gs-watermark overflow-auto p-6">

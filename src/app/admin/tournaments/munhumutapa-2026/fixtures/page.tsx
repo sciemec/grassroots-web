@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/auth-store";
 import {
   Trophy, Plus, Save, Trash2, ArrowLeft,
   CheckCircle2, Clock, Radio,
@@ -71,6 +73,16 @@ function catToAgeGender(cat: Category): { age: "U14" | "U16"; gender: "Boys" | "
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminFixturesPage() {
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [hasHydrated, user, router]);
+
   const [fixtures, setFixtures]       = useState<Fixture[]>([]);
   const [registrations, setReg]       = useState<Registration[]>([]);
   const [activeCategory, setActiveCat]= useState<Category>("u14-boys");
@@ -175,6 +187,8 @@ export default function AdminFixturesPage() {
     });
     return result;
   }, [catFixtures]);
+
+  if (!hasHydrated || !user) return null;
 
   return (
     <main className="gs-watermark p-6">

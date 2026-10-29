@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Smartphone, Monitor, Tablet, Globe, TrendingUp, Calendar, Download, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 
@@ -30,8 +32,15 @@ const PLATFORM_EMOJI: Record<string, string> = {
 const DEVICE_ICON = { mobile: Smartphone, desktop: Monitor, tablet: Tablet };
 
 export default function PwaStatsPage() {
-  const user = useAuthStore((s) => s.user);
+  const router       = useRouter();
+  const user         = useAuthStore((s) => s.user);
   const _hasHydrated = useAuthStore((s) => s._hasHydrated);
+
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [_hasHydrated, user, router]);
 
   const { data, isLoading } = useQuery<PwaStats>({
     queryKey: ["admin-pwa-stats"],
@@ -39,7 +48,7 @@ export default function PwaStatsPage() {
       const res = await api.get("/admin/pwa-stats");
       return res.data;
     },
-    enabled: !!user,
+    enabled: !!user && user.role === "admin",
     refetchInterval: 30_000,
   });
 

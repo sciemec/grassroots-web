@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Search, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
@@ -65,7 +66,15 @@ const SCOUT_VIS_OPTIONS = [
 ];
 
 export default function AdminTalentDatabasePage() {
-  const token = useAuthStore((s) => s.token);
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [hasHydrated, user, router]);
 
   const [search, setSearch]           = useState("");
   const [province, setProvince]       = useState("");
@@ -88,7 +97,7 @@ export default function AdminTalentDatabasePage() {
       const res = await api.get(`/admin/talent-database?${params}`);
       return res.data as { data: TalentPlayer[]; total: number; last_page: number };
     },
-    enabled: !!token,
+    enabled: !!user && user.role === "admin",
     staleTime: 30_000,
   });
 
@@ -104,6 +113,8 @@ export default function AdminTalentDatabasePage() {
   function handleFilter<T>(setter: (v: T) => void) {
     return (v: T) => { setter(v); setPage(1); };
   }
+
+  if (!hasHydrated || !user) return null;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>

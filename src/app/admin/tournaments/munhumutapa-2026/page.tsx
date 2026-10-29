@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/auth-store";
 import {
   Trophy,
   Users,
@@ -62,6 +64,16 @@ const STATUS_ICONS = {
 };
 
 export default function MunhumutapaAdminPage() {
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [hasHydrated, user, router]);
+
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -145,6 +157,8 @@ export default function MunhumutapaAdminPage() {
     a.download = "munhumutapa-2026-registrations.csv";
     a.click();
   };
+
+  if (!hasHydrated || !user) return null;
 
   return (
     <main className="gs-watermark p-6">
