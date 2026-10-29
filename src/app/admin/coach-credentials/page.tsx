@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, GraduationCap, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
@@ -55,10 +56,18 @@ function EmptyState({ status }: { status: StatusTab }) {
 }
 
 export default function AdminCoachCredentialsPage() {
-  const user = useAuthStore((s) => s.user);
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const queryClient = useQueryClient();
 
   const [statusTab, setStatusTab] = useState<StatusTab>("pending");
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [hasHydrated, user, router]);
   const [rejectOpen, setRejectOpen] = useState<Record<string, boolean>>({});
   const [rejectNotes, setRejectNotes] = useState<Record<string, string>>({});
 
@@ -68,7 +77,7 @@ export default function AdminCoachCredentialsPage() {
       const res = await api.get("/admin/coach-verifications", { params: { status: statusTab } });
       return res.data;
     },
-    enabled: !!user,
+    enabled: !!user && user.role === "admin",
   });
 
   const approveMutation = useMutation({
@@ -89,6 +98,8 @@ export default function AdminCoachCredentialsPage() {
   const rows = data?.data ?? [];
 
   const pendingCount = statusTab === "pending" ? rows.length : undefined;
+
+  if (!hasHydrated || !user) return null;
 
   return (
     <main className="gs-watermark overflow-auto p-6">
@@ -199,10 +210,10 @@ export default function AdminCoachCredentialsPage() {
                   <div className="flex flex-col gap-2 shrink-0">
                     <button
                       onClick={() => approveMutation.mutate(row.id)}
-                      disabled={approveMutation.isPending}
+                      disabled={approveMutation.isPending && approveMutation.variables === row.id}
                       className="flex items-center gap-1.5 rounded-lg bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-500/20 disabled:opacity-50 transition-colors"
                     >
-                      {approveMutation.isPending
+                      {approveMutation.isPending && approveMutation.variables === row.id
                         ? <Loader2 className="h-3 w-3 animate-spin" />
                         : <CheckCircle2 className="h-3 w-3" />}
                       Approve

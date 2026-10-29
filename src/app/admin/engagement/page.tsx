@@ -2,8 +2,9 @@
 // src/app/admin/engagement/page.tsx
 // Engagement Sponsor Dashboard — live + historical KPIs
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -134,21 +135,28 @@ function SkeletonCard() {
 // ── Main ───────────────────────────────────────────────────────────────────
 
 export default function AdminEngagementPage() {
+  const router       = useRouter();
   const user         = useAuthStore((s) => s.user);
   const _hasHydrated = useAuthStore((s) => s._hasHydrated);
   const [tab, setTab] = useState<"live" | "history">("live");
 
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [_hasHydrated, user, router]);
+
   const { data: liveData, isLoading: liveLoading, refetch: refetchLive, dataUpdatedAt } = useQuery<LiveData>({
     queryKey: ["admin-engagement-live"],
     queryFn: async () => { const res = await api.get("/admin/engagement/live"); return res.data; },
-    enabled: !!user && tab === "live",
+    enabled: !!user && user.role === "admin" && tab === "live",
     refetchInterval: 30_000,
   });
 
   const { data: snapData, isLoading: snapLoading, refetch: refetchSnapshots } = useQuery<{ data: Snapshot[] }>({
     queryKey: ["admin-engagement-snapshots"],
     queryFn: async () => { const res = await api.get("/admin/engagement/snapshots"); return res.data; },
-    enabled: !!user && tab === "history",
+    enabled: !!user && user.role === "admin" && tab === "history",
   });
 
   const snapshots = snapData?.data ?? [];

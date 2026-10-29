@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Flag, CheckCircle2, XCircle, ChevronDown, ChevronUp,
   Loader2, AlertTriangle, MessageSquare, FileText,
@@ -279,10 +280,18 @@ function PostCard({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AdminReportsPage() {
+  const router      = useRouter();
   const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const queryClient = useQueryClient();
 
   const [sectionTab, setSectionTab] = useState<SectionTab>("comments");
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") { router.replace("/dashboard"); }
+  }, [hasHydrated, user, router]);
   const [statusTab,  setStatusTab]  = useState<StatusTab>("flagged");
   const [actionId,   setActionId]   = useState<string | null>(null);
 
@@ -294,7 +303,7 @@ export default function AdminReportsPage() {
       const res = await api.get("/admin/reports", { params: { status: statusTab, per_page: 20 } });
       return res.data;
     },
-    enabled: !!user && sectionTab === "comments",
+    enabled: !!user && user.role === "admin" && sectionTab === "comments",
   });
 
   const resolveComment = useMutation({
@@ -317,7 +326,7 @@ export default function AdminReportsPage() {
       const res = await api.get("/admin/post-reports", { params: { status: statusTab, per_page: 20 } });
       return res.data;
     },
-    enabled: !!user && sectionTab === "posts",
+    enabled: !!user && user.role === "admin" && sectionTab === "posts",
   });
 
   const resolvePost = useMutation({
@@ -339,6 +348,8 @@ export default function AdminReportsPage() {
   const items        = activeQuery.data?.data ?? [];
   const total        = activeQuery.data?.total ?? 0;
   const isLoading    = activeQuery.isLoading;
+
+  if (!hasHydrated || !user) return null;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>

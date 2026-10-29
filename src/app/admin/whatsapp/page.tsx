@@ -3,15 +3,27 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Send, Users, DollarSign, ArrowLeft } from 'lucide-react';
+import { useAuthStore } from '@/lib/auth-store';
 
 export default function WhatsAppAdminPage() {
+  const router      = useRouter();
+  const user        = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [target, setTarget] = useState('all');
   const [result, setResult] = useState<{ sent: number } | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
   const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) { router.replace('/login'); return; }
+    if (user.role !== 'admin') { router.replace('/dashboard'); }
+  }, [hasHydrated, user, router]);
 
   useEffect(() => {
     fetch('/api/whatsapp/stats')
@@ -56,6 +68,8 @@ export default function WhatsAppAdminPage() {
       setIsSending(false);
     }
   };
+
+  if (!hasHydrated || !user) return null;
 
   return (
     <main className="gs-watermark overflow-auto p-6">
