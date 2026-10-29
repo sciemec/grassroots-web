@@ -28,9 +28,9 @@ type FilterStatus = "all" | "suspended" | "verified" | "pending";
 // ── Interfaces ────────────────────────────────────────────────────────────────
 interface AdminUser {
   id: string;
-  name: string;
-  email: string;
-  phone?: string;
+  name: string | null;
+  email: string | null;
+  phone?: string | null;
   role: string;
   age_group?: string;
   province?: string;
@@ -43,9 +43,9 @@ interface AdminUser {
 
 interface PendingScout {
   id: string;
-  name: string;
-  email: string;
-  province?: string;
+  name: string | null;
+  email: string | null;
+  province?: string | null;
   created_at: string;
 }
 
@@ -88,7 +88,8 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(months / 12)}yr ago`;
 }
 
-function maskEmail(email: string): string {
+function maskEmail(email: string | null | undefined): string {
+  if (!email) return "—";
   const [local, domain] = email.split("@");
   if (!domain) return "***";
   return `${local?.[0] ?? "*"}***@${domain}`;
@@ -105,7 +106,8 @@ function isMinorOrUnknown(ag?: string | null): boolean {
   return !ag || MINOR_GROUPS.has(ag);
 }
 
-function displayName(name: string, ag?: string | null): string {
+function displayName(name: string | null | undefined, ag?: string | null): string {
+  if (!name) return "—";
   if (!isMinorOrUnknown(ag)) return name;
   const parts = name.trim().split(/\s+/);
   const first = parts[0] ?? "?";
@@ -113,7 +115,8 @@ function displayName(name: string, ag?: string | null): string {
   return [first, lastInit].filter(Boolean).join(" ");
 }
 
-function ini(name: string): string {
+function ini(name: string | null | undefined): string {
+  if (!name) return "?";
   return name
     .trim()
     .split(/\s+/)
