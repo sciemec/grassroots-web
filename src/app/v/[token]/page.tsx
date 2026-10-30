@@ -1,8 +1,8 @@
-"use client";
 // src/app/v/[token]/page.tsx
 // Public (no auth) Arena post viewer — accessible via share link
+// Server component — supports generateMetadata for OG/social previews.
 
-import { useEffect, useState } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Heart, MessageCircle, Eye, Play, Award, Trophy, Shield } from "lucide-react";
 
@@ -34,12 +34,57 @@ interface SharedPost {
   view_count?: number;
   created_at: string;
   share_token: string;
+  is_minor?: boolean;
   user?: {
     id: string;
     name: string;
     role: string;
     sport?: string;
     province?: string;
+  };
+}
+
+async function fetchPost(token: string): Promise<SharedPost | null> {
+  try {
+    const res = await fetch(`${API}/arena/public/${token}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data ?? json ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata({ params }: { params: { token: string } }): Promise<Metadata> {
+  const post = await fetchPost(params.token);
+  if (!post) {
+    return { title: "Post not found — GrassRoots Sports" };
+  }
+
+  const authorName = post.user?.name ?? "GrassRoots Athlete";
+  const description = post.body.slice(0, 155) + (post.body.length > 155 ? "…" : "");
+  const pageUrl = `https://grassrootssports.live/v/${params.token}`;
+
+  // For minor authors: suppress image and use generic title so no personal info leaks into social previews
+  const ogImage = !post.is_minor && post.image_url ? post.image_url : undefined;
+
+  return {
+    title: `${authorName} on GrassRoots Sports`,
+    description,
+    openGraph: {
+      title: `${authorName} on GrassRoots Sports`,
+      description,
+      url: pageUrl,
+      siteName: "GrassRoots Sports",
+      type: "article",
+      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630, alt: "Post image" }] } : {}),
+    },
+    twitter: {
+      card: ogImage ? "summary_large_image" : "summary",
+      title: `${authorName} on GrassRoots Sports`,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
   };
 }
 
@@ -63,31 +108,10 @@ function Avatar({ name, size = 40 }: { name: string; size?: number }) {
   );
 }
 
-export default function PublicPostPage({ params }: { params: { token: string } }) {
-  const [post, setPost] = useState<SharedPost | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+export default async function PublicPostPage({ params }: { params: { token: string } }) {
+  const post = await fetchPost(params.token);
 
-  useEffect(() => {
-    fetch(`${API}/arena/public/${params.token}`)
-      .then(r => {
-        if (!r.ok) throw new Error("not found");
-        return r.json();
-      })
-      .then(json => setPost(json.data ?? json))
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
-  }, [params.token]);
-
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div className="w-8 h-8 border-4 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (notFound || !post) {
+  if (!post) {
     return (
       <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
         <div className="text-5xl mb-4">🔗</div>

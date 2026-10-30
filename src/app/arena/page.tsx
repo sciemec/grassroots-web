@@ -1645,10 +1645,12 @@ export default function ArenaPage() {
                         className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#1a5c2a] transition">
                         <MessageCircle size={16} /> Comment
                       </button>
-                      <button onClick={() => handleShare(post.id)}
-                        className={`flex items-center gap-2 text-sm transition ${copiedShare[post.id] ? "text-green-600 font-semibold" : "text-gray-500 hover:text-blue-500"}`}>
-                        <Share2 size={16} /> {copiedShare[post.id] ? "Copied!" : "Share"}
-                      </button>
+                      {post.visibility === "public" && (
+                        <button onClick={() => handleShare(post.id)}
+                          className={`flex items-center gap-2 text-sm transition ${copiedShare[post.id] ? "text-green-600 font-semibold" : "text-gray-500 hover:text-blue-500"}`}>
+                          <Share2 size={16} /> {copiedShare[post.id] ? "Copied!" : "Share"}
+                        </button>
+                      )}
                     </div>
 
                     {/* Comments */}
