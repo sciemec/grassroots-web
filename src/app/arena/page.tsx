@@ -234,6 +234,9 @@ export default function ArenaPage() {
   const [pipedPlayers, setPipedPlayers] = useState<Set<string>>(new Set());
   const [showFilters,  setShowFilters]  = useState(false);
 
+  // ── Stories (posts from last 24h) ─────────────────────────────────────────
+  const [stories, setStories] = useState<Post[]>([]);
+
   // ── Suggested users ("People you may know") ───────────────────────────────
   const [suggestions,          setSuggestions]          = useState<SuggestedUser[]>([]);
   const [followedSuggestions,  setFollowedSuggestions]  = useState<Set<string>>(new Set());
@@ -342,6 +345,14 @@ export default function ArenaPage() {
   useEffect(() => {
     fetchVideos();
   }, [fetchVideos]);
+
+  // ── Fetch stories (last 24h — public, no auth) ────────────────────────────
+  useEffect(() => {
+    fetch(`${API}/arena/stories`)
+      .then(r => r.ok ? r.json() : { data: [] })
+      .then(d => setStories(safeArray<Post>(d.data ?? d)))
+      .catch(() => {});
+  }, []);
 
   // ── Fetch suggested users (for-you tab only) ──────────────────────────────
   useEffect(() => {
@@ -1168,6 +1179,36 @@ export default function ArenaPage() {
         {/* ── SOCIAL FEED TABS ───────────────────────────────────────────────── */}
         {activeTab !== "videos" && activeTab !== "pathways" && (
           <>
+            {/* ── Stories carousel (last 24h) ── */}
+            {activeTab === "for-you" && stories.length > 0 && (
+              <div className="mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                <div className="flex gap-3 pb-1" style={{ width: "max-content" }}>
+                  {stories.map((story) => {
+                    const name = story.user?.name ?? "?";
+                    const initials = name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
+                    const ringColor =
+                      story.post_type === "achievement" ? "#c8962a" :
+                      story.post_type === "milestone"   ? "#1a5c2a" :
+                      story.post_type === "video"       ? "#0369a1" : "#6b7280";
+                    return (
+                      <a key={story.id}
+                        href={story.share_token ? `/arena?play=${story.share_token}` : `/arena?play=${story.id}`}
+                        className="flex flex-col items-center gap-1 flex-shrink-0 group">
+                        <div className="w-14 h-14 rounded-full p-0.5" style={{ background: ringColor }}>
+                          <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-sm font-bold" style={{ color: ringColor }}>
+                            {initials}
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500 max-w-[56px] truncate group-hover:text-gray-800 transition-colors">
+                          {name.split(" ")[0]}
+                        </span>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Create post — logged-in users only; guests see a join nudge */}
             {!user && (
               <Link href="/register" className="block bg-white rounded-2xl p-4 mb-6 shadow-sm border border-gray-200 hover:border-[#1a5c2a]/30 transition group">

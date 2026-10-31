@@ -104,12 +104,17 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!activeThread || !token) return;
-    fetch(`${API}/arena/messages/${activeThread.other_user.id}`, {
-      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
-    })
-      .then((r) => r.ok ? r.json() : { data: [] })
-      .then((json) => setMessages(safeArray(json.data ?? json)))
-      .catch(() => {});
+    const loadThread = () => {
+      fetch(`${API}/arena/messages/${activeThread.other_user.id}`, {
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
+      })
+        .then((r) => r.ok ? r.json() : { data: [] })
+        .then((json) => setMessages(safeArray(json.data ?? json)))
+        .catch(() => {});
+    };
+    loadThread();
+    const interval = setInterval(loadThread, 5000);
+    return () => clearInterval(interval);
   }, [activeThread, token]);
 
   useEffect(() => {
