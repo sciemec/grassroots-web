@@ -126,7 +126,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* ── 4. Content & Community ───────────────────────────────────── */}
-        <SectionLabel>3 · Content &amp; Community</SectionLabel>
+        <SectionLabel>4 · Content &amp; Community</SectionLabel>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
           <HubCard href="/admin/announcements" icon={Megaphone}    label="Announcements"    desc="Platform notices & broadcasts"     accent />
           <HubCard href="/admin/fan-hub"       icon={Film}         label="Fan Hub Mod"      desc="Review, approve & remove videos"   />

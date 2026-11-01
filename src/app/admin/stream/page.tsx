@@ -51,7 +51,7 @@ export default function StreamControlPage() {
   const stopStream = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/stream/stop', {
+      const response = await fetch('/api/stream/end', {
         method: 'POST'
       });
       
