@@ -251,7 +251,7 @@ export default function CoachHubPage() {
 
         {/* WhatsApp — connect to THUTO on WhatsApp */}
         <div style={{ marginBottom: 24 }}>
-          <WaButton label="Chat with THUTO on WhatsApp" showQr={false} />
+          <WaButton label="Chat with THUTO on WhatsApp" showQr={false} text="MENU" />
         </div>
 
         {/* ── 1. Squad & Players ─────────────────────────────────────── */}

@@ -384,7 +384,7 @@ export default function PlayerHubPage() {
 
         {/* WhatsApp — THUTO on WhatsApp */}
         <div style={{ marginTop: 16 }}>
-          <WaButton label="Chat with THUTO on WhatsApp" showQr={false} />
+          <WaButton label="Chat with THUTO on WhatsApp" showQr={false} text="HI" />
         </div>
 
         {/* Section 1 — Build my profile */}
