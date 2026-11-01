@@ -14,7 +14,7 @@ const API_URL   = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.
 
 const SCHOLARSHIP_KEYWORDS = [
   "scholarship", "schola", "bursary", "ncaa", "university",
-  "study abroad", "pathway", "college", "4",
+  "study abroad", "pathway", "college",
 ];
 
 export function isScholarshipIntent(text: string): boolean {
