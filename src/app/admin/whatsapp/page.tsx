@@ -12,6 +12,8 @@ export default function WhatsAppAdminPage() {
   const user        = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
 
+  const token = useAuthStore((s) => s.token);
+
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [target, setTarget] = useState('all');
@@ -26,11 +28,14 @@ export default function WhatsAppAdminPage() {
   }, [hasHydrated, user, router]);
 
   useEffect(() => {
-    fetch('/api/whatsapp/stats')
+    if (!token) return;
+    fetch('/api/whatsapp/stats', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
       .then((r) => r.json())
       .then((d) => setSubscriberCount(d.totalSubscribers ?? 0))
       .catch(() => {});
-  }, []);
+  }, [token]);
 
   const handleBroadcast = async () => {
     if (!message.trim()) return;
@@ -47,7 +52,10 @@ export default function WhatsAppAdminPage() {
     try {
       const response = await fetch('/api/whatsapp/broadcast', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           message: message,
           filterPremium: target === 'premium',
