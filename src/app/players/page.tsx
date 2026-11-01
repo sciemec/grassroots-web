@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { MapPin, ChevronRight, Search, Filter, User, ChevronDown, ArrowLeft, Bookmark, BookmarkCheck } from "lucide-react";
+import { MapPin, ChevronRight, Search, Filter, User, ChevronDown, Bookmark, BookmarkCheck } from "lucide-react";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -318,7 +318,7 @@ export default function PlayersPage() {
               className="flex items-center gap-1.5 font-semibold text-xs"
               style={{ color: "#1a5c2a" }}
             >
-              <ArrowLeft size={13} />
+              <ChevronRight size={13} />
               My Scouting Board
             </Link>
           </div>
