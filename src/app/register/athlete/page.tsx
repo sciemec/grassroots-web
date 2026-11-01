@@ -53,10 +53,13 @@ export default function RegisterAthletePage() {
     parseInt(form.age) <= 100 &&
     form.country !== "";
 
+  const normalizedPhone = form.contactType === "phone" ? normalizePhone(form.phone.trim()) : "";
+  const phoneValid = /^\+\d{10,15}$/.test(normalizedPhone);
+
   const contactValid =
     form.contactType === "email"
       ? form.email.includes("@") && form.email.includes(".")
-      : form.phone.replace(/\D/g, "").length >= 9;
+      : phoneValid;
 
   const canSubmit =
     contactValid &&
@@ -286,13 +289,23 @@ export default function RegisterAthletePage() {
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 ) : (
-                  <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) => set("phone", e.target.value)}
-                    placeholder="+263 77 123 4567"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1.5">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={form.phone}
+                      onChange={(e) => set("phone", e.target.value)}
+                      placeholder="+263 77 123 4567 or 0771234567"
+                      className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        form.phone && !phoneValid ? "border-red-300 bg-red-50" : "border-gray-200"
+                      }`}
+                    />
+                    {form.phone && !phoneValid && (
+                      <p className="text-xs text-red-500 mt-1">
+                        Enter a valid number e.g. +263 77 123 4567 or 0771234567
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 
