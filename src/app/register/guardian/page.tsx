@@ -10,7 +10,6 @@ interface FormData {
   email: string;
   password: string;
   confirm: string;
-  whatsapp: string;
   agreed: boolean;
 }
 
@@ -29,7 +28,6 @@ export default function GuardianRegisterPage() {
     email: "",
     password: "",
     confirm: "",
-    whatsapp: "",
     agreed: false,
   });
 
@@ -57,7 +55,6 @@ export default function GuardianRegisterPage() {
           password: form.password,
           password_confirmation: form.confirm,
           role: "guardian",
-          whatsapp_number: form.whatsapp.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -183,14 +180,15 @@ export default function GuardianRegisterPage() {
                 )}
               </div>
 
-              <div>
-                <label style={labelStyle}>
-                  WhatsApp Number <span style={{ color: "#9ca3af", fontWeight: 400 }}>(optional)</span>
-                </label>
-                <input style={inputStyle} type="tel" placeholder="+263 77 123 4567"
-                  value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} />
-                <p style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>
-                  Used for Guardian Addon alerts ($2/month — activate later)
+              <div style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0",
+                borderRadius: 10, padding: "12px 14px" }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "#1a5c2a", marginBottom: 4 }}>
+                  📲 WhatsApp alerts available after linking
+                </p>
+                <p style={{ fontSize: 12, color: "#374151", lineHeight: 1.5, margin: 0 }}>
+                  Once you link to your child using their 6-digit invite code, you can add your
+                  WhatsApp number in your Guardian Dashboard to receive training updates and
+                  safety alerts directly on WhatsApp.
                 </p>
               </div>
 
@@ -223,7 +221,6 @@ export default function GuardianRegisterPage() {
                   { label: "Name",  value: form.name },
                   { label: "Email", value: form.email },
                   { label: "Role",  value: "Parent / Guardian" },
-                  ...(form.whatsapp ? [{ label: "WhatsApp", value: form.whatsapp }] : []),
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: "flex", justifyContent: "space-between",
                     marginBottom: 6 }}>
