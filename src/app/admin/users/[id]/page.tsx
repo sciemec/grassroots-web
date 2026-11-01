@@ -22,7 +22,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { api } from "@/lib/api";
+import api from "@/lib/api";
 
 /* ─── constants ─────────────────────────────────────────── */
 const GRS_GREEN = "#1a5c2a";
@@ -139,7 +139,8 @@ function VerifyBadge({ status }: { status: string }) {
 /* ─── page ───────────────────────────────────────────────── */
 export default function AdminUserDetailPage() {
   const router      = useRouter();
-  const { id }      = useParams<{ id: string }>();
+  const params      = useParams<{ id: string }>();
+  const id          = params?.id;
   const user        = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const qc          = useQueryClient();
@@ -152,7 +153,7 @@ export default function AdminUserDetailPage() {
 
   const { data, isLoading, isError } = useQuery<AdminUser>({
     queryKey: ["admin-user", id],
-    queryFn: () => api.get(`/admin/users/${id}`).then((r) => r.data),
+    queryFn: () => api.get(`/admin/users/${id}`).then((r: { data: AdminUser }) => r.data),
     enabled: !!id && hasHydrated && user?.role === "admin",
   });
 

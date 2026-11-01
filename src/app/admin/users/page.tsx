@@ -19,7 +19,7 @@ const BG = "#f4f2ee";
 
 const MINOR_GROUPS = new Set(["U11", "U13", "U15", "U17", "under_13", "13_17"]);
 
-const ROLE_TABS = ["all", "player", "coach", "scout", "fan", "analyst", "admin"] as const;
+const ROLE_TABS = ["all", "player", "coach", "scout", "fan", "analyst", "admin", "registered"] as const;
 type RoleTab = (typeof ROLE_TABS)[number];
 
 const ALL_ROLES = ["player", "coach", "scout", "fan", "analyst", "admin"] as const;
@@ -75,6 +75,22 @@ interface WeeklySnapshot {
   new_registered_players: number;
   total_new_players: number;
   by_coach: WeeklySnapshotCoach[];
+}
+
+interface RegisteredPlayer {
+  id: string;
+  name: string;
+  first_name: string | null;
+  surname: string | null;
+  date_of_birth: string | null;
+  sport: string | null;
+  position: string | null;
+  province: string | null;
+  match_status: string;
+  organisation_name: string | null;
+  coach_name: string | null;
+  coach_email: string | null;
+  created_at: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -425,6 +441,7 @@ export default function AdminUsersPage() {
   const exportRef = useRef<HTMLDivElement>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [regPage, setRegPage] = useState(1);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -524,6 +541,17 @@ export default function AdminUsersPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: regData, isLoading: regLoading } = useQuery<{ data: RegisteredPlayer[]; meta: UsersMeta }>({
+    queryKey: ["admin-registered-players", debouncedSearch, regPage],
+    queryFn: async () => {
+      const res = await api.get("/admin/registered-players", {
+        params: { search: debouncedSearch || undefined, per_page: 25, page: regPage },
+      });
+      return res.data;
+    },
+    enabled: !!user && user.role === "admin" && roleTab === "registered",
+  });
+
   // ── Mutations ──────────────────────────────────────────────────────────────
   const toggleMutation = useMutation({
     mutationFn: (id: string) => api.post(`/admin/users/${id}/toggle-active`),
@@ -584,6 +612,7 @@ export default function AdminUsersPage() {
   const setRoleFilter = (r: RoleTab) => {
     setRoleTab(r);
     setPage(1);
+    setRegPage(1);
     setFilterStatus("all");
   };
 
@@ -782,6 +811,18 @@ export default function AdminUsersPage() {
           );
         })}
 
+        <button
+          onClick={() => setRoleFilter("registered")}
+          className="rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+          style={
+            roleTab === "registered"
+              ? { backgroundColor: "#b45309", color: "#fff" }
+              : { backgroundColor: "#fffbeb", color: "#b45309", border: "1px solid #fde68a" }
+          }
+        >
+          Registered {regData?.meta.total != null ? `(${regData.meta.total})` : ""}
+        </button>
+
         {pendingScouts.length > 0 && (
           <span className="flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700">
             <AlertTriangle className="h-3 w-3" />
@@ -917,8 +958,160 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Content */}
-      {isError ? (
+      {/* Registered players content (coach-registered, no platform account) */}
+      {roleTab === "registered" && (
+        <>
+          {regLoading ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
+            </div>
+          ) : !regData?.data.length ? (
+            <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-white p-14 text-center">
+              <Users className="mx-auto mb-3 h-10 w-10 text-gray-300" />
+              <p className="font-semibold text-gray-600">
+                {debouncedSearch ? "No registered players match your search" : "No unlinked registered players"}
+              </p>
+              <p className="mt-1 text-sm text-gray-400">
+                Coach-registered players who have joined the platform are shown under their role tab.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop table */}
+              <div className="hidden lg:block overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <table className="w-full min-w-[900px] text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-amber-50">
+                      {["Player", "Sport / Position", "Province", "Registered by", "Date", "Status"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-amber-700">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {regData.data.map((rp) => {
+                      const ms = rp.match_status;
+                      const statusStyle =
+                        ms === "confirmed" || ms === "standalone_confirmed"
+                          ? { bg: "#dcfce7", text: "#15803d", label: ms === "standalone_confirmed" ? "Academy confirmed" : "Confirmed" }
+                          : ms === "pending_confirmation"
+                          ? { bg: "#fef3c7", text: "#b45309", label: "Pending" }
+                          : { bg: "#f3f4f6", text: "#6b7280", label: "Unmatched" };
+                      return (
+                        <tr key={rp.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ backgroundColor: "#b45309" }}>
+                                {ini(rp.name)}
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold text-gray-900">{rp.name}</p>
+                                {rp.date_of_birth && (
+                                  <p className="text-[11px] text-gray-400">
+                                    DOB: {new Date(rp.date_of_birth).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-xs font-medium capitalize text-gray-700">{rp.sport || "—"}</p>
+                            <p className="text-[11px] text-gray-400">{rp.position || "—"}</p>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500">{rp.province || "—"}</td>
+                          <td className="px-4 py-3">
+                            <p className="text-xs font-medium text-gray-700 truncate max-w-[160px]">{rp.coach_name || "—"}</p>
+                            {rp.organisation_name && (
+                              <p className="text-[11px] text-gray-400 truncate max-w-[160px]">{rp.organisation_name}</p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="block text-xs font-medium text-gray-700">
+                              {new Date(rp.created_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
+                            </span>
+                            <span className="block text-[11px] text-gray-400">{timeAgo(rp.created_at)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>
+                              {statusStyle.label}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile cards */}
+              <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
+                {regData.data.map((rp) => {
+                  const ms = rp.match_status;
+                  const statusStyle =
+                    ms === "confirmed" || ms === "standalone_confirmed"
+                      ? { bg: "#dcfce7", text: "#15803d", label: ms === "standalone_confirmed" ? "Academy confirmed" : "Confirmed" }
+                      : ms === "pending_confirmation"
+                      ? { bg: "#fef3c7", text: "#b45309", label: "Pending" }
+                      : { bg: "#f3f4f6", text: "#6b7280", label: "Unmatched" };
+                  return (
+                    <div key={rp.id} className="rounded-2xl border border-amber-100 bg-white p-4 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style={{ backgroundColor: "#b45309" }}>
+                          {ini(rp.name)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900">{rp.name}</p>
+                          <p className="text-xs text-gray-500 capitalize">{[rp.sport, rp.position].filter(Boolean).join(" · ") || "—"}</p>
+                          {rp.province && <p className="text-[11px] text-gray-400">{rp.province}</p>}
+                        </div>
+                        <span className="rounded-full px-2 py-0.5 text-[11px] font-medium shrink-0" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>
+                          {statusStyle.label}
+                        </span>
+                      </div>
+                      <div className="mt-3 border-t border-gray-50 pt-2.5">
+                        <p className="text-[11px] text-gray-500">
+                          Registered by <span className="font-medium text-gray-700">{rp.coach_name || "—"}</span>
+                          {rp.organisation_name && ` · ${rp.organisation_name}`}
+                        </p>
+                        <p className="text-[11px] text-gray-400">{timeAgo(rp.created_at)}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Pagination */}
+              {regData.meta.last_page > 1 && (
+                <div className="mt-5 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">
+                    {regData.meta.total} total · page {regPage} of {regData.meta.last_page}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setRegPage((p) => Math.max(1, p - 1))}
+                      disabled={regPage === 1}
+                      className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                    >
+                      ← Prev
+                    </button>
+                    <button
+                      onClick={() => setRegPage((p) => Math.min(regData.meta.last_page, p + 1))}
+                      disabled={regPage === regData.meta.last_page}
+                      className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* Content — platform account users */}
+      {roleTab !== "registered" && (isError ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-10 text-center">
           <AlertTriangle className="mx-auto mb-3 h-9 w-9 text-red-400" />
           <p className="font-semibold text-red-700">Could not load users</p>
@@ -1109,10 +1302,10 @@ export default function AdminUsersPage() {
             </table>
           </div>
         </>
-      )}
+      ))}
 
-      {/* Pagination */}
-      {meta && meta.last_page > 1 && !isError && (
+      {/* Pagination — platform users */}
+      {roleTab !== "registered" && meta && meta.last_page > 1 && !isError && (
         <div className="mt-5 flex items-center justify-between">
           <p className="text-xs text-gray-500">
             {meta.total} total · page {page} of {meta.last_page}
