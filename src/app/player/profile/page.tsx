@@ -98,7 +98,7 @@ const schema = z.object({
   bio:            z.string().max(500).optional(),
   area:           z.string().max(100).optional(),
   date_of_birth:  z.string().optional(),
-  phone:          z.string().optional(),
+  phone:          z.string().regex(/^\+?[\d\s\-()]{7,15}$/, "Enter a valid phone number e.g. 0771 234 567").optional().or(z.literal("")),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -1108,6 +1108,7 @@ If no AI analysis data is provided, write a strong profile from position and spo
                     </label>
                     <input {...register("phone")} type="tel" placeholder="e.g. 0771 234 567"
                       className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground" />
+                    {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p>}
                     <p className="mt-1 text-xs text-muted-foreground">Used for training reminders and AI coaching via WhatsApp.</p>
                   </div>
 
