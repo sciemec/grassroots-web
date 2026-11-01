@@ -139,7 +139,19 @@ export default function CoachProfilePage() {
             </div>
             <div id="phone">
               <label className={labelCls}>Phone number</label>
-              <input {...register("phone")} className={inputCls} placeholder="+263 7…" />
+              <input
+                {...register("phone", {
+                  pattern: {
+                    value: /^\+?[\d\s\-()]{7,15}$/,
+                    message: "Enter a valid phone number e.g. +263 71 234 5678",
+                  },
+                })}
+                type="tel"
+                className={inputCls}
+                placeholder="+263 71 234 5678"
+              />
+              {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">Used for WhatsApp match reports and coaching updates.</p>
             </div>
             <div className="sm:col-span-2">
               <label className={labelCls}>Email address</label>
@@ -210,7 +222,9 @@ export default function CoachProfilePage() {
         </button>
 
         {save.isError && (
-          <p className="text-sm text-destructive">Failed to save. Please try again.</p>
+          <p className="text-sm text-destructive">
+            {(save.error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to save. Please try again."}
+          </p>
         )}
       </form>
 
