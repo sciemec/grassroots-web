@@ -489,7 +489,8 @@ export default function PlayersPage() {
                   { label: "All",   value: "" },
                   { label: "U13",   value: "under_13" },
                   { label: "13–17", value: "13_17" },
-                  { label: "18+",   value: "18_plus" },
+                  { label: "18–25", value: "18_25" },
+                  { label: "26+",   value: "26_plus" },
                 ] as const).map(({ label, value }) => {
                   const active = ageGroup === value;
                   return (
