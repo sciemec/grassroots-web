@@ -355,7 +355,11 @@ export default function PublicPassportTabs({
 }) {
   const [headerOpen, setHeaderOpen] = useState(false);
   const [topTab, setTopTab]         = useState<"physical" | "technical">("physical");
-  const [bottomTab, setBottomTab]   = useState<"technique" | "coached" | "position">("technique");
+  const hasPosition = assessmentDomains.length > 0;
+  const hasCoached  = coachRatings.length > 0;
+  const defaultBottom: "technique" | "coached" | "position" =
+    hasPosition ? "position" : hasCoached ? "coached" : "technique";
+  const [bottomTab, setBottomTab]   = useState<"technique" | "coached" | "position">(defaultBottom);
 
   const xp       = xpTotal ?? 0;
   const streak   = dailyStreak ?? 0;
