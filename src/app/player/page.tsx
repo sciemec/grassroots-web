@@ -23,6 +23,7 @@ import {
   IconWorld,
   IconBrain,
   IconChalkboard,
+  IconLayers,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -483,6 +484,14 @@ export default function PlayerHubPage() {
           iconColor={GL}
           title="Highlight Vault"
           subtitle="Your video library"
+        />
+        <HubCard
+          href="/player/training-plans"
+          icon={IconLayers}
+          iconBg={DG}
+          iconColor={GL}
+          title="Training Plans"
+          subtitle="Plans assigned to you by your coach"
         />
 
         {/* Section 4 — Academics */}
