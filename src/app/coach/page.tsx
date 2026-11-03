@@ -11,7 +11,7 @@ import {
   Users, Calendar, Video,
   UserSearch, Globe, Bell, Layers,
   ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, UserCheck, Clapperboard, ShoppingBag, Star, ClipboardList,
-  ChevronDown, ChevronUp, Film, Zap,
+  ChevronDown, ChevronUp, Film, Zap, ListOrdered,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -265,7 +265,8 @@ export default function CoachHubPage() {
         {/* ── 2. Match & Tactics ─────────────────────────────────────── */}
         <SectionLabel>2 · Match &amp; Tactics</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-<HubCard href="/coach/tactics/board"  icon={Layers}        iconBg="#dbeafe" iconColor="#2563eb" label="Intelligence Board" desc="XG map, formations & drag"               badge="new" />
+          <HubCard href="/coach/matches"        icon={ListOrdered}   iconBg="#f0fdf4" iconColor="#1a5c2a" label="Fixtures"           desc="Schedule · log results · match history" badge="core" />
+          <HubCard href="/coach/tactics/board"  icon={Layers}        iconBg="#dbeafe" iconColor="#2563eb" label="Intelligence Board" desc="XG map, formations & drag"               badge="new" />
           <HubCard href="/coach/set-pieces"     icon={Video}         iconBg="#fdf4ff" iconColor="#a21caf" label="Set Pieces"         desc="Clip analysis + scoring lab"             badge="ai" />
           <HubCard href="/coach/video-analysis" icon={Eye}           iconBg="#fee2e2" iconColor="#dc2626" label="Video Analysis"     desc="Match Eye · Drill · General · Player"    badge="ai" />
           <HubCard href="/coach/tactics/learn"  icon={GraduationCap} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Tactics Academy"   desc="Formations, principles & badges"         badge="new" />
@@ -274,10 +275,10 @@ export default function CoachHubPage() {
         {/* ── 3. Training ────────────────────────────────────────────── */}
         <SectionLabel>3 · Training</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <HubCard href="/coach/training-plans" icon={Calendar}      iconBg="#dcfce7" iconColor="#16a34a" label="Training Plans"    desc="Build & assign plans"                  badge="core" />
-<HubCard href="/coach/field-assessment" icon={ClipboardList} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Field Assessment"  desc="Position tests · benchmarks · radar chart" badge="new" />
-          <HubCard href="/coach/skill-drills"   icon={Star}          iconBg="#fefce8" iconColor="#ca8a04" label="Skill Assessment"  desc="Rate & test squad across 6 core skills" badge="new" />
-          <HubCard href="/coach/assess-player"  icon={UserCheck}     iconBg="#f0fdf4" iconColor="#1a5c2a" label="Player Technique Assessment"   desc="Coach-assisted · 6 skills · feeds technique radar" />
+          <HubCard href="/coach/training-plans"   icon={Calendar}      iconBg="#dcfce7" iconColor="#16a34a" label="Training Plans"         desc="Build & assign plans to your squad"             badge="core" />
+          <HubCard href="/coach/field-assessment" icon={ClipboardList} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Fitness Tests"           desc="Speed, jump, Yo-Yo & agility benchmarks"        badge="new" />
+          <HubCard href="/coach/skill-drills"     icon={Star}          iconBg="#fefce8" iconColor="#ca8a04" label="Technical Ratings"       desc="Rate squad on 6 skills — updates radar chart"   badge="new" />
+          <HubCard href="/coach/assess-player"    icon={UserCheck}     iconBg="#f0fdf4" iconColor="#1a5c2a" label="Drill Recording"         desc="Film a drill · get AI technique feedback"        />
         </div>
 
         {/* ── 4. Network & Videos ────────────────────────────────────── */}
