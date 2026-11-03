@@ -1,8 +1,414 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Layers, ChevronDown, ChevronUp, Loader2, CheckCircle2, Clock, Users, Target } from "lucide-react";
+import { ArrowLeft, Layers, ChevronDown, ChevronUp, Loader2, CheckCircle2, Clock, Users, Target, Plus, X, UserPlus, Trash2 } from "lucide-react";
+import { useAuthStore } from "@/lib/auth-store";
+
+// ─── My Plans types ───────────────────────────────────────────────────────────
+
+interface SavedPlan {
+  id: string;
+  title: string;
+  sport: string;
+  description: string | null;
+  duration: number | null;
+  coaching_role: string | null;
+  created_at: string;
+}
+
+interface SquadMember {
+  id: string;
+  player_user_id: string;
+  name: string;
+  position?: string;
+}
+
+interface RegisteredPlayer {
+  id: string;
+  first_name: string;
+  surname: string;
+  position: string | null;
+  sport: string;
+}
+
+interface Assignment {
+  id: string;
+  player_name: string;
+  player_type: "platform" | "registered";
+  position: string | null;
+  assigned_at: string;
+}
+
+// ─── My Plans components ──────────────────────────────────────────────────────
+
+function MyPlanCard({
+  plan,
+  token,
+  apiUrl,
+  onDelete,
+}: {
+  plan: SavedPlan;
+  token: string;
+  apiUrl: string;
+  onDelete: (id: string) => void;
+}) {
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [assigning, setAssigning] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [squad, setSquad] = useState<SquadMember[]>([]);
+  const [regPlayers, setRegPlayers] = useState<RegisteredPlayer[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [loadingDrawer, setLoadingDrawer] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const fetchAssignments = useCallback(async () => {
+    try {
+      const res = await fetch(`${apiUrl}/coach/training-plans/${plan.id}/assignments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setAssignments(Array.isArray(json.data) ? json.data : []);
+      }
+    } catch { /* ignore */ }
+  }, [plan.id, apiUrl, token]);
+
+  useEffect(() => { fetchAssignments(); }, [fetchAssignments]);
+
+  const openDrawer = async () => {
+    setDrawerOpen(true);
+    setLoadingDrawer(true);
+    try {
+      const [squadRes, regRes] = await Promise.all([
+        fetch(`${apiUrl}/coach/squad`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${apiUrl}/coach/registered-players?per_page=100`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      if (squadRes.ok) {
+        const j = await squadRes.json();
+        const members = Array.isArray(j) ? j : (j.data ?? []);
+        setSquad(members.map((m: Record<string, string>) => ({
+          id: m.id,
+          player_user_id: m.player_user_id ?? m.id,
+          name: (m.name ?? m.player_name ?? `${m.first_name ?? ""} ${m.surname ?? ""}`.trim()) || "—",
+          position: m.position,
+        })));
+      }
+      if (regRes.ok) {
+        const j = await regRes.json();
+        const items = Array.isArray(j.data) ? j.data : [];
+        setRegPlayers(items);
+      }
+    } catch { /* ignore */ }
+    setLoadingDrawer(false);
+  };
+
+  const toggleSelect = (key: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  const handleAssign = async () => {
+    if (selected.size === 0) return;
+    setAssigning(true);
+    for (const key of selected) {
+      const [type, id] = key.split(":");
+      const body = type === "squad"
+        ? { player_user_id: id }
+        : { coach_registered_player_id: id };
+      try {
+        await fetch(`${apiUrl}/coach/training-plans/${plan.id}/assign`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      } catch { /* ignore */ }
+    }
+    setAssigning(false);
+    setSelected(new Set());
+    setDrawerOpen(false);
+    fetchAssignments();
+  };
+
+  const removeAssignment = async (assignmentId: string) => {
+    try {
+      await fetch(`${apiUrl}/coach/training-plans/assignments/${assignmentId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
+    } catch { /* ignore */ }
+  };
+
+  const deletePlan = async () => {
+    if (!confirm(`Delete "${plan.title}"? This also removes all assignments.`)) return;
+    try {
+      await fetch(`${apiUrl}/coach/training-plans/${plan.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      onDelete(plan.id);
+    } catch { /* ignore */ }
+  };
+
+  const SPORT_COLORS: Record<string, string> = {
+    football: "#15803d", netball: "#7c3aed", rugby: "#b45309",
+    basketball: "#c2410c", cricket: "#0369a1",
+  };
+  const sportColor = SPORT_COLORS[plan.sport] ?? "#1a5c2a";
+
+  return (
+    <>
+      <div style={{
+        backgroundColor: "white", borderRadius: 14, border: "1px solid #e5e7eb",
+        overflow: "hidden", marginBottom: 10,
+      }}>
+        {/* Header row */}
+        <div style={{ padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+              <span style={{
+                backgroundColor: `${sportColor}15`, color: sportColor,
+                border: `1px solid ${sportColor}40`,
+                borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700, textTransform: "capitalize",
+              }}>
+                {plan.sport}
+              </span>
+              {plan.duration && (
+                <span style={{ fontSize: 12, color: "#6b7280" }}>{plan.duration} min</span>
+              )}
+            </div>
+            <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "#111" }}>{plan.title}</p>
+            {plan.description && (
+              <p style={{ margin: 0, fontSize: 12, color: "#6b7280", lineHeight: 1.4 }}>{plan.description}</p>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+            <button
+              onClick={openDrawer}
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                backgroundColor: "#1a5c2a", color: "white",
+                border: "none", borderRadius: 8, padding: "6px 12px",
+                fontSize: 12, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              <UserPlus size={13} /> Assign
+            </button>
+            <button
+              onClick={deletePlan}
+              style={{
+                backgroundColor: "#fff1f2", color: "#be123c",
+                border: "1px solid #fecdd3", borderRadius: 8, padding: "6px 8px",
+                cursor: "pointer",
+              }}
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+        </div>
+
+        {/* Assignments toggle */}
+        {assignments.length > 0 && (
+          <div style={{ borderTop: "1px solid #f3f4f6" }}>
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              style={{
+                width: "100%", padding: "8px 16px", display: "flex", alignItems: "center",
+                justifyContent: "space-between", background: "none", border: "none",
+                cursor: "pointer", fontSize: 12, color: "#6b7280",
+              }}
+            >
+              <span style={{ fontWeight: 600 }}>
+                {assignments.length} player{assignments.length !== 1 ? "s" : ""} assigned
+              </span>
+              {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            {expanded && (
+              <div style={{ padding: "0 16px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+                {assignments.map((a) => (
+                  <div key={a.id} style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    backgroundColor: "#f9fafb", borderRadius: 8, padding: "6px 10px",
+                  }}>
+                    <div>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>{a.player_name}</span>
+                      {a.position && (
+                        <span style={{ fontSize: 11, color: "#6b7280", marginLeft: 8 }}>{a.position}</span>
+                      )}
+                      <span style={{
+                        fontSize: 10, marginLeft: 8,
+                        color: a.player_type === "platform" ? "#1d4ed8" : "#7c3aed",
+                      }}>
+                        {a.player_type === "platform" ? "Platform" : "Registered"}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => removeAssignment(a.id)}
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}
+                    >
+                      <X size={12} color="#9ca3af" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Assign Drawer */}
+      {drawerOpen && (
+        <div
+          onClick={() => setDrawerOpen(false)}
+          style={{
+            position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.45)", zIndex: 50,
+            display: "flex", alignItems: "flex-end",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "white", borderRadius: "20px 20px 0 0",
+              width: "100%", maxHeight: "75vh", overflowY: "auto",
+              padding: "20px 16px 32px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <div>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: "#111" }}>Assign Plan</p>
+                <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{plan.title}</p>
+              </div>
+              <button onClick={() => setDrawerOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                <X size={20} color="#6b7280" />
+              </button>
+            </div>
+
+            {loadingDrawer ? (
+              <div style={{ textAlign: "center", padding: "40px 0", color: "#6b7280" }}>
+                <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
+              </div>
+            ) : (
+              <>
+                {squad.length > 0 && (
+                  <>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>
+                      Squad Players
+                    </p>
+                    {squad.map((m) => {
+                      const key = `squad:${m.player_user_id}`;
+                      const checked = selected.has(key);
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={() => toggleSelect(key)}
+                          style={{
+                            width: "100%", display: "flex", alignItems: "center", gap: 12,
+                            padding: "10px 12px", borderRadius: 10, marginBottom: 6,
+                            border: `2px solid ${checked ? "#1a5c2a" : "#e5e7eb"}`,
+                            backgroundColor: checked ? "#f0fdf4" : "white",
+                            cursor: "pointer", textAlign: "left",
+                          }}
+                        >
+                          <div style={{
+                            width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                            backgroundColor: checked ? "#1a5c2a" : "#e5e7eb",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 12, fontWeight: 700, color: checked ? "white" : "#6b7280",
+                          }}>
+                            {m.name.charAt(0)}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{m.name}</span>
+                            {m.position && (
+                              <span style={{ fontSize: 12, color: "#6b7280", marginLeft: 8 }}>{m.position}</span>
+                            )}
+                          </div>
+                          {checked && <CheckCircle2 size={16} color="#1a5c2a" />}
+                        </button>
+                      );
+                    })}
+                  </>
+                )}
+
+                {regPlayers.length > 0 && (
+                  <>
+                    <p style={{
+                      fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase",
+                      letterSpacing: "0.5px", marginBottom: 8, marginTop: squad.length > 0 ? 16 : 0,
+                    }}>
+                      Registered Players (no account)
+                    </p>
+                    {regPlayers.map((r) => {
+                      const key = `reg:${r.id}`;
+                      const checked = selected.has(key);
+                      const name = `${r.first_name} ${r.surname}`.trim() || "—";
+                      return (
+                        <button
+                          key={r.id}
+                          onClick={() => toggleSelect(key)}
+                          style={{
+                            width: "100%", display: "flex", alignItems: "center", gap: 12,
+                            padding: "10px 12px", borderRadius: 10, marginBottom: 6,
+                            border: `2px solid ${checked ? "#7c3aed" : "#e5e7eb"}`,
+                            backgroundColor: checked ? "#faf5ff" : "white",
+                            cursor: "pointer", textAlign: "left",
+                          }}
+                        >
+                          <div style={{
+                            width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                            backgroundColor: checked ? "#7c3aed" : "#e5e7eb",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 12, fontWeight: 700, color: checked ? "white" : "#6b7280",
+                          }}>
+                            {name.charAt(0)}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{name}</span>
+                            {r.position && (
+                              <span style={{ fontSize: 12, color: "#6b7280", marginLeft: 8 }}>{r.position}</span>
+                            )}
+                          </div>
+                          {checked && <CheckCircle2 size={16} color="#7c3aed" />}
+                        </button>
+                      );
+                    })}
+                  </>
+                )}
+
+                {squad.length === 0 && regPlayers.length === 0 && (
+                  <p style={{ textAlign: "center", padding: "30px 0", fontSize: 13, color: "#6b7280" }}>
+                    No players found. Add players to your squad first.
+                  </p>
+                )}
+
+                <button
+                  disabled={selected.size === 0 || assigning}
+                  onClick={handleAssign}
+                  style={{
+                    width: "100%", marginTop: 16, padding: "14px",
+                    backgroundColor: selected.size > 0 ? "#1a5c2a" : "#e5e7eb",
+                    color: selected.size > 0 ? "white" : "#9ca3af",
+                    border: "none", borderRadius: 12, fontSize: 14, fontWeight: 700,
+                    cursor: selected.size > 0 ? "pointer" : "default",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  }}
+                >
+                  {assigning
+                    ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Assigning…</>
+                    : `Assign to ${selected.size} player${selected.size !== 1 ? "s" : ""}`}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -335,6 +741,25 @@ const SPORT_OPTIONS = [
 type SportOption = typeof SPORT_OPTIONS[number]["key"];
 
 export default function TrainingPlansPage() {
+  const token  = useAuthStore((s) => s.token);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+
+  // ── My Plans state ──────────────────────────────────────────────────────────
+  const [savedPlans, setSavedPlans]       = useState<SavedPlan[]>([]);
+  const [plansLoading, setPlansLoading]   = useState(true);
+
+  useEffect(() => {
+    if (!token) { setPlansLoading(false); return; }
+    fetch(`${apiUrl}/coach/training-plans`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((j) => setSavedPlans(Array.isArray(j.data) ? j.data : []))
+      .catch(() => {})
+      .finally(() => setPlansLoading(false));
+  }, [token, apiUrl]);
+
+  // ── Reference content state ─────────────────────────────────────────────────
   const [sport, setSport] = useState<SportOption>("football");
   const [tab, setTab] = useState<"phases" | "programmes">("phases");
   const [phases, setPhases] = useState<Phase[]>([]);
@@ -388,6 +813,75 @@ export default function TrainingPlansPage() {
             <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: "#111" }}>Training Plans</h1>
             <p style={{ margin: 0, fontSize: 13, color: "#6b7280" }}>Development phases &amp; session programmes</p>
           </div>
+        </div>
+
+        {/* ── My Plans ──────────────────────────────────────────────────── */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111" }}>My Plans</h2>
+              <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>Plans you&apos;ve created and assigned to players</p>
+            </div>
+            <Link
+              href="/coach/training-plans/new"
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                backgroundColor: "#1a5c2a", color: "white",
+                borderRadius: 10, padding: "8px 14px",
+                fontSize: 13, fontWeight: 700, textDecoration: "none",
+              }}
+            >
+              <Plus size={14} /> New Plan
+            </Link>
+          </div>
+
+          {plansLoading ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "20px 0", color: "#6b7280" }}>
+              <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+              <span style={{ fontSize: 13 }}>Loading your plans…</span>
+            </div>
+          ) : savedPlans.length === 0 ? (
+            <div style={{
+              backgroundColor: "white", borderRadius: 14, border: "2px dashed #d1fae5",
+              padding: "24px 20px", textAlign: "center",
+            }}>
+              <Layers size={28} color="#d1fae5" style={{ margin: "0 auto 8px" }} />
+              <p style={{ margin: "0 0 4px", fontWeight: 700, color: "#374151", fontSize: 14 }}>No plans yet</p>
+              <p style={{ margin: "0 0 12px", fontSize: 12, color: "#6b7280" }}>
+                Create a custom training plan and assign it to your squad or registered players.
+              </p>
+              <Link
+                href="/coach/training-plans/new"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  backgroundColor: "#1a5c2a", color: "white",
+                  borderRadius: 10, padding: "8px 16px",
+                  fontSize: 13, fontWeight: 700, textDecoration: "none",
+                }}
+              >
+                <Plus size={13} /> Create First Plan
+              </Link>
+            </div>
+          ) : (
+            savedPlans.map((plan) => (
+              <MyPlanCard
+                key={plan.id}
+                plan={plan}
+                token={token ?? ""}
+                apiUrl={apiUrl}
+                onDelete={(id) => setSavedPlans((prev) => prev.filter((p) => p.id !== id))}
+              />
+            ))
+          )}
+        </div>
+
+        {/* Divider */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+          <hr style={{ flex: 1, border: "none", borderTop: "1px solid #e5e7eb" }} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            Reference Library
+          </span>
+          <hr style={{ flex: 1, border: "none", borderTop: "1px solid #e5e7eb" }} />
         </div>
 
         {/* Sport selector */}
