@@ -23,11 +23,6 @@ import {
   IconWorld,
   IconBrain,
   IconChalkboard,
-  IconStack2,
-  IconFlag,
-  IconStar,
-  IconCoin,
-  IconChartBar,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -192,25 +187,21 @@ export default function PlayerHubPage() {
     api
       .get("/profile")
       .then((res) => {
-        // res.data is the top-level Laravel response; profile fields are nested under res.data.profile
         const raw = res.data ?? {};
         const prof = raw.profile ?? {};
 
         const pct: number = prof.profile_complete_pct ?? 0;
         setProfilePct(pct);
 
-        // Show nudge banner once for players missing position or province
         const missingPosition = !(prof.position_primary ?? prof.position);
         const missingProvince = !raw.province;
         const dismissed = localStorage.getItem("grs_profile_nudge_dismissed");
         if (!dismissed && (missingPosition || missingProvince)) setShowProfileBanner(true);
 
-        // Show WhatsApp banner once for players with no phone number
         const missingPhone = !raw.phone && !raw.whatsapp_number;
         const phoneDismissed = localStorage.getItem("grs_phone_nudge_dismissed");
         if (!phoneDismissed && missingPhone) setShowPhoneBanner(true);
 
-        // Write context snapshot so THUTO can give personalised, data-driven advice
         localStorage.setItem(
           "thuto_page_data",
           JSON.stringify({
@@ -265,7 +256,7 @@ export default function PlayerHubPage() {
       {/* ── Content ────────────────────────────────────────────────────────── */}
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "0 16px" }}>
 
-        {/* Profile completeness nudge — shown once for players missing position/province */}
+        {/* Profile completeness nudge */}
         {showProfileBanner && (
           <div
             style={{
@@ -326,7 +317,7 @@ export default function PlayerHubPage() {
           </div>
         )}
 
-        {/* WhatsApp number nudge — shown once for players with no phone */}
+        {/* WhatsApp number nudge */}
         {showPhoneBanner && (
           <div
             style={{
@@ -471,31 +462,6 @@ export default function PlayerHubPage() {
           subtitle="Learn positioning, shape &amp; decision-making"
         />
 
-        <HubCard
-          href="/player/coaching"
-          icon={IconChalkboard}
-          iconBg={O}
-          iconColor={OL}
-          title="Find A Coach"
-          subtitle="Connect with a coach near you"
-        />
-        <HubCard
-          href="/player/training-plans"
-          icon={IconStack2}
-          iconBg={O}
-          iconColor={OL}
-          title="Training Plans"
-          subtitle="Plans assigned to you by your coach"
-        />
-        <HubCard
-          href="/player/stats"
-          icon={IconChartBar}
-          iconBg={O}
-          iconColor={OL}
-          title="My Stats"
-          subtitle="Match logs and performance history"
-        />
-
         {/* Section 3 — Showcase */}
         <SectionLabel label="Showcase" />
         <HubCard
@@ -506,30 +472,6 @@ export default function PlayerHubPage() {
           title="Highlight Vault"
           subtitle="Your video library"
         />
-        <HubCard
-          href="/player/showcase"
-          icon={IconStar}
-          iconBg={DG}
-          iconColor={GL}
-          title="Showcase Clips"
-          subtitle="Skill clips scouts can discover"
-        />
-        <HubCard
-          href="/player/valuation"
-          icon={IconCoin}
-          iconBg={DG}
-          iconColor={GL}
-          title="My Market Value"
-          subtitle="See what you're worth in USD"
-        />
-        <HubCard
-          href="/player/goal"
-          icon={IconFlag}
-          iconBg={DG}
-          iconColor={GL}
-          title="Mission Mode"
-          subtitle="Set a goal, get a daily plan"
-        />
 
         {/* Section 4 — Academics */}
         <SectionLabel label="Academics" />
@@ -539,7 +481,7 @@ export default function PlayerHubPage() {
           iconBg={N}
           iconColor={NC}
           title="Study Sessions"
-          subtitle="Balance school & sport"
+          subtitle="Balance school &amp; sport"
         />
 
         {/* Section 5 — Network */}
@@ -583,7 +525,7 @@ export default function PlayerHubPage() {
         </Link>
 
         {/* Section 6 — Safety & family */}
-        <SectionLabel label="Safety & family" />
+        <SectionLabel label="Safety &amp; family" />
         <HubCard
           href="/player/consent"
           icon={IconLock}
