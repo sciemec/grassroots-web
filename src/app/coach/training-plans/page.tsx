@@ -7,6 +7,14 @@ import { useAuthStore } from "@/lib/auth-store";
 
 // ─── My Plans types ───────────────────────────────────────────────────────────
 
+interface Drill {
+  name?: string;
+  description?: string;
+  duration_minutes?: number;
+  sets?: number;
+  reps?: number;
+}
+
 interface SavedPlan {
   id: string;
   title: string;
@@ -14,6 +22,7 @@ interface SavedPlan {
   description: string | null;
   duration: number | null;
   coaching_role: string | null;
+  drills: Drill[] | string | null;
   created_at: string;
 }
 
@@ -154,6 +163,12 @@ function MyPlanCard({
     } catch { /* ignore */ }
   };
 
+  const parsedDrills: Drill[] = (() => {
+    if (!plan.drills) return [];
+    if (Array.isArray(plan.drills)) return plan.drills;
+    try { return JSON.parse(plan.drills as string) ?? []; } catch { return []; }
+  })();
+
   const SPORT_COLORS: Record<string, string> = {
     football: "#15803d", netball: "#7c3aed", rugby: "#b45309",
     basketball: "#c2410c", cricket: "#0369a1",
@@ -210,6 +225,45 @@ function MyPlanCard({
             </button>
           </div>
         </div>
+
+        {/* Drills section */}
+        {parsedDrills.length > 0 && (
+          <div style={{ borderTop: "1px solid #f3f4f6", padding: "12px 16px" }}>
+            <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              Drills ({parsedDrills.length})
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {parsedDrills.map((drill, i) => (
+                <div key={i} style={{
+                  backgroundColor: "#f9fafb", border: "1px solid #e5e7eb",
+                  borderRadius: 8, padding: "8px 12px",
+                }}>
+                  <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 600, color: "#111" }}>
+                    {drill.name ?? `Drill ${i + 1}`}
+                  </p>
+                  {drill.description && (
+                    <p style={{ margin: "0 0 4px", fontSize: 12, color: "#6b7280", lineHeight: 1.4 }}>
+                      {drill.description}
+                    </p>
+                  )}
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    {drill.duration_minutes && (
+                      <span style={{ fontSize: 11, color: "#1a5c2a", fontWeight: 600 }}>
+                        {drill.duration_minutes} min
+                      </span>
+                    )}
+                    {drill.sets && (
+                      <span style={{ fontSize: 11, color: "#6b7280" }}>{drill.sets} sets</span>
+                    )}
+                    {drill.reps && (
+                      <span style={{ fontSize: 11, color: "#6b7280" }}>{drill.reps} reps</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Assignments toggle */}
         {assignments.length > 0 && (
