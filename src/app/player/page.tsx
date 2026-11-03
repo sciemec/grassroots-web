@@ -23,7 +23,11 @@ import {
   IconWorld,
   IconBrain,
   IconChalkboard,
-  IconLayers,
+  IconStack2,
+  IconFlag,
+  IconStar,
+  IconCoin,
+  IconChartBar,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -179,7 +183,7 @@ function DrillGroupCard() {
 
 export default function PlayerHubPage() {
   const token = useAuthStore((s) => s.token);
-  const [profilePct, setProfilePct] = useState<number>(0);
+  const [profilePct, setProfilePct] = useState<number | null>(null);
   const [showProfileBanner, setShowProfileBanner] = useState(false);
   const [showPhoneBanner, setShowPhoneBanner] = useState(false);
 
@@ -396,7 +400,7 @@ export default function PlayerHubPage() {
           iconBg={G}
           iconColor={GL}
           title="My Profile"
-          subtitle={`Edit your details, ${profilePct}% complete`}
+          subtitle={profilePct === null ? "Edit your details" : `Edit your details, ${profilePct}% complete`}
         />
         <HubCard
           href="/player/verification"
@@ -475,6 +479,23 @@ export default function PlayerHubPage() {
           title="Find A Coach"
           subtitle="Connect with a coach near you"
         />
+        <HubCard
+          href="/player/training-plans"
+          icon={IconStack2}
+          iconBg={O}
+          iconColor={OL}
+          title="Training Plans"
+          subtitle="Plans assigned to you by your coach"
+        />
+        <HubCard
+          href="/player/stats"
+          icon={IconChartBar}
+          iconBg={O}
+          iconColor={OL}
+          title="My Stats"
+          subtitle="Match logs and performance history"
+        />
+
         {/* Section 3 — Showcase */}
         <SectionLabel label="Showcase" />
         <HubCard
@@ -486,12 +507,28 @@ export default function PlayerHubPage() {
           subtitle="Your video library"
         />
         <HubCard
-          href="/player/training-plans"
-          icon={IconLayers}
+          href="/player/showcase"
+          icon={IconStar}
           iconBg={DG}
           iconColor={GL}
-          title="Training Plans"
-          subtitle="Plans assigned to you by your coach"
+          title="Showcase Clips"
+          subtitle="Skill clips scouts can discover"
+        />
+        <HubCard
+          href="/player/valuation"
+          icon={IconCoin}
+          iconBg={DG}
+          iconColor={GL}
+          title="My Market Value"
+          subtitle="See what you're worth in USD"
+        />
+        <HubCard
+          href="/player/goal"
+          icon={IconFlag}
+          iconBg={DG}
+          iconColor={GL}
+          title="Mission Mode"
+          subtitle="Set a goal, get a daily plan"
         />
 
         {/* Section 4 — Academics */}
