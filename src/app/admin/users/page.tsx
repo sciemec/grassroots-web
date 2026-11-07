@@ -482,6 +482,9 @@ export default function AdminUsersPage() {
         params: {
           search: debouncedSearch || undefined,
           role: roleTab !== "all" ? roleTab : undefined,
+          suspended: filterStatus === "suspended" ? true : undefined,
+          verified:  filterStatus === "verified"  ? true : undefined,
+          pending:   filterStatus === "pending"   ? true : undefined,
           per_page: 25,
           page,
         },
@@ -594,18 +597,8 @@ export default function AdminUsersPage() {
   const maxProvinceCount = provinces[0]?.count ?? 1;
   const pendingScouts = pendingScoutsData?.data ?? [];
 
-  const filteredUsers = useMemo(() => {
-    if (filterStatus === "all") return users;
-    return users.filter((u) => {
-      if (filterStatus === "suspended") return !u.is_active;
-      if (filterStatus === "verified")  return u.is_active && !!u.verified_at;
-      if (filterStatus === "pending")   return u.is_active && !u.verified_at;
-      return true;
-    });
-  }, [users, filterStatus]);
-
-  const suspendedCount = useMemo(() => users.filter((u) => !u.is_active).length, [users]);
-  const pendingVerifyCount = useMemo(() => users.filter((u) => u.is_active && !u.verified_at).length, [users]);
+  // Server handles filtering — no client-side re-filter needed
+  const filteredUsers = users;
 
   if (!hasHydrated || !user) return null;
 
@@ -830,33 +823,29 @@ export default function AdminUsersPage() {
           </span>
         )}
 
-        {suspendedCount > 0 && (
-          <button
-            onClick={() => setStatusFilter("suspended")}
-            className="rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
-            style={
-              filterStatus === "suspended"
-                ? { backgroundColor: "#b91c1c", color: "#fff", borderColor: "#b91c1c" }
-                : { backgroundColor: "#fef2f2", color: "#b91c1c", borderColor: "#fecaca" }
-            }
-          >
-            Suspended
-          </button>
-        )}
+        <button
+          onClick={() => setStatusFilter("suspended")}
+          className="rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
+          style={
+            filterStatus === "suspended"
+              ? { backgroundColor: "#b91c1c", color: "#fff", borderColor: "#b91c1c" }
+              : { backgroundColor: "#fef2f2", color: "#b91c1c", borderColor: "#fecaca" }
+          }
+        >
+          Suspended{filterStatus === "suspended" && meta?.total != null ? ` (${meta.total})` : ""}
+        </button>
 
-        {pendingVerifyCount > 0 && (
-          <button
-            onClick={() => setStatusFilter("pending")}
-            className="rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
-            style={
-              filterStatus === "pending"
-                ? { backgroundColor: "#b45309", color: "#fff", borderColor: "#b45309" }
-                : { backgroundColor: "#fffbeb", color: "#b45309", borderColor: "#fde68a" }
-            }
-          >
-            Unverified
-          </button>
-        )}
+        <button
+          onClick={() => setStatusFilter("pending")}
+          className="rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
+          style={
+            filterStatus === "pending"
+              ? { backgroundColor: "#b45309", color: "#fff", borderColor: "#b45309" }
+              : { backgroundColor: "#fffbeb", color: "#b45309", borderColor: "#fde68a" }
+          }
+        >
+          Unverified{filterStatus === "pending" && meta?.total != null ? ` (${meta.total})` : ""}
+        </button>
       </div>
 
       {/* Search + Filters toggle */}
