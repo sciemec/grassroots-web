@@ -1013,6 +1013,36 @@ export default function AdminUsersPage() {
                   </p>
                 )}
               </div>
+              {coachRegData?.data.length ? (
+                <button
+                  onClick={() => {
+                    const rows = [
+                      ["Coach Name", "Email", "Organisation", "Players Registered", "Last Registration"],
+                      ...coachRegData.data.map((cr) => [
+                        cr.coach_name ?? "",
+                        cr.coach_email ?? "",
+                        cr.org_name ?? "",
+                        String(cr.total),
+                        cr.last_registration_at
+                          ? new Date(cr.last_registration_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })
+                          : "",
+                      ]),
+                    ];
+                    const csv = rows.map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
+                    const blob = new Blob([csv], { type: "text/csv" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `coach-registrations-${new Date().toISOString().slice(0, 10)}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Download CSV
+                </button>
+              ) : null}
             </div>
 
             {coachRegLoading ? (
