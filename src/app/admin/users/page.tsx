@@ -93,6 +93,15 @@ interface RegisteredPlayer {
   created_at: string;
 }
 
+interface CoachRegistration {
+  coach_id: string;
+  coach_name: string;
+  coach_email: string;
+  org_name: string | null;
+  total: number;
+  last_registration_at: string | null;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -575,6 +584,20 @@ export default function AdminUsersPage() {
     enabled: !!user && user.role === "admin" && roleTab === "registered",
   });
 
+  const { data: coachRegData, isLoading: coachRegLoading } = useQuery<{
+    total_coaches: number;
+    total_players: number;
+    data: CoachRegistration[];
+  }>({
+    queryKey: ["admin-coach-registrations"],
+    queryFn: async () => {
+      const res = await api.get("/admin/coach-registrations");
+      return res.data;
+    },
+    enabled: !!user && user.role === "admin" && roleTab === "registered",
+    staleTime: 2 * 60 * 1000,
+  });
+
   // ── Mutations ──────────────────────────────────────────────────────────────
   const toggleMutation = useMutation({
     mutationFn: (id: string) => api.post(`/admin/users/${id}/toggle-active`),
@@ -979,6 +1002,75 @@ export default function AdminUsersPage() {
       {/* Registered players content (coach-registered, no platform account) */}
       {roleTab === "registered" && (
         <>
+          {/* Coach registrations summary */}
+          <div className="mb-6">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">Coaches &amp; Registration Counts</h3>
+                {coachRegData && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {coachRegData.total_coaches} coach{coachRegData.total_coaches !== 1 ? "es" : ""} · {coachRegData.total_players} players total
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {coachRegLoading ? (
+              <div className="flex items-center gap-2 rounded-2xl border border-gray-100 bg-white p-5 text-sm text-gray-400">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading coach registrations…
+              </div>
+            ) : !coachRegData?.data.length ? (
+              <div className="rounded-2xl border border-gray-100 bg-white p-6 text-center text-sm text-gray-400">
+                No coach registrations yet.
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <table className="w-full min-w-[600px] text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-green-50">
+                      {["Coach", "Organisation", "Players Registered", "Last Registration"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: GRS_GREEN }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {coachRegData.data.map((cr) => (
+                      <tr key={cr.coach_id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ backgroundColor: GRS_GREEN }}>
+                              {ini(cr.coach_name)}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">{cr.coach_name || "—"}</p>
+                              <p className="text-[11px] text-gray-400">{maskEmail(cr.coach_email)}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600">{cr.org_name || "—"}</td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold" style={{ backgroundColor: "#dcfce7", color: GRS_GREEN }}>
+                            <Users className="h-3 w-3" />
+                            {cr.total}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500">
+                          {cr.last_registration_at
+                            ? new Date(cr.last_registration_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })
+                            : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <h3 className="mb-3 text-base font-semibold text-gray-900">Unlinked Registered Players</h3>
+
           {regLoading ? (
             <div className="grid gap-3 sm:grid-cols-2">
               {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
