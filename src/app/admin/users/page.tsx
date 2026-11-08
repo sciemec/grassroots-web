@@ -438,7 +438,27 @@ export default function AdminUsersPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
+
+  async function fetchAllForExport(): Promise<AdminUser[]> {
+    const params = {
+      search:    debouncedSearch || undefined,
+      role:      roleTab !== "all" && roleTab !== "registered" ? roleTab : undefined,
+      suspended: filterStatus === "suspended" ? true : undefined,
+      verified:  filterStatus === "verified"  ? true : undefined,
+      pending:   filterStatus === "pending"   ? true : undefined,
+      per_page:  100,
+    };
+    const first = await api.get("/admin/users", { params: { ...params, page: 1 } });
+    const all: AdminUser[] = [...(first.data.data ?? [])];
+    const lastPage: number = first.data.meta?.last_page ?? 1;
+    for (let p = 2; p <= lastPage; p++) {
+      const res = await api.get("/admin/users", { params: { ...params, page: p } });
+      all.push(...(res.data.data ?? []));
+    }
+    return all;
+  }
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [regPage, setRegPage] = useState(1);
@@ -644,25 +664,34 @@ export default function AdminUsersPage() {
         <div className="relative" ref={exportRef}>
           <button
             onClick={() => setExportOpen((o) => !o)}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            disabled={exportLoading}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
-            <Download className="h-3.5 w-3.5" />
-            Export
-            <ChevronDown className="h-3 w-3" />
+            {exportLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            {exportLoading ? "Exporting…" : "Export"}
+            {!exportLoading && <ChevronDown className="h-3 w-3" />}
           </button>
-          {exportOpen && (
-            <div className="absolute right-0 top-full z-20 mt-1 w-32 rounded-xl border border-gray-100 bg-white shadow-lg">
+          {exportOpen && !exportLoading && (
+            <div className="absolute right-0 top-full z-20 mt-1 w-36 rounded-xl border border-gray-100 bg-white shadow-lg">
               <button
-                onClick={() => { exportCSV(users); setExportOpen(false); }}
+                onClick={async () => {
+                  setExportOpen(false);
+                  setExportLoading(true);
+                  try { exportCSV(await fetchAllForExport()); } finally { setExportLoading(false); }
+                }}
                 className="flex w-full items-center gap-2 rounded-t-xl px-3 py-2.5 text-left text-xs text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <Download className="h-3.5 w-3.5" /> CSV (this page)
+                <Download className="h-3.5 w-3.5" /> CSV (all pages)
               </button>
               <button
-                onClick={() => { exportPDF(users); setExportOpen(false); }}
+                onClick={async () => {
+                  setExportOpen(false);
+                  setExportLoading(true);
+                  try { exportPDF(await fetchAllForExport()); } finally { setExportLoading(false); }
+                }}
                 className="flex w-full items-center gap-2 rounded-b-xl px-3 py-2.5 text-left text-xs text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <FileText className="h-3.5 w-3.5" /> PDF (this page)
+                <FileText className="h-3.5 w-3.5" /> PDF (all pages)
               </button>
             </div>
           )}
