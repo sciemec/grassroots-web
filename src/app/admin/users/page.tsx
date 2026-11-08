@@ -22,7 +22,7 @@ const MINOR_GROUPS = new Set(["U11", "U13", "U15", "U17", "under_13", "13_17"]);
 const ROLE_TABS = ["all", "player", "coach", "scout", "fan", "analyst", "admin", "registered"] as const;
 type RoleTab = (typeof ROLE_TABS)[number];
 
-const ALL_ROLES = ["player", "coach", "scout", "fan", "analyst", "admin"] as const;
+const ALL_ROLES = ["player", "coach", "scout", "fan", "analyst"] as const;
 
 type FilterStatus = "all" | "suspended" | "verified" | "pending";
 
@@ -1214,7 +1214,7 @@ export default function AdminUsersPage() {
                           >
                             {u.role} <ChevronDown className="h-2.5 w-2.5" />
                           </button>
-                          {roleDropdownOpen === u.id && (
+                          {roleDropdownOpen === u.id && u.id !== user?.id && (
                             <div className="absolute left-0 top-full z-30 mt-1 w-28 rounded-xl border border-gray-100 bg-white shadow-lg">
                               {ALL_ROLES.filter((r) => r !== u.role).map((r) => {
                                 const rp2 = ROLE_PILL[r] ?? { bg: "#f3f4f6", text: "#374151" };
