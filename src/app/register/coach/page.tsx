@@ -8,12 +8,20 @@ import { normalizePhone } from "@/lib/phone-normalize";
 import { COUNTRIES } from "@/lib/countries";
 import { useAuthStore } from "@/lib/auth-store";
 
+const ZW_PROVINCES = [
+  "Harare", "Bulawayo", "Manicaland", "Mashonaland Central",
+  "Mashonaland East", "Mashonaland West", "Masvingo",
+  "Matabeleland North", "Matabeleland South", "Midlands",
+];
+
 interface FormData {
   first_name: string;
   surname: string;
   gender: "male" | "female" | "";
   age: string;
   country: string;
+  province: string;
+  address: string;
   contactType: "email" | "phone";
   email: string;
   phone: string;
@@ -36,6 +44,8 @@ export default function RegisterCoachPage() {
     gender: "",
     age: "",
     country: "Zimbabwe",
+    province: "",
+    address: "",
     contactType: "email",
     email: "",
     phone: "",
@@ -53,7 +63,8 @@ export default function RegisterCoachPage() {
     form.age !== "" &&
     parseInt(form.age) >= 18 &&
     parseInt(form.age) <= 100 &&
-    form.country !== "";
+    form.country !== "" &&
+    form.province !== "";
 
   const contactValid =
     form.contactType === "email"
@@ -78,6 +89,8 @@ export default function RegisterCoachPage() {
         gender: form.gender,
         age: parseInt(form.age),
         country: form.country,
+        province: form.province,
+        ...(form.address.trim() ? { address: form.address.trim() } : {}),
         password: form.password,
         password_confirmation: form.confirmPassword,
         role: "coach",
@@ -300,6 +313,31 @@ export default function RegisterCoachPage() {
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5">Province <span className="text-red-400">*</span></label>
+                <select
+                  value={form.province}
+                  onChange={(e) => set("province", e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                >
+                  <option value="">Select province…</option>
+                  {ZW_PROVINCES.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5">Address <span className="text-gray-400 font-normal">(optional)</span></label>
+                <input
+                  type="text"
+                  value={form.address}
+                  onChange={(e) => set("address", e.target.value)}
+                  placeholder="e.g. 12 Samora Machel Ave, Harare"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
               </div>
 
               <button
