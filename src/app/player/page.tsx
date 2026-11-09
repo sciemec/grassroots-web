@@ -23,6 +23,8 @@ import {
   IconWorld,
   IconBrain,
   IconChalkboard,
+  IconHeart,
+  IconCoin,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -471,6 +473,25 @@ export default function PlayerHubPage() {
           iconColor={GL}
           title="Highlight Vault"
           subtitle="Your video library"
+        />
+
+        {/* Section — Raise funds */}
+        <SectionLabel label="Raise funds" />
+        <HubCard
+          href="/campaigns"
+          icon={IconHeart}
+          iconBg={O}
+          iconColor={OL}
+          title="Crowdfunding"
+          subtitle="Browse campaigns & support athletes"
+        />
+        <HubCard
+          href="/campaigns/new"
+          icon={IconCoin}
+          iconBg={O}
+          iconColor={OL}
+          title="Start a Campaign"
+          subtitle="Raise funds for kit, travel or trials"
         />
 
         {/* Section 4 — Academics */}
