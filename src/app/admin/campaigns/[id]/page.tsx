@@ -44,10 +44,10 @@ interface Disbursement {
   amount_cents: number;
   payee_name: string;
   payee_ref: string;
-  quote_url: string | null;
+  quote_file_url: string | null;
   status: "requested" | "approved" | "paid" | "rejected";
   admin_note: string | null;
-  proof_url: string | null;
+  proof_file_url: string | null;
   created_at: string;
 }
 
@@ -396,13 +396,13 @@ export default function AdminCampaignDetailPage() {
                       </div>
                     </div>
 
-                    {d.quote_url && (
-                      <a href={d.quote_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#0369a1", marginTop: 8 }}>
+                    {d.quote_file_url && (
+                      <a href={d.quote_file_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#0369a1", marginTop: 8 }}>
                         <ExternalLink size={11} /> Quote
                       </a>
                     )}
-                    {d.proof_url && (
-                      <a href={d.proof_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: GRS_GREEN, marginTop: 8, marginLeft: d.quote_url ? 12 : 0 }}>
+                    {d.proof_file_url && (
+                      <a href={d.proof_file_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: GRS_GREEN, marginTop: 8, marginLeft: d.quote_file_url ? 12 : 0 }}>
                         <Upload size={11} /> Proof
                       </a>
                     )}

@@ -36,10 +36,10 @@ interface Disbursement {
   amount_cents: number;
   payee_name: string;
   payee_ref: string;
-  quote_url: string | null;
+  quote_file_url: string | null;
   status: "requested" | "approved" | "paid" | "rejected";
   admin_note: string | null;
-  proof_url: string | null;
+  proof_file_url: string | null;
   proof_submitted_at: string | null;
   created_at: string;
   paid_at: string | null;
@@ -121,7 +121,7 @@ function DisbursementForm({ campaignId, balanceCents, onSuccess }: {
         payee_name:  payee.trim(),
         payee_ref:   ref.trim(),
         amount_cents: Math.round(amt * 100),
-        quote_url:   quoteUrl.trim() || null,
+        quote_file_url: quoteUrl.trim() || null,
       });
       setPayee(""); setRef(""); setAmtUsd(""); setQuoteUrl("");
       setOpen(false);
@@ -208,7 +208,7 @@ function ProofUploadForm({ disbursementId, onSuccess }: { disbursementId: string
     if (!url.trim()) return;
     setSaving(true);
     try {
-      await api.post(`/campaigns/disbursements/${disbursementId}/proof`, { proof_url: url.trim() });
+      await api.post(`/campaigns/disbursements/${disbursementId}/proof`, { proof_file_url: url.trim() });
       setUrl(""); setOpen(false); onSuccess();
     } catch { /* silent */ } finally { setSaving(false); }
   };
@@ -468,20 +468,20 @@ export default function CampaignManagePage() {
                           </div>
                         </div>
 
-                        {d.quote_url && (
-                          <a href={d.quote_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#0369a1", marginTop: 8 }}>
+                        {d.quote_file_url && (
+                          <a href={d.quote_file_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#0369a1", marginTop: 8 }}>
                             <ExternalLink size={11} /> View quote
                           </a>
                         )}
 
-                        {d.status === "paid" && !d.proof_url && (
+                        {d.status === "paid" && !d.proof_file_url && (
                           <div style={{ marginTop: 8 }}>
                             <div style={{ fontSize: 11, color: "#b45309", marginBottom: 4 }}>Admin marked as paid — please upload proof of receipt.</div>
                             <ProofUploadForm disbursementId={d.id} onSuccess={load} />
                           </div>
                         )}
-                        {d.proof_url && (
-                          <a href={d.proof_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: GRS_GREEN, marginTop: 8 }}>
+                        {d.proof_file_url && (
+                          <a href={d.proof_file_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: GRS_GREEN, marginTop: 8 }}>
                             <Upload size={11} /> Proof uploaded
                           </a>
                         )}
