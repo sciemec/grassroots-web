@@ -1038,32 +1038,48 @@ export default function AdminUsersPage() {
               </div>
               {coachRegData?.data.length ? (
                 <button
-                  onClick={() => {
-                    const rows = [
-                      ["Coach Name", "Email", "Organisation", "Players Registered", "Last Registration"],
-                      ...coachRegData.data.map((cr) => [
-                        cr.coach_name ?? "",
-                        cr.coach_email ?? "",
-                        cr.org_name ?? "",
+                  onClick={async () => {
+                    const { default: jsPDF } = await import("jspdf");
+                    const { default: autoTable } = await import("jspdf-autotable");
+                    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+                    doc.setFillColor(26, 92, 42);
+                    doc.rect(0, 0, 297, 18, "F");
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFontSize(13);
+                    doc.setFont("helvetica", "bold");
+                    doc.text("GrassRoots Sports — Coach Registrations Report", 10, 12);
+                    doc.setFontSize(8);
+                    doc.setFont("helvetica", "normal");
+                    doc.text(
+                      `Generated ${new Date().toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" })}  ·  ${coachRegData.total_coaches} coaches  ·  ${coachRegData.total_players} players`,
+                      297 - 10, 12, { align: "right" }
+                    );
+
+                    autoTable(doc, {
+                      startY: 24,
+                      head: [["Coach Name", "Email", "Organisation", "Players Registered", "Last Registration"]],
+                      body: coachRegData.data.map((cr) => [
+                        cr.coach_name ?? "—",
+                        cr.coach_email ?? "—",
+                        cr.org_name ?? "—",
                         String(cr.total),
                         cr.last_registration_at
                           ? new Date(cr.last_registration_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })
-                          : "",
+                          : "—",
                       ]),
-                    ];
-                    const csv = rows.map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
-                    const blob = new Blob([csv], { type: "text/csv" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `coach-registrations-${new Date().toISOString().slice(0, 10)}.csv`;
-                    a.click();
-                    URL.revokeObjectURL(url);
+                      headStyles: { fillColor: [26, 92, 42], textColor: 255, fontStyle: "bold", fontSize: 9 },
+                      bodyStyles: { fontSize: 8 },
+                      alternateRowStyles: { fillColor: [245, 247, 245] },
+                      columnStyles: { 3: { halign: "center" } },
+                    });
+
+                    doc.save(`coach-registrations-${new Date().toISOString().slice(0, 10)}.pdf`);
                   }}
                   className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
                 >
                   <Download className="h-3.5 w-3.5" />
-                  Download CSV
+                  Download PDF
                 </button>
               ) : null}
             </div>
