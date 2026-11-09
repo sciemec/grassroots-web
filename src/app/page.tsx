@@ -8,6 +8,8 @@ import {
   DynamicPublicVideoGrid  as PublicVideoGrid,
   DynamicThutoChatVisitor as ThutoChatVisitor,
 } from "@/components/home/LandingDynamic";
+import dynamic from "next/dynamic";
+const CampaignStrip = dynamic(() => import("@/components/home/CampaignStrip"), { ssr: false });
 
 export const metadata: Metadata = {
   title: "Grassroots Sports — Zimbabwe's #1 Talent Discovery Platform",
@@ -106,6 +108,9 @@ export default function GrassrootsSportsLanding() {
       <div id="features">
         <PublicVideoGrid />
       </div>
+
+      {/* Campaign strip — live athlete crowdfunding preview */}
+      <CampaignStrip />
 
       {/* ── HOW IT WORKS ─────────────────────────────────────────── */}
       <section className="py-16 px-6 bg-white border-y border-gray-100">
