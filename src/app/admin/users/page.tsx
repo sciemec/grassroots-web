@@ -1287,31 +1287,54 @@ export default function AdminUsersPage() {
             </div>
             {coachSquadsData?.data.length ? (
               <button
-                onClick={() => {
-                  const rows = [
-                    ["Coach Name", "Email", "Province", "Squad Size", "WhatsApp Linked", "Joined"],
-                    ...coachSquadsData.data.map((c) => [
-                      c.coach_name ?? "",
-                      c.coach_email ?? "",
-                      c.province ?? "",
+                onClick={async () => {
+                  const { default: jsPDF } = await import("jspdf");
+                  const { default: autoTable } = await import("jspdf-autotable");
+                  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+                  // Header bar
+                  doc.setFillColor(26, 92, 42);
+                  doc.rect(0, 0, 297, 18, "F");
+                  doc.setTextColor(255, 255, 255);
+                  doc.setFontSize(13);
+                  doc.setFont("helvetica", "bold");
+                  doc.text("GrassRoots Sports — Coach Squads Report", 10, 12);
+                  doc.setFontSize(8);
+                  doc.setFont("helvetica", "normal");
+                  doc.text(`Generated ${new Date().toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" })}  ·  ${coachSquadsData.total_coaches} coaches`, 297 - 10, 12, { align: "right" });
+
+                  autoTable(doc, {
+                    startY: 24,
+                    head: [["Coach Name", "Email", "Province", "Squad Size", "WhatsApp Linked", "Joined"]],
+                    body: coachSquadsData.data.map((c) => [
+                      c.coach_name ?? "—",
+                      c.coach_email ?? "—",
+                      c.province ?? "—",
                       String(c.squad_count),
                       c.whatsapp_linked ? "Yes" : "No",
-                      c.joined_at ? new Date(c.joined_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" }) : "",
+                      c.joined_at ? new Date(c.joined_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" }) : "—",
                     ]),
-                  ];
-                  const csv = rows.map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
-                  const blob = new Blob([csv], { type: "text/csv" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `coaches-squads-${new Date().toISOString().slice(0, 10)}.csv`;
-                  a.click();
-                  URL.revokeObjectURL(url);
+                    headStyles: { fillColor: [26, 92, 42], textColor: 255, fontStyle: "bold", fontSize: 9 },
+                    bodyStyles: { fontSize: 8 },
+                    alternateRowStyles: { fillColor: [245, 247, 245] },
+                    columnStyles: {
+                      3: { halign: "center" },
+                      4: { halign: "center" },
+                    },
+                    didDrawCell: (data) => {
+                      if (data.section === "body" && data.column.index === 4) {
+                        const val = String(data.cell.raw);
+                        doc.setTextColor(val === "Yes" ? 22 : 220, val === "Yes" ? 101 : 38, val === "Yes" ? 52 : 38);
+                      }
+                    },
+                  });
+
+                  doc.save(`coaches-squads-${new Date().toISOString().slice(0, 10)}.pdf`);
                 }}
                 className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
               >
                 <Download className="h-3.5 w-3.5" />
-                Download CSV
+                Download PDF
               </button>
             ) : null}
           </div>
