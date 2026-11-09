@@ -7,9 +7,8 @@ import {
   DynamicPlayerStories    as PlayerStories,
   DynamicPublicVideoGrid  as PublicVideoGrid,
   DynamicThutoChatVisitor as ThutoChatVisitor,
+  DynamicCampaignStrip    as CampaignStrip,
 } from "@/components/home/LandingDynamic";
-import dynamic from "next/dynamic";
-const CampaignStrip = dynamic(() => import("@/components/home/CampaignStrip"), { ssr: false });
 
 export const metadata: Metadata = {
   title: "Grassroots Sports — Zimbabwe's #1 Talent Discovery Platform",

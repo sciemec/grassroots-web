@@ -16,3 +16,8 @@ export const DynamicThutoChatVisitor = dynamic(
   () => import("@/components/thuto/ThutoChatVisitor"),
   { ssr: false }
 );
+
+export const DynamicCampaignStrip = dynamic(
+  () => import("@/components/home/CampaignStrip"),
+  { ssr: false }
+);
