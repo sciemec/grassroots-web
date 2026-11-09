@@ -102,6 +102,15 @@ interface CoachRegistration {
   last_registration_at: string | null;
 }
 
+interface CoachSquad {
+  coach_id: string;
+  coach_name: string;
+  coach_email: string;
+  province: string | null;
+  squad_count: number;
+  joined_at: string;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -595,6 +604,19 @@ export default function AdminUsersPage() {
       return res.data;
     },
     enabled: !!user && user.role === "admin" && roleTab === "registered",
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: coachSquadsData, isLoading: coachSquadsLoading } = useQuery<{
+    total_coaches: number;
+    data: CoachSquad[];
+  }>({
+    queryKey: ["admin-coaches-squads"],
+    queryFn: async () => {
+      const res = await api.get("/admin/coaches/squads");
+      return res.data;
+    },
+    enabled: !!user && user.role === "admin" && roleTab === "coach",
     staleTime: 2 * 60 * 1000,
   });
 
@@ -1248,6 +1270,101 @@ export default function AdminUsersPage() {
             </>
           )}
         </>
+      )}
+
+      {/* Coach squads overview — shown at top of Coach tab */}
+      {roleTab === "coach" && (
+        <div className="mb-6">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">All Coaches &amp; Their Squads</h3>
+              {coachSquadsData && (
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {coachSquadsData.total_coaches} coach{coachSquadsData.total_coaches !== 1 ? "es" : ""} on the platform
+                </p>
+              )}
+            </div>
+            {coachSquadsData?.data.length ? (
+              <button
+                onClick={() => {
+                  const rows = [
+                    ["Coach Name", "Email", "Province", "Squad Size", "Joined"],
+                    ...coachSquadsData.data.map((c) => [
+                      c.coach_name ?? "",
+                      c.coach_email ?? "",
+                      c.province ?? "",
+                      String(c.squad_count),
+                      c.joined_at ? new Date(c.joined_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" }) : "",
+                    ]),
+                  ];
+                  const csv = rows.map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
+                  const blob = new Blob([csv], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `coaches-squads-${new Date().toISOString().slice(0, 10)}.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download CSV
+              </button>
+            ) : null}
+          </div>
+
+          {coachSquadsLoading ? (
+            <div className="flex items-center gap-2 rounded-2xl border border-gray-100 bg-white p-5 text-sm text-gray-400">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading coach squads…
+            </div>
+          ) : !coachSquadsData?.data.length ? (
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 text-center text-sm text-gray-400">
+              No coaches found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
+              <table className="w-full min-w-[560px] text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-green-50">
+                    {["Coach", "Province", "Squad Size", "Joined"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: GRS_GREEN }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {coachSquadsData.data.map((c) => (
+                    <tr key={c.coach_id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ backgroundColor: GRS_GREEN }}>
+                            {ini(c.coach_name)}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">{c.coach_name || "—"}</p>
+                            <p className="text-[11px] text-gray-400">{maskEmail(c.coach_email)}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600">{c.province || "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold" style={{ backgroundColor: c.squad_count > 0 ? "#dcfce7" : "#f3f4f6", color: c.squad_count > 0 ? GRS_GREEN : "#6b7280" }}>
+                          <Users className="h-3 w-3" />
+                          {c.squad_count}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500">
+                        {new Date(c.joined_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Content — platform account users */}
