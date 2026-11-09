@@ -109,6 +109,7 @@ interface CoachSquad {
   province: string | null;
   squad_count: number;
   joined_at: string;
+  whatsapp_linked: boolean;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -1288,12 +1289,13 @@ export default function AdminUsersPage() {
               <button
                 onClick={() => {
                   const rows = [
-                    ["Coach Name", "Email", "Province", "Squad Size", "Joined"],
+                    ["Coach Name", "Email", "Province", "Squad Size", "WhatsApp Linked", "Joined"],
                     ...coachSquadsData.data.map((c) => [
                       c.coach_name ?? "",
                       c.coach_email ?? "",
                       c.province ?? "",
                       String(c.squad_count),
+                      c.whatsapp_linked ? "Yes" : "No",
                       c.joined_at ? new Date(c.joined_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" }) : "",
                     ]),
                   ];
@@ -1327,7 +1329,7 @@ export default function AdminUsersPage() {
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-green-50">
-                    {["Coach", "Province", "Squad Size", "Joined"].map((h) => (
+                    {["Coach", "Province", "Squad Size", "WhatsApp", "Joined"].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: GRS_GREEN }}>
                         {h}
                       </th>
@@ -1353,6 +1355,11 @@ export default function AdminUsersPage() {
                         <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold" style={{ backgroundColor: c.squad_count > 0 ? "#dcfce7" : "#f3f4f6", color: c.squad_count > 0 ? GRS_GREEN : "#6b7280" }}>
                           <Users className="h-3 w-3" />
                           {c.squad_count}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: c.whatsapp_linked ? "#dcfce7" : "#fee2e2", color: c.whatsapp_linked ? GRS_GREEN : "#dc2626" }}>
+                          {c.whatsapp_linked ? "✓ Linked" : "✗ No"}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500">
