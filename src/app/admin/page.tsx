@@ -8,7 +8,7 @@ import {
   Users, ShieldCheck, Search, CreditCard, BarChart3, Megaphone,
   Film, Bell, Database, MessageSquare, Building2, Radio, Activity,
   Smartphone, Sparkles, Trophy, Globe, UserCircle, Target,
-  Settings, Lock, Flag, TrendingUp,
+  Settings, Lock, Flag, TrendingUp, Heart,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -97,6 +97,12 @@ export default function AdminDashboardPage() {
       </header>
 
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px 56px" }}>
+
+        {/* ── Crowdfunding ──────────────────────────────────────────────── */}
+        <SectionLabel>Crowdfunding</SectionLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
+          <HubCard href="/admin/campaigns" icon={Heart} label="Campaign Review" desc="Approve, pause & moderate athlete fundraising campaigns" accent />
+        </div>
 
         {/* ── 1. User Management ────────────────────────────────────────── */}
         <SectionLabel>1 · User Management</SectionLabel>
