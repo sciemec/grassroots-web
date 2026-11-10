@@ -8,7 +8,7 @@ import {
   Users, ShieldCheck, Search, CreditCard, BarChart3, Megaphone,
   Film, Bell, Database, MessageSquare, Building2, Radio, Activity,
   Smartphone, Sparkles, Trophy, Globe, UserCircle, Target,
-  Settings, Lock, Flag, TrendingUp, Heart, Clock,
+  Settings, Lock, Flag, TrendingUp, Heart, Clock, Handshake, Link2,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -98,12 +98,14 @@ export default function AdminDashboardPage() {
 
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px 56px" }}>
 
-        {/* ── Crowdfunding ──────────────────────────────────────────────── */}
-        <SectionLabel>Crowdfunding</SectionLabel>
+        {/* ── Sponsorships ──────────────────────────────────────────────── */}
+        <SectionLabel>Athlete Sponsorships</SectionLabel>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
-          <HubCard href="/admin/campaigns"             icon={Heart}  label="Campaign Review"  desc="Approve, pause & moderate athlete fundraising campaigns" accent />
-          <HubCard href="/admin/disbursements/overdue" icon={Clock}  label="Overdue Proofs"   desc="Paid disbursements awaiting receipt upload" />
-          <HubCard href="/campaigns"                   icon={Globe}  label="Crowdfunding Hub" desc="Browse the public campaign listing as a donor" />
+          <HubCard href="/admin/sponsorships"           icon={Handshake} label="Sponsorship Cases"      desc="Review, approve & moderate athlete sponsorship cases" accent />
+          <HubCard href="/admin/introductions"          icon={Link2}     label="Introduction Requests"  desc="Manage sponsor–athlete connection requests" />
+          <HubCard href="/admin/sponsors"               icon={Heart}     label="Sponsor Profiles"       desc="Verify and manage sponsor accounts" />
+          <HubCard href="/admin/disbursements/overdue"  icon={Clock}     label="Overdue Proofs"         desc="Paid disbursements awaiting receipt upload" />
+          <HubCard href="/sponsorships"                 icon={Globe}     label="Browse Sponsorships"    desc="View the public sponsorship listing" />
         </div>
 
         {/* ── 1. User Management ────────────────────────────────────────── */}
