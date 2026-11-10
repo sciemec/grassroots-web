@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
-import PublicNavbar from "@/components/layout/public-navbar";
+import { PublicNavbar } from "@/components/layout/public-navbar";
 
 interface SponsorshipCase {
   id: string;

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
-import PublicNavbar from "@/components/layout/public-navbar";
+import { PublicNavbar } from "@/components/layout/public-navbar";
 
 const SPORTS = [
   "Football", "Rugby", "Athletics", "Netball",
