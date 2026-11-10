@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Heart, Users, Clock, ShieldCheck, CheckCircle2,
   AlertCircle, Loader2, ChevronDown, ChevronUp, Phone, Mail,
-  Share2, Flag, Edit3, ExternalLink,
+  Share2, Flag, Edit3, ExternalLink, Copy, Check,
 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -485,6 +485,8 @@ export default function CampaignDetailClient() {
   const [showDonate, setShowDonate] = useState(false);
   const [donated, setDonated]     = useState(false);
   const [showFullStory, setShowFullStory] = useState(false);
+  const [showShare, setShowShare]   = useState(false);
+  const [copied, setCopied]         = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -535,12 +537,80 @@ export default function CampaignDetailClient() {
                 <Edit3 size={12} /> Manage
               </button>
             )}
-            <button
-              onClick={() => navigator.share?.({ title: campaign.title, url: window.location.href })}
-              style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "1px solid #e5e5e5", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 12, color: "#374151" }}
-            >
-              <Share2 size={12} /> Share
-            </button>
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowShare((v) => !v)}
+                style={{ display: "flex", alignItems: "center", gap: 4, background: showShare ? GRS_GREEN : "none", border: `1px solid ${showShare ? GRS_GREEN : "#e5e5e5"}`, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 12, color: showShare ? "#fff" : "#374151" }}
+              >
+                <Share2 size={12} /> Share
+              </button>
+
+              {showShare && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    onClick={() => setShowShare(false)}
+                    style={{ position: "fixed", inset: 0, zIndex: 39 }}
+                  />
+                  {/* Panel */}
+                  <div style={{
+                    position: "absolute", right: 0, top: "calc(100% + 8px)",
+                    backgroundColor: "#fff", border: "1px solid #e5e5e5",
+                    borderRadius: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+                    padding: 12, zIndex: 40, minWidth: 220,
+                    display: "flex", flexDirection: "column", gap: 4,
+                  }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", paddingBottom: 6, borderBottom: "1px solid #f3f4f6", marginBottom: 4 }}>
+                      Share this campaign
+                    </div>
+
+                    {/* WhatsApp */}
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(`Support ${campaign.beneficiary_name}'s campaign on GrassRoots Sports 🌱\n\n${campaign.title}\n\n${window.location.href}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowShare(false)}
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 8, textDecoration: "none", color: "#111", fontSize: 13, fontWeight: 600 }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f0fdf4")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    >
+                      <span style={{ fontSize: 18, lineHeight: 1 }}>💬</span> WhatsApp
+                    </a>
+
+                    {/* Facebook */}
+                    <a
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowShare(false)}
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 8, textDecoration: "none", color: "#111", fontSize: 13, fontWeight: 600 }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#eff6ff")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    >
+                      <span style={{ fontSize: 18, lineHeight: 1 }}>📘</span> Facebook
+                    </a>
+
+                    {/* Copy link */}
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.href).then(() => {
+                          setCopied(true);
+                          setTimeout(() => { setCopied(false); setShowShare(false); }, 1500);
+                        });
+                      }}
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 8, border: "none", background: "none", cursor: "pointer", color: "#111", fontSize: 13, fontWeight: 600, textAlign: "left", width: "100%" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f9fafb")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    >
+                      {copied
+                        ? <><Check size={16} color="#16a34a" /> <span style={{ color: "#16a34a" }}>Link copied!</span></>
+                        : <><Copy size={16} /> Copy link</>
+                      }
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
