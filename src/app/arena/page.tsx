@@ -11,7 +11,7 @@ import {
   MoreVertical, Pencil, Trash2, X, Check, GraduationCap, Flag,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { matchPrograms, type MatchResult, type PlayerMatchData } from "@/lib/scholarship-matcher";
+import { matchPlayerToScholarships, type MatchResult, type PlayerMatchData } from "@/lib/scholarship-matcher";
 import ScholarshipAlertCard from "@/components/passport/ScholarshipAlertCard";
 import { REEL_STORAGE_KEY, type ReelState } from "@/components/passport/ScholarshipReel";
 
@@ -267,7 +267,7 @@ export default function ArenaPage() {
       english_proficiency: (u.english_proficiency as string) ?? "basic",
       reel_complete:       reelFilled >= 4,
     };
-    setScholarshipMatches(matchPrograms(data));
+    setScholarshipMatches(matchPlayerToScholarships(data));
   }, [activeTab, user]);
 
   // ── Fetch social feed ─────────────────────────────────────────────────────
