@@ -493,6 +493,14 @@ export default function PlayerHubPage() {
           title="Submit Your Case"
           subtitle="Apply for sponsorship — kit, travel or trials"
         />
+        <HubCard
+          href="/player/financial-literacy"
+          icon={IconBook}
+          iconBg="#f0fdf4"
+          iconColor="#16a34a"
+          title="Financial Literacy"
+          subtitle="Complete lessons & quiz to earn your sponsorship badge"
+        />
 
         {/* Section 4 — Academics */}
         <SectionLabel label="Academics" />

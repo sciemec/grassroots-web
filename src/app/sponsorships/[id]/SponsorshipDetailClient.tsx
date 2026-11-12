@@ -28,6 +28,7 @@ interface SponsorshipCase {
   updates?: CaseUpdate[];
   my_introduction?: IntroRequest | null;
   vouches?: VouchRecord[];
+  financial_literacy_complete?: boolean;
 }
 
 interface VouchRecord {
@@ -273,6 +274,11 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
             {c.vouched && (
               <span className="bg-[#f0b429] text-[#1a3a1a] text-xs font-bold px-2.5 py-1 rounded-full">
                 ✓ Vouched
+              </span>
+            )}
+            {c.financial_literacy_complete && (
+              <span className="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                📚 Financially Literate
               </span>
             )}
             <span
