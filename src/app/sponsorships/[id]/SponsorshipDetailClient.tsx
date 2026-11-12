@@ -16,6 +16,7 @@ interface SponsorshipCase {
   cover_image_url: string | null;
   status: string;
   owner_name: string;
+  owner_user_id?: string | null;
   province: string | null;
   age_group: string | null;
   vouched: boolean;
@@ -26,6 +27,15 @@ interface SponsorshipCase {
   voucher_org?: string | null;
   updates?: CaseUpdate[];
   my_introduction?: IntroRequest | null;
+  vouches?: VouchRecord[];
+}
+
+interface VouchRecord {
+  id: string;
+  status: string;
+  voucher_org_name: string | null;
+  invite_whatsapp: string | null;
+  voucher?: { id: string; name: string } | null;
 }
 
 interface CaseUpdate {
@@ -75,21 +85,42 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
   const [introError, setIntroError] = useState<string | null>(null);
   const [introSuccess, setIntroSuccess] = useState(false);
 
+  // Vouch request state (owner only, draft / pending_vouch)
+  const [showVouchForm, setShowVouchForm] = useState(false);
+  const [vouchMode, setVouchMode] = useState<"platform" | "whatsapp">("platform");
+  const [vouchUserId, setVouchUserId] = useState("");
+  const [vouchWhatsapp, setVouchWhatsapp] = useState("");
+  const [vouchSubmitting, setVouchSubmitting] = useState(false);
+  const [vouchError, setVouchError] = useState<string | null>(null);
+  const [vouchSuccess, setVouchSuccess] = useState(false);
+
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
   useEffect(() => {
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    fetch(`${base}/sponsorships/${id}`, { headers })
-      .then((r) => {
+    const fetchPublic = () =>
+      fetch(`${base}/sponsorships/${id}`, { headers }).then((r) => {
         if (r.status === 404) { setNotFound(true); return null; }
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
-      })
-      .then((json) => {
-        if (json) setCaseData(json.data ?? json);
-      })
+      });
+
+    // When authenticated, try the owner/admin detail endpoint first so draft
+    // cases are visible to the owner. Fall back to the public endpoint if the
+    // caller is not the owner, admin, or a voucher (403).
+    const load = token
+      ? fetch(`${base}/sponsorships/${id}/detail`, { headers }).then((r) => {
+          if (r.status === 403) return fetchPublic();
+          if (r.status === 404) { setNotFound(true); return null; }
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
+      : fetchPublic();
+
+    load
+      .then((json) => { if (json) setCaseData(json.data ?? json); })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [id, token, base]);
@@ -142,6 +173,49 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
     }
   };
 
+  const requestVouch = async () => {
+    setVouchSubmitting(true);
+    setVouchError(null);
+
+    const body: Record<string, string> =
+      vouchMode === "platform"
+        ? { voucher_user_id: vouchUserId.trim() }
+        : { invite_whatsapp: vouchWhatsapp.trim() };
+
+    try {
+      const res = await fetch(`${base}/sponsorships/${id}/vouch/request`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setVouchError(json.message ?? "Could not send vouch request.");
+        return;
+      }
+      setVouchSuccess(true);
+      setShowVouchForm(false);
+      setVouchUserId("");
+      setVouchWhatsapp("");
+      setCaseData((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: prev.status === "draft" ? "pending_vouch" : prev.status,
+              vouches: [...(prev.vouches ?? []), json.data],
+            }
+          : prev
+      );
+    } catch {
+      setVouchError("Network error. Please try again.");
+    } finally {
+      setVouchSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
@@ -177,7 +251,7 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
   const statusConfig = STATUS_LABELS[c.status] ?? { label: c.status, color: "#6b7280" };
   const myIntro = c.my_introduction;
   const canRequestIntro = c.status === "live" && (!myIntro || myIntro.status === "withdrawn");
-  const isSponsor = user?.role === "sponsor" || user?.role === "admin";
+  const isOwner = user?.id === c.owner_user_id;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
@@ -280,6 +354,119 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
             </>
           )}
         </div>
+
+        {/* Owner draft / pending_vouch management panel */}
+        {isOwner && (c.status === "draft" || c.status === "pending_vouch") && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-5">
+            <h2 className="font-semibold text-gray-900 mb-1">Your Case — Awaiting a Vouch</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              A coach, teacher, or club official must vouch for this case before it can go live for sponsors to see.
+            </p>
+
+            {/* Existing vouch requests */}
+            {c.vouches && c.vouches.length > 0 && (
+              <div className="mb-4 space-y-2">
+                {c.vouches.map((v) => (
+                  <div key={v.id} className="bg-gray-50 rounded-lg px-3 py-2 text-xs flex items-center justify-between gap-2">
+                    <span className="font-medium text-gray-800 truncate">
+                      {v.voucher_org_name ?? v.voucher?.name ?? (v.invite_whatsapp ? `WhatsApp: ${v.invite_whatsapp}` : "Pending")}
+                    </span>
+                    <span
+                      className={`flex-shrink-0 px-2 py-0.5 rounded-full font-medium ${
+                        v.status === "confirmed" ? "bg-green-100 text-green-800"
+                        : v.status === "declined" || v.status === "revoked" ? "bg-red-100 text-red-700"
+                        : "bg-purple-100 text-purple-800"
+                      }`}
+                    >
+                      {v.status === "requested" ? "Waiting" : v.status.charAt(0).toUpperCase() + v.status.slice(1)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {vouchSuccess && (
+              <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl px-3 py-2 text-xs font-medium mb-3">
+                Vouch request sent!
+              </div>
+            )}
+
+            {!showVouchForm ? (
+              <button
+                onClick={() => { setShowVouchForm(true); setVouchSuccess(false); }}
+                className="w-full border-2 border-dashed border-[#1a5c2a]/30 hover:border-[#1a5c2a]/60 text-[#1a5c2a] text-sm font-medium py-2.5 rounded-xl transition-colors"
+              >
+                + Request a Voucher
+              </button>
+            ) : (
+              <div className="border border-gray-200 rounded-xl p-4">
+                {/* Mode toggle */}
+                <div className="flex gap-2 mb-3">
+                  <button
+                    onClick={() => setVouchMode("platform")}
+                    className={`flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors ${vouchMode === "platform" ? "bg-[#1a5c2a] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                  >
+                    Platform User
+                  </button>
+                  <button
+                    onClick={() => setVouchMode("whatsapp")}
+                    className={`flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors ${vouchMode === "whatsapp" ? "bg-[#1a5c2a] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                  >
+                    WhatsApp Invite
+                  </button>
+                </div>
+
+                {vouchError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-xs mb-3">
+                    {vouchError}
+                  </div>
+                )}
+
+                {vouchMode === "platform" ? (
+                  <div className="mb-3">
+                    <label className="text-xs font-medium text-gray-700 block mb-1">Coach or Official&apos;s User ID</label>
+                    <input
+                      type="text"
+                      value={vouchUserId}
+                      onChange={(e) => setVouchUserId(e.target.value)}
+                      placeholder="Paste the coach's user ID from their profile"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">The person must have a coach or admin role on GRS.</p>
+                  </div>
+                ) : (
+                  <div className="mb-3">
+                    <label className="text-xs font-medium text-gray-700 block mb-1">WhatsApp Number</label>
+                    <input
+                      type="tel"
+                      value={vouchWhatsapp}
+                      onChange={(e) => setVouchWhatsapp(e.target.value)}
+                      placeholder="e.g. 0771 234 567"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">We&apos;ll send them a WhatsApp message with a vouching link.</p>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowVouchForm(false); setVouchError(null); }}
+                    className="flex-1 border border-gray-300 text-gray-700 text-xs font-medium py-2 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={requestVouch}
+                    disabled={vouchSubmitting || (vouchMode === "platform" ? !vouchUserId.trim() : !vouchWhatsapp.trim())}
+                    className="flex-1 bg-[#1a5c2a] text-white text-xs font-semibold py-2 rounded-lg hover:bg-[#145222] disabled:opacity-60"
+                  >
+                    {vouchSubmitting ? "Sending…" : "Send Request"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Vouch info */}
         {c.vouched && (c.voucher_org || c.voucher_name) && (
