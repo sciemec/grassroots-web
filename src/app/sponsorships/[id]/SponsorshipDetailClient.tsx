@@ -81,6 +81,20 @@ interface IntroRequest {
   created_at: string;
 }
 
+interface IntroAgreement {
+  id: string;
+  introduction_request_id: string;
+  agreed_amount_cents: number | null;
+  currency: string;
+  payee_name: string | null;
+  what_sponsor_provides: string | null;
+  what_sponsor_receives: string | null;
+  notes: string | null;
+  status: "draft" | "confirmed";
+  created_at: string;
+  updated_at: string;
+}
+
 const SPORT_EMOJI: Record<string, string> = {
   football: "⚽", rugby: "🏉", athletics: "🏃", netball: "🏐",
   basketball: "🏀", cricket: "🏏", swimming: "🏊", tennis: "🎾",
@@ -129,6 +143,18 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
   const [proofError, setProofError] = useState<string | null>(null);
   const [proofSuccess, setProofSuccess] = useState(false);
 
+  // Agreement state (shown when intro is accepted)
+  const [agreement, setAgreement] = useState<IntroAgreement | null>(null);
+  const [agreementLoaded, setAgreementLoaded] = useState(false);
+  const [agreeAmount, setAgreeAmount] = useState("");
+  const [agreePayee, setAgreePayee] = useState("");
+  const [agreeProvides, setAgreeProvides] = useState("");
+  const [agreeReceives, setAgreeReceives] = useState("");
+  const [agreeNotes, setAgreeNotes] = useState("");
+  const [agreeSaving, setAgreeSaving] = useState(false);
+  const [agreeConfirming, setAgreeConfirming] = useState(false);
+  const [agreeError, setAgreeError] = useState<string | null>(null);
+
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
   useEffect(() => {
@@ -159,6 +185,29 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [id, token, base]);
+
+  // Load agreement when the intro has been accepted
+  useEffect(() => {
+    const intro = caseData?.my_introduction;
+    if (!intro || intro.status !== "accepted" || !token || agreementLoaded) return;
+    setAgreementLoaded(true);
+    fetch(`${base}/sponsorships/${id}/introductions/${intro.id}/agreement`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (json?.data) {
+          const a: IntroAgreement = json.data;
+          setAgreement(a);
+          setAgreeAmount(a.agreed_amount_cents ? String(a.agreed_amount_cents / 100) : "");
+          setAgreePayee(a.payee_name ?? "");
+          setAgreeProvides(a.what_sponsor_provides ?? "");
+          setAgreeReceives(a.what_sponsor_receives ?? "");
+          setAgreeNotes(a.notes ?? "");
+        }
+      })
+      .catch(() => {});
+  }, [caseData?.my_introduction, token, base, id, agreementLoaded]);
 
   const submitIntro = async () => {
     if (!user) { router.push("/login"); return; }
@@ -281,6 +330,60 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
     }
   };
 
+  const saveAgreement = async () => {
+    const intro = caseData?.my_introduction;
+    if (!intro) return;
+    setAgreeSaving(true);
+    setAgreeError(null);
+    try {
+      const res = await fetch(
+        `${base}/sponsorships/${id}/introductions/${intro.id}/agreement`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            agreed_amount_cents: agreeAmount ? Math.round(parseFloat(agreeAmount) * 100) : null,
+            payee_name: agreePayee.trim() || null,
+            what_sponsor_provides: agreeProvides.trim() || null,
+            what_sponsor_receives: agreeReceives.trim() || null,
+            notes: agreeNotes.trim() || null,
+          }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) { setAgreeError(json.message ?? "Could not save. Please try again."); return; }
+      setAgreement(json.data);
+    } catch {
+      setAgreeError("Network error. Please try again.");
+    } finally {
+      setAgreeSaving(false);
+    }
+  };
+
+  const confirmAgreement = async () => {
+    const intro = caseData?.my_introduction;
+    if (!intro) return;
+    if (!confirm("Confirm this agreement? This cannot be undone.")) return;
+    setAgreeConfirming(true);
+    setAgreeError(null);
+    try {
+      const res = await fetch(
+        `${base}/sponsorships/${id}/introductions/${intro.id}/agreement/confirm`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) { setAgreeError(json.message ?? "Could not confirm. Please try again."); return; }
+      setAgreement(json.data);
+    } catch {
+      setAgreeError("Network error. Please try again.");
+    } finally {
+      setAgreeConfirming(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
@@ -400,6 +503,167 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
                 >
                   Withdraw
                 </button>
+              )}
+            </div>
+          )}
+
+          {/* Agreement card — shown when intro is accepted */}
+          {myIntro && myIntro.status === "accepted" && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-base">🤝</span>
+                <h3 className="font-semibold text-gray-900 text-sm">Sponsorship Agreement</h3>
+                {agreement?.status === "confirmed" && (
+                  <span className="ml-auto text-xs font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                    ✓ Confirmed
+                  </span>
+                )}
+                {agreement?.status === "draft" && (
+                  <span className="ml-auto text-xs font-medium bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                    Draft
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mb-4">
+                Record the terms you've agreed on so both parties have a clear written record.
+              </p>
+
+              {agreeError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-xs mb-3">
+                  {agreeError}
+                </div>
+              )}
+
+              {agreement?.status === "confirmed" ? (
+                // Read-only confirmed view
+                <div className="space-y-3 text-sm">
+                  {agreement.agreed_amount_cents != null && (
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 mb-0.5">Amount</div>
+                      <div className="text-gray-900 font-semibold">
+                        ${(agreement.agreed_amount_cents / 100).toFixed(2)} {agreement.currency}
+                      </div>
+                    </div>
+                  )}
+                  {agreement.payee_name && (
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 mb-0.5">Payee</div>
+                      <div className="text-gray-800">{agreement.payee_name}</div>
+                    </div>
+                  )}
+                  {agreement.what_sponsor_provides && (
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 mb-0.5">Sponsor provides</div>
+                      <div className="text-gray-800 text-xs leading-relaxed">{agreement.what_sponsor_provides}</div>
+                    </div>
+                  )}
+                  {agreement.what_sponsor_receives && (
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 mb-0.5">Sponsor receives</div>
+                      <div className="text-gray-800 text-xs leading-relaxed">{agreement.what_sponsor_receives}</div>
+                    </div>
+                  )}
+                  {agreement.notes && (
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 mb-0.5">Notes</div>
+                      <div className="text-gray-800 text-xs leading-relaxed">{agreement.notes}</div>
+                    </div>
+                  )}
+                  <div className="text-xs text-gray-400 pt-1">
+                    Confirmed {new Date(agreement.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                  </div>
+                </div>
+              ) : (
+                // Editable draft form
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-700 block mb-1">
+                        Amount (USD) <span className="text-gray-400">(optional)</span>
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={agreeAmount}
+                        onChange={(e) => setAgreeAmount(e.target.value)}
+                        placeholder="e.g. 250"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700 block mb-1">
+                        Payee name <span className="text-gray-400">(optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={agreePayee}
+                        onChange={(e) => setAgreePayee(e.target.value)}
+                        placeholder="Who receives payment"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">
+                      What the sponsor provides <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <textarea
+                      value={agreeProvides}
+                      onChange={(e) => setAgreeProvides(e.target.value)}
+                      maxLength={2000}
+                      rows={2}
+                      placeholder="e.g. $250 towards kit and tournament fees"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">
+                      What the sponsor receives <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <textarea
+                      value={agreeReceives}
+                      onChange={(e) => setAgreeReceives(e.target.value)}
+                      maxLength={2000}
+                      rows={2}
+                      placeholder="e.g. Logo on kit, monthly progress updates"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">
+                      Notes <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <textarea
+                      value={agreeNotes}
+                      onChange={(e) => setAgreeNotes(e.target.value)}
+                      maxLength={2000}
+                      rows={2}
+                      placeholder="Any other terms or context"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={saveAgreement}
+                      disabled={agreeSaving}
+                      className="flex-1 border border-[#1a5c2a] text-[#1a5c2a] text-xs font-semibold py-2 rounded-lg hover:bg-[#1a5c2a]/5 disabled:opacity-60"
+                    >
+                      {agreeSaving ? "Saving…" : "Save Draft"}
+                    </button>
+                    <button
+                      onClick={confirmAgreement}
+                      disabled={agreeConfirming || !agreement}
+                      className="flex-1 bg-[#1a5c2a] text-white text-xs font-semibold py-2 rounded-lg hover:bg-[#145222] disabled:opacity-60"
+                      title={!agreement ? "Save a draft first" : undefined}
+                    >
+                      {agreeConfirming ? "Confirming…" : "Confirm Agreement"}
+                    </button>
+                  </div>
+                  {!agreement && (
+                    <p className="text-xs text-gray-400 text-center">Save a draft first, then confirm once both parties agree.</p>
+                  )}
+                </div>
               )}
             </div>
           )}
