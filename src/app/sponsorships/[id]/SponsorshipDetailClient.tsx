@@ -29,6 +29,32 @@ interface SponsorshipCase {
   my_introduction?: IntroRequest | null;
   vouches?: VouchRecord[];
   financial_literacy_complete?: boolean;
+  player?: PlayerData | null;
+}
+
+interface SkillRating {
+  skill_code: string;
+  rating: number;
+}
+
+interface PlayerHighlight {
+  id: string;
+  event_type: string;
+  speed_kmh: number | null;
+  r2_url: string | null;
+  created_at: string;
+}
+
+interface PlayerData {
+  first_name: string;
+  surname?: string;
+  position?: string;
+  sport?: string;
+  age_group?: string;
+  avatar_url?: string | null;
+  club?: string | null;
+  skill_ratings?: SkillRating[];
+  highlights?: PlayerHighlight[];
 }
 
 interface VouchRecord {
@@ -529,6 +555,85 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
           <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-5">
             <h2 className="font-semibold text-gray-900 mb-3">The Story</h2>
             <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{c.story}</p>
+          </div>
+        )}
+
+        {/* Player Profile */}
+        {c.player && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-5">
+            <h2 className="font-semibold text-gray-900 mb-4">About the Player</h2>
+
+            {/* Identity row */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-[#1a5c2a]/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {c.player.avatar_url ? (
+                  <img src={c.player.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl font-bold text-[#1a5c2a]">
+                    {c.player.first_name?.[0] ?? "?"}
+                  </span>
+                )}
+              </div>
+              <div>
+                <div className="font-semibold text-gray-900 text-sm">
+                  {c.player.first_name}{c.player.surname ? ` ${c.player.surname}` : ""}
+                </div>
+                <div className="text-xs text-gray-500 flex flex-wrap gap-x-2 mt-0.5">
+                  {c.player.position && <span className="capitalize">{c.player.position}</span>}
+                  {c.player.age_group && (
+                    <><span>·</span><span className="capitalize">{c.player.age_group.replace(/_/g, " ")}</span></>
+                  )}
+                  {c.player.club && <><span>·</span><span>{c.player.club}</span></>}
+                </div>
+              </div>
+            </div>
+
+            {/* Skill ratings */}
+            {c.player.skill_ratings && c.player.skill_ratings.length > 0 && (
+              <div className="mb-4">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  Coach Ratings
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  {c.player.skill_ratings.map((r) => (
+                    <div key={r.skill_code}>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-xs text-gray-600 capitalize">
+                          {r.skill_code.replace(/_/g, " ")}
+                        </span>
+                        <span className="text-xs font-semibold text-[#1a5c2a]">{r.rating.toFixed(1)}</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#1a5c2a] rounded-full"
+                          style={{ width: `${(r.rating / 10) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Highlight clips */}
+            {c.player.highlights && c.player.highlights.length > 0 && (
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  Recent Highlights
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {c.player.highlights.map((h) => (
+                    <span
+                      key={h.id}
+                      className="inline-flex items-center gap-1.5 bg-[#1a5c2a]/8 text-[#1a5c2a] text-xs font-medium px-2.5 py-1 rounded-full capitalize"
+                    >
+                      🎬 {h.event_type.replace(/_/g, " ")}
+                      {h.speed_kmh ? ` · ${h.speed_kmh} km/h` : ""}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
