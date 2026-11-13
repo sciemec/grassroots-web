@@ -288,7 +288,8 @@ export default function CoachHubPage() {
           <HubCard href="/arena/recruitment"         icon={UserSearch}   iconBg="#ede9fe" iconColor="#7c3aed" label="Talent Board"     desc="Open positions & talent wants"                    />
           <HubCard href="/coach/match-videos"        icon={Clapperboard} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Video Hub"        desc="Upload · library · share with parents & players"  badge="new" />
           <HubCard href="/coach/marketplace-profile" icon={ShoppingBag}  iconBg="#fef3c7" iconColor="#d97706" label="My Coach Profile" desc="Rates · credentials · assessment requests"        badge="new" />
-          <HubCard href="/sponsorships"             icon={Heart}        iconBg="#fce7f3" iconColor="#be185d" label="Athlete Sponsorships" desc="Help your players get connected with sponsors"    badge="new" />
+          <HubCard href="/sponsorships"              icon={Heart}        iconBg="#fce7f3" iconColor="#be185d" label="Athlete Sponsorships" desc="Help your players get connected with sponsors"    badge="new" />
+          <HubCard href="/coach/vouch-requests"    icon={UserCheck}    iconBg="#f0fdf4" iconColor="#1a5c2a" label="Vouch Requests"      desc="Cases where players have asked you to vouch"      />
         </div>
 
         {/* ── 5. School Programme ────────────────────────────────────── */}
