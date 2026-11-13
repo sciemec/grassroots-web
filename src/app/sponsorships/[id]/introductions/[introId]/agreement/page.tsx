@@ -24,6 +24,49 @@ interface PageProps {
 
 const CURRENCIES = ["USD", "ZIG", "ZAR", "GBP", "EUR"];
 
+function AgreementFields({ agreement }: { agreement: IntroAgreement }) {
+  return (
+    <div className="space-y-4 text-sm">
+      {agreement.agreed_amount_cents != null && (
+        <div>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Amount</div>
+          <div className="text-gray-900 font-semibold text-base">
+            {agreement.currency}{" "}
+            {(agreement.agreed_amount_cents / 100).toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </div>
+        </div>
+      )}
+      {agreement.payee_name && (
+        <div>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Payee</div>
+          <div className="text-gray-800">{agreement.payee_name}</div>
+        </div>
+      )}
+      {agreement.what_sponsor_provides && (
+        <div>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Sponsor provides</div>
+          <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">{agreement.what_sponsor_provides}</div>
+        </div>
+      )}
+      {agreement.what_sponsor_receives && (
+        <div>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Sponsor receives</div>
+          <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">{agreement.what_sponsor_receives}</div>
+        </div>
+      )}
+      {agreement.notes && (
+        <div>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Notes</div>
+          <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">{agreement.notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StepDot({
   label,
   done,
@@ -63,13 +106,15 @@ export default function AgreementPage({ params }: PageProps) {
   const { id, introId } = params;
   const router = useRouter();
   const token  = useAuthStore((s) => s.token);
+  const user   = useAuthStore((s) => s.user);
   const base   = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
-  const [loading,   setLoading]   = useState(true);
-  const [caseTitle, setCaseTitle] = useState("");
-  const [playerName, setPlayerName] = useState("");
-  const [agreement, setAgreement] = useState<IntroAgreement | null>(null);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [loading,          setLoading]          = useState(true);
+  const [caseTitle,        setCaseTitle]        = useState("");
+  const [playerName,       setPlayerName]       = useState("");
+  const [caseOwnerUserId,  setCaseOwnerUserId]  = useState<string | null>(null);
+  const [agreement,        setAgreement]        = useState<IntroAgreement | null>(null);
+  const [fetchError,       setFetchError]       = useState<string | null>(null);
 
   // form
   const [amount,   setAmount]   = useState("");
@@ -100,6 +145,7 @@ export default function AgreementPage({ params }: PageProps) {
           const json = await caseRes.json();
           const c = json.data ?? json;
           setCaseTitle(c.title ?? "");
+          setCaseOwnerUserId(c.owner_user_id ?? null);
           const p = c.player;
           if (p) {
             setPlayerName(`${p.first_name ?? ""} ${p.surname ?? ""}`.trim());
@@ -188,6 +234,7 @@ export default function AgreementPage({ params }: PageProps) {
 
   const isConfirmed = agreement?.status === "confirmed";
   const hasDraft    = !!agreement;
+  const isOwner     = !!user && !!caseOwnerUserId && user.id === caseOwnerUserId;
 
   if (loading) {
     return (
@@ -256,7 +303,7 @@ export default function AgreementPage({ params }: PageProps) {
           </div>
         )}
 
-        {/* ── CONFIRMED: read-only view ── */}
+        {/* ── CONFIRMED: read-only view (everyone) ── */}
         {isConfirmed && agreement ? (
           <div className="bg-white rounded-2xl border border-green-200 p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -273,52 +320,67 @@ export default function AgreementPage({ params }: PageProps) {
               </div>
             </div>
 
-            <div className="space-y-4 text-sm">
-              {agreement.agreed_amount_cents != null && (
-                <div>
-                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Amount</div>
-                  <div className="text-gray-900 font-semibold text-base">
-                    {agreement.currency}{" "}
-                    {(agreement.agreed_amount_cents / 100).toLocaleString("en-US", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </div>
-                </div>
-              )}
-              {agreement.payee_name && (
-                <div>
-                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Payee</div>
-                  <div className="text-gray-800">{agreement.payee_name}</div>
-                </div>
-              )}
-              {agreement.what_sponsor_provides && (
-                <div>
-                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Sponsor provides</div>
-                  <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">{agreement.what_sponsor_provides}</div>
-                </div>
-              )}
-              {agreement.what_sponsor_receives && (
-                <div>
-                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Sponsor receives</div>
-                  <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">{agreement.what_sponsor_receives}</div>
-                </div>
-              )}
-              {agreement.notes && (
-                <div>
-                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Notes</div>
-                  <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">{agreement.notes}</div>
-                </div>
-              )}
-            </div>
+            <AgreementFields agreement={agreement} />
 
             <div className="mt-5 pt-4 border-t border-gray-100 text-xs text-gray-400">
               This agreement is locked. Contact GrassRoots Sports to make amendments.
             </div>
           </div>
 
+        ) : isOwner ? (
+          /* ── OWNER: read-only draft view ── */
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            {!hasDraft ? (
+              <div className="text-center py-6">
+                <div className="text-3xl mb-3">📋</div>
+                <div className="font-semibold text-gray-700 text-sm mb-1">No terms drafted yet</div>
+                <p className="text-xs text-gray-400 max-w-xs mx-auto">
+                  The sponsor will record the agreed terms here. Check back once they have saved a draft.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-4">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                    style={{ backgroundColor: "#fef3c7", color: "#92400e" }}
+                  >
+                    ✎
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">Sponsor&apos;s proposed terms</div>
+                    <div className="text-xs text-gray-400">
+                      Review the terms below and confirm once you agree.
+                    </div>
+                  </div>
+                </div>
+
+                <AgreementFields agreement={agreement!} />
+
+                {saveError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-xs mt-4">
+                    {saveError}
+                  </div>
+                )}
+
+                <div className="mt-5 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={handleConfirm}
+                    disabled={confirming}
+                    className="w-full bg-[#1a5c2a] text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-[#145222] disabled:opacity-60 transition-colors"
+                  >
+                    {confirming ? "Confirming…" : "Confirm Agreement"}
+                  </button>
+                  <p className="text-xs text-gray-400 text-center mt-2">
+                    Confirming locks the terms. Both parties will be notified.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
         ) : (
-          /* ── DRAFT / NEW: editable form ── */
+          /* ── SPONSOR: editable form ── */
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <h2 className="font-semibold text-gray-900 mb-1">Record the agreed terms</h2>
             <p className="text-xs text-gray-500 mb-5">

@@ -81,6 +81,15 @@ interface IntroRequest {
   created_at: string;
 }
 
+interface OwnerIntro {
+  id: string;
+  status: string;
+  offer_cents: number | null;
+  sponsor_name: string | null;
+  sponsor_email: string | null;
+  created_at: string;
+}
+
 interface IntroAgreement {
   id: string;
   introduction_request_id: string;
@@ -147,6 +156,10 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
   const [agreement, setAgreement] = useState<IntroAgreement | null>(null);
   const [agreementLoaded, setAgreementLoaded] = useState(false);
 
+  // Owner-only: all accepted introductions with agreement status
+  const [ownerIntros, setOwnerIntros] = useState<OwnerIntro[]>([]);
+  const [ownerIntrosLoaded, setOwnerIntrosLoaded] = useState(false);
+
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
   useEffect(() => {
@@ -190,6 +203,19 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
       .then((json) => { if (json?.data) setAgreement(json.data); })
       .catch(() => {});
   }, [caseData?.my_introduction, token, base, id, agreementLoaded]);
+
+  // Load all introductions for the case owner
+  useEffect(() => {
+    if (!caseData || !user || !token || ownerIntrosLoaded) return;
+    if (user.id !== caseData.owner_user_id) return;
+    setOwnerIntrosLoaded(true);
+    fetch(`${base}/sponsorships/${id}/introductions`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => { if (Array.isArray(json?.data)) setOwnerIntros(json.data); })
+      .catch(() => {});
+  }, [caseData, user, token, base, id, ownerIntrosLoaded]);
 
   const submitIntro = async () => {
     if (!user) { router.push("/login"); return; }
@@ -620,6 +646,55 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
               <span className="text-amber-700">{c.voucher_org ?? c.voucher_name}</span>
               <p className="text-amber-600 text-xs mt-0.5">This case has been verified by a trusted coach or organisation.</p>
             </div>
+          </div>
+        )}
+
+        {/* Owner: accepted introductions panel */}
+        {isOwner && ownerIntrosLoaded && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-5">
+            <h2 className="font-semibold text-gray-900 mb-1 text-sm">Accepted Sponsors</h2>
+            <p className="text-xs text-gray-400 mb-4">
+              Sponsors whose introduction you accepted. Tap a row to view or confirm their proposed terms.
+            </p>
+            {ownerIntros.filter((i) => i.status === "accepted").length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No accepted introductions yet.</p>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {ownerIntros
+                  .filter((i) => i.status === "accepted")
+                  .map((intro) => (
+                    <Link
+                      key={intro.id}
+                      href={`/sponsorships/${id}/introductions/${intro.id}/agreement`}
+                      className="flex items-center justify-between gap-3 py-3 group"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">
+                          {intro.sponsor_name ?? intro.sponsor_email ?? "Sponsor"}
+                        </div>
+                        {intro.offer_cents != null && (
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            Offer: USD {(intro.offer_cents / 100).toLocaleString("en-US", {
+                              minimumFractionDigits: 2, maximumFractionDigits: 2,
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                          style={{
+                            backgroundColor: "#fef3c7",
+                            color: "#92400e",
+                          }}
+                        >
+                          View Agreement
+                        </span>
+                        <span className="text-gray-400 group-hover:text-[#1a5c2a] transition-colors text-sm">→</span>
+                      </div>
+                    </Link>
+                  ))}
+              </div>
+            )}
           </div>
         )}
 
