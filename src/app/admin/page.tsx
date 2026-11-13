@@ -103,6 +103,7 @@ export default function AdminDashboardPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
           <HubCard href="/admin/sponsorships"           icon={Handshake} label="Sponsorship Cases"      desc="Review, approve & moderate athlete sponsorship cases" accent />
           <HubCard href="/admin/introductions"          icon={Link2}     label="Introduction Requests"  desc="Manage sponsor–athlete connection requests" />
+          <HubCard href="/admin/agreements"             icon={Link2}     label="Agreements"             desc="All sponsorship agreement terms and statuses" />
           <HubCard href="/admin/sponsors"               icon={Heart}     label="Sponsor Profiles"       desc="Verify and manage sponsor accounts" />
           <HubCard href="/admin/disbursements/overdue"  icon={Clock}     label="Overdue Proofs"         desc="Paid disbursements awaiting receipt upload" />
           <HubCard href="/sponsorships"                 icon={Globe}     label="Browse Sponsorships"    desc="View the public sponsorship listing" />
