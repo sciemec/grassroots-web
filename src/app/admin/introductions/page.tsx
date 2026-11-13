@@ -20,6 +20,18 @@ interface IntroRequest {
   sponsor: { id: string; name: string; email: string } | null;
 }
 
+interface IntroAgreement {
+  id: string;
+  agreed_amount_cents: number | null;
+  currency: string;
+  payee_name: string | null;
+  what_sponsor_provides: string | null;
+  what_sponsor_receives: string | null;
+  notes: string | null;
+  status: "draft" | "confirmed";
+  updated_at: string;
+}
+
 interface ApiResponse {
   data: IntroRequest[];
   meta?: { current_page: number; last_page: number; total: number };
@@ -68,6 +80,8 @@ export default function AdminIntroductionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [markingId, setMarkingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // null = not fetched, "loading" = in-flight, IntroAgreement = loaded, "none" = 404/empty
+  const [agreements, setAgreements] = useState<Record<string, IntroAgreement | "loading" | "none">>({});
 
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -114,6 +128,29 @@ export default function AdminIntroductionsPage() {
     } finally {
       setMarkingId(null);
     }
+  };
+
+  const loadAgreement = (intro: IntroRequest) => {
+    if (!token || intro.status !== "accepted") return;
+    if (agreements[intro.id] !== undefined) return; // already loaded
+    setAgreements((prev) => ({ ...prev, [intro.id]: "loading" }));
+    fetch(`${base}/sponsorships/${intro.case_id}/introductions/${intro.id}/agreement`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        setAgreements((prev) => ({
+          ...prev,
+          [intro.id]: json?.data ?? "none",
+        }));
+      })
+      .catch(() => setAgreements((prev) => ({ ...prev, [intro.id]: "none" })));
+  };
+
+  const toggleExpand = (intro: IntroRequest) => {
+    const next = expandedId === intro.id ? null : intro.id;
+    setExpandedId(next);
+    if (next) loadAgreement(intro);
   };
 
   const pendingMarkCount = intros.filter((i) => i.status === "accepted" && !i.intro_sent).length;
@@ -191,6 +228,7 @@ export default function AdminIntroductionsPage() {
             {intros.map((intro) => {
               const isExpanded = expandedId === intro.id;
               const needsSending = intro.status === "accepted" && !intro.intro_sent;
+              const agr = agreements[intro.id];
 
               return (
                 <div key={intro.id} className={needsSending ? "bg-amber-50/40" : ""}>
@@ -251,12 +289,23 @@ export default function AdminIntroductionsPage() {
                         )
                       )}
 
+                      {/* Agreement status pill */}
+                      {intro.status === "accepted" && agr && agr !== "loading" && agr !== "none" && (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
+                          agr.status === "confirmed"
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            : "bg-amber-50 text-amber-700 border-amber-200"
+                        }`}>
+                          🤝 {agr.status === "confirmed" ? "Agreed" : "Draft"}
+                        </span>
+                      )}
+
                       {/* Expand toggle */}
-                      {(intro.message || intro.response_note) && (
+                      {(intro.message || intro.response_note || intro.status === "accepted") && (
                         <button
-                          onClick={() => setExpandedId(isExpanded ? null : intro.id)}
+                          onClick={() => toggleExpand(intro)}
                           className="text-xs text-gray-400 hover:text-gray-700 transition-colors px-1"
-                          title={isExpanded ? "Collapse" : "Show message"}
+                          title={isExpanded ? "Collapse" : "Show details"}
                         >
                           {isExpanded ? "▲" : "▼"}
                         </button>
@@ -264,7 +313,7 @@ export default function AdminIntroductionsPage() {
                     </div>
                   </div>
 
-                  {/* Expanded message / response */}
+                  {/* Expanded message / response / agreement */}
                   {isExpanded && (
                     <div className="px-4 pb-4 space-y-3">
                       {intro.message && (
@@ -279,6 +328,80 @@ export default function AdminIntroductionsPage() {
                             Athlete response · {intro.responded_at ? dateShort(intro.responded_at) : ""}
                           </div>
                           <p className="text-sm text-green-800 whitespace-pre-line">{intro.response_note}</p>
+                        </div>
+                      )}
+
+                      {/* Agreement panel */}
+                      {intro.status === "accepted" && (
+                        <div className={`rounded-xl border px-4 py-3 ${
+                          !agr || agr === "loading" ? "bg-gray-50 border-gray-200"
+                          : agr === "none" ? "bg-gray-50 border-dashed border-gray-200"
+                          : agr.status === "confirmed" ? "bg-emerald-50 border-emerald-200"
+                          : "bg-amber-50 border-amber-200"
+                        }`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm">🤝</span>
+                            <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Sponsorship Agreement
+                            </div>
+                            {agr && agr !== "loading" && agr !== "none" && (
+                              <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                agr.status === "confirmed"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}>
+                                {agr.status === "confirmed" ? "✓ Confirmed" : "Draft"}
+                              </span>
+                            )}
+                          </div>
+
+                          {(!agr || agr === "loading") && (
+                            <div className="h-3 bg-gray-200 rounded animate-pulse w-1/3" />
+                          )}
+
+                          {agr === "none" && (
+                            <p className="text-xs text-gray-400 italic">No agreement recorded yet.</p>
+                          )}
+
+                          {agr && agr !== "loading" && agr !== "none" && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                              {agr.agreed_amount_cents != null && (
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-0.5">Amount</div>
+                                  <div className="font-semibold text-gray-900">
+                                    {fmt(agr.agreed_amount_cents)} {agr.currency}
+                                  </div>
+                                </div>
+                              )}
+                              {agr.payee_name && (
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-0.5">Payee</div>
+                                  <div className="text-gray-800">{agr.payee_name}</div>
+                                </div>
+                              )}
+                              {agr.what_sponsor_provides && (
+                                <div className="sm:col-span-2">
+                                  <div className="text-xs text-gray-500 mb-0.5">Sponsor provides</div>
+                                  <div className="text-gray-800 text-xs leading-relaxed">{agr.what_sponsor_provides}</div>
+                                </div>
+                              )}
+                              {agr.what_sponsor_receives && (
+                                <div className="sm:col-span-2">
+                                  <div className="text-xs text-gray-500 mb-0.5">Sponsor receives</div>
+                                  <div className="text-gray-800 text-xs leading-relaxed">{agr.what_sponsor_receives}</div>
+                                </div>
+                              )}
+                              {agr.notes && (
+                                <div className="sm:col-span-2">
+                                  <div className="text-xs text-gray-500 mb-0.5">Notes</div>
+                                  <div className="text-gray-800 text-xs leading-relaxed">{agr.notes}</div>
+                                </div>
+                              )}
+                              <div className="sm:col-span-2 text-xs text-gray-400 mt-1">
+                                Last updated {dateShort(agr.updated_at)}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
