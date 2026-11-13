@@ -41,7 +41,8 @@ interface VouchRecord {
 
 interface CaseUpdate {
   id: string;
-  title: string;
+  kind?: string;
+  title?: string;
   body: string;
   created_at: string;
 }
@@ -94,6 +95,13 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
   const [vouchSubmitting, setVouchSubmitting] = useState(false);
   const [vouchError, setVouchError] = useState<string | null>(null);
   const [vouchSuccess, setVouchSuccess] = useState(false);
+
+  // Proof of Use state (owner only, live cases)
+  const [showProofForm, setShowProofForm] = useState(false);
+  const [proofBody, setProofBody] = useState("");
+  const [proofSubmitting, setProofSubmitting] = useState(false);
+  const [proofError, setProofError] = useState<string | null>(null);
+  const [proofSuccess, setProofSuccess] = useState(false);
 
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -214,6 +222,36 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
       setVouchError("Network error. Please try again.");
     } finally {
       setVouchSubmitting(false);
+    }
+  };
+
+  const postProof = async () => {
+    setProofSubmitting(true);
+    setProofError(null);
+    try {
+      const res = await fetch(`${base}/sponsorships/${id}/updates`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ body: proofBody.trim(), kind: "proof", notify_sponsors: true }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setProofError(json.message ?? "Could not post proof. Please try again.");
+        return;
+      }
+      setProofSuccess(true);
+      setShowProofForm(false);
+      setProofBody("");
+      setCaseData((prev) =>
+        prev ? { ...prev, updates: [json.data, ...(prev.updates ?? [])] } : prev
+      );
+    } catch {
+      setProofError("Network error. Please try again.");
+    } finally {
+      setProofSubmitting(false);
     }
   };
 
@@ -508,15 +546,83 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
             <h2 className="font-semibold text-gray-900 mb-4">Updates</h2>
             <div className="space-y-4">
               {c.updates.map((u) => (
-                <div key={u.id} className="border-l-2 border-[#1a5c2a] pl-3">
+                <div key={u.id} className={`border-l-2 pl-3 ${u.kind === "proof" ? "border-emerald-500" : "border-[#1a5c2a]"}`}>
                   <div className="text-xs text-gray-400 mb-0.5">
                     {new Date(u.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                   </div>
+                  {u.kind === "proof" && (
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <span className="text-xs font-semibold text-emerald-700">🧾 Proof of Use</span>
+                    </div>
+                  )}
                   {u.title && <div className="font-medium text-sm text-gray-900">{u.title}</div>}
                   <p className="text-sm text-gray-600 mt-0.5">{u.body}</p>
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Proof of Use — owner only, live cases */}
+        {isOwner && c.status === "live" && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-5">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="font-semibold text-gray-900">Proof of Use</h2>
+              {!showProofForm && (
+                <button
+                  onClick={() => { setShowProofForm(true); setProofSuccess(false); }}
+                  className="text-xs font-medium text-[#1a5c2a] hover:underline"
+                >
+                  + Add proof
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              Keep sponsors informed by sharing a note or receipt showing how support was used.
+              Connected sponsors will be notified automatically.
+            </p>
+
+            {proofSuccess && (
+              <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl px-3 py-2 text-xs font-medium mb-3">
+                Proof posted — connected sponsors have been notified.
+              </div>
+            )}
+
+            {showProofForm && (
+              <div className="border border-gray-200 rounded-xl p-4">
+                {proofError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-xs mb-3">
+                    {proofError}
+                  </div>
+                )}
+                <label className="text-xs font-medium text-gray-700 block mb-1">
+                  What did the support go towards?
+                </label>
+                <textarea
+                  value={proofBody}
+                  onChange={(e) => setProofBody(e.target.value)}
+                  maxLength={1000}
+                  rows={4}
+                  placeholder="e.g. Purchased boots and training kit for the upcoming season. Receipt sent to GRS via WhatsApp."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 mb-3"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowProofForm(false); setProofError(null); setProofBody(""); }}
+                    className="flex-1 border border-gray-300 text-gray-700 text-xs font-medium py-2 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={postProof}
+                    disabled={proofSubmitting || !proofBody.trim()}
+                    className="flex-1 bg-[#1a5c2a] text-white text-xs font-semibold py-2 rounded-lg hover:bg-[#145222] disabled:opacity-60"
+                  >
+                    {proofSubmitting ? "Posting…" : "Post Proof"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
