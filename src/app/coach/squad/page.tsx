@@ -1,13 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
+import { Suspense, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Users, Search, Activity, Zap, AlertTriangle,
   ShieldCheck, AlertCircle, Clock, RotateCcw, Filter,
+  BarChart2, CalendarCheck, Printer, Plus, Trash2, X,
 } from "lucide-react";
 import api from "@/lib/api";
+import jsPDF from "jspdf";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -29,6 +31,27 @@ interface SquadMemberFull {
   consent_status: string | null;
   match_status: string;
   stats: { sessions_14d: number; avg_score: number | null; last_session: string | null };
+}
+
+interface MatchDayPlayer {
+  id: string;
+  name: string;
+  position: string;
+  shirt_no: number | null;
+  age_group: string;
+  gender: string | null;
+  role: "starter" | "substitute";
+}
+
+interface MatchDayData {
+  id?: string;
+  match_date: string;
+  opponent: string;
+  venue: string;
+  competition: string;
+  starters: MatchDayPlayer[];
+  substitutes: MatchDayPlayer[];
+  created_at?: string;
 }
 
 const AGE_GROUPS = ["U11", "U13", "U15", "U17", "U20", "Senior", "Unknown"];
@@ -195,10 +218,19 @@ function SquadPageInner() {
   const [needsConfirmCount, setNeedsConfirmCount] = useState(0);
   const [showArchived, setShowArchived]           = useState(false);
   const [showFilters, setShowFilters]             = useState(false);
-  const [activeTab, setActiveTab]                 = useState<"players" | "injuries" | "fatigue" | "chemistry">("players");
+  const [activeTab, setActiveTab]                 = useState<"players" | "injuries" | "fatigue" | "chemistry" | "groups" | "matchday">("players");
   const [page, setPage]                           = useState(1);
   const [fetchError, setFetchError]               = useState(false);
   const [restoreError, setRestoreError]           = useState<string | null>(null);
+
+  // Match Day Squad state
+  const [matchDay, setMatchDay]                   = useState<MatchDayData | null>(null);
+  const [matchDayLoading, setMatchDayLoading]     = useState(false);
+  const [matchDaySaving, setMatchDaySaving]       = useState(false);
+  const [mdStep, setMdStep]                       = useState<"empty" | "form" | "pick" | "sheet">("empty");
+  const [mdForm, setMdForm]                       = useState({ match_date: "", opponent: "", venue: "", competition: "" });
+  const [mdSelected, setMdSelected]               = useState<Map<string, "starter" | "substitute">>(new Map());
+  const printRef                                  = useRef<HTMLDivElement>(null);
 
   // Filters live in URL query string
   const search            = params.get("search") ?? "";
@@ -237,6 +269,7 @@ function SquadPageInner() {
   }, []);
 
   useEffect(() => { fetchSquad(showArchived); }, [showArchived, fetchSquad]);
+  useEffect(() => { if (activeTab === "matchday") loadMatchDay(); }, [activeTab, loadMatchDay]);
 
   const updateStatus = async (id: string, status: string) => {
     const prevStatus = squad.find((m) => m.id === id)?.status;
@@ -257,6 +290,142 @@ function SquadPageInner() {
       setRestoreError(id);
     }
   };
+
+  const loadMatchDay = useCallback(async () => {
+    setMatchDayLoading(true);
+    try {
+      const res = await api.get("/coach/match-day");
+      const data = res.data?.data ?? null;
+      if (data) {
+        setMatchDay(data);
+        setMdStep("sheet");
+      } else {
+        setMdStep("empty");
+      }
+    } catch {
+      // fallback to localStorage
+      const saved = localStorage.getItem("gs_match_day_squad");
+      if (saved) {
+        try {
+          setMatchDay(JSON.parse(saved));
+          setMdStep("sheet");
+        } catch { setMdStep("empty"); }
+      } else {
+        setMdStep("empty");
+      }
+    } finally {
+      setMatchDayLoading(false);
+    }
+  }, []);
+
+  const saveMatchDay = useCallback(async () => {
+    if (!mdForm.match_date || !mdForm.opponent) return;
+    const starters    = Array.from(mdSelected.entries()).filter(([, r]) => r === "starter").map(([id]) => {
+      const m = squad.find((s) => s.id === id)!;
+      return { id: m.id, name: m.name, position: m.position, shirt_no: m.shirt_no, age_group: m.age_group, gender: m.gender, role: "starter" as const };
+    });
+    const substitutes = Array.from(mdSelected.entries()).filter(([, r]) => r === "substitute").map(([id]) => {
+      const m = squad.find((s) => s.id === id)!;
+      return { id: m.id, name: m.name, position: m.position, shirt_no: m.shirt_no, age_group: m.age_group, gender: m.gender, role: "substitute" as const };
+    });
+    const payload: MatchDayData = { ...mdForm, starters, substitutes };
+    setMatchDaySaving(true);
+    try {
+      const res = await api.post("/coach/match-day", payload);
+      const saved = res.data?.data ?? payload;
+      setMatchDay(saved);
+      localStorage.setItem("gs_match_day_squad", JSON.stringify(saved));
+    } catch {
+      setMatchDay(payload);
+      localStorage.setItem("gs_match_day_squad", JSON.stringify(payload));
+    } finally {
+      setMatchDaySaving(false);
+      setMdStep("sheet");
+    }
+  }, [mdForm, mdSelected, squad]);
+
+  const printMatchDay = useCallback(() => {
+    if (!matchDay) return;
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const W = 210, margin = 15;
+
+    // Header
+    doc.setFillColor(26, 92, 42);
+    doc.rect(0, 0, W, 28, "F");
+    doc.setFillColor(200, 150, 42);
+    doc.rect(0, 28, W, 2, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("MATCH DAY SQUAD", W / 2, 12, { align: "center" });
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`vs ${matchDay.opponent.toUpperCase()}`, W / 2, 20, { align: "center" });
+    doc.setFontSize(9);
+    const meta = [matchDay.match_date, matchDay.venue, matchDay.competition].filter(Boolean).join("  |  ");
+    doc.text(meta, W / 2, 26, { align: "center" });
+
+    // Starters section
+    doc.setTextColor(26, 92, 42);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(`STARTING XI (${matchDay.starters.length})`, margin, 40);
+    doc.setDrawColor(26, 92, 42);
+    doc.setLineWidth(0.4);
+    doc.line(margin, 42, W - margin, 42);
+
+    let y = 48;
+    doc.setFontSize(9);
+    matchDay.starters.forEach((p, i) => {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(26, 92, 42);
+      doc.text(String(p.shirt_no ?? i + 1), margin, y);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(30, 30, 30);
+      doc.text(p.name, margin + 10, y);
+      doc.setTextColor(100, 100, 100);
+      doc.text(p.position, 130, y);
+      doc.text(p.age_group, 165, y);
+      y += 7;
+      if (y > 240) { doc.addPage(); y = 20; }
+    });
+
+    // Substitutes section
+    y += 4;
+    doc.setTextColor(26, 92, 42);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(`SUBSTITUTES (${matchDay.substitutes.length})`, margin, y);
+    doc.setDrawColor(200, 150, 42);
+    doc.line(margin, y + 2, W - margin, y + 2);
+    y += 8;
+    doc.setFontSize(9);
+    matchDay.substitutes.forEach((p, i) => {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(200, 150, 42);
+      doc.text(String(p.shirt_no ?? 12 + i), margin, y);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(30, 30, 30);
+      doc.text(p.name, margin + 10, y);
+      doc.setTextColor(100, 100, 100);
+      doc.text(p.position, 130, y);
+      doc.text(p.age_group, 165, y);
+      y += 7;
+      if (y > 275) { doc.addPage(); y = 20; }
+    });
+
+    // Footer
+    const pages = doc.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(160, 160, 160);
+      doc.text(`Generated by GrassRoots Sports · grassrootssports.live`, margin, 290);
+      doc.text(new Date().toLocaleDateString("en-ZW"), W - margin, 290, { align: "right" });
+    }
+
+    doc.save(`MatchDay-vs-${matchDay.opponent.replace(/\s+/g, "-")}-${matchDay.match_date}.pdf`);
+  }, [matchDay]);
 
   const filtered = useMemo(() => squad.filter((m) => {
     if (search && !m.name.toLowerCase().includes(search.toLowerCase()) &&
@@ -279,6 +448,21 @@ function SquadPageInner() {
     injured: squad.filter((m) => m.status === "injured").length,
   }), [squad]);
 
+  const groupsBreakdown = useMemo(() => {
+    const breakdown: Record<string, { male: number; female: number; unknown: number; total: number }> = {};
+    const active = squad.filter((m) => !m.removed_at);
+    for (const m of active) {
+      const ag = m.age_group || "Unknown";
+      if (!breakdown[ag]) breakdown[ag] = { male: 0, female: 0, unknown: 0, total: 0 };
+      const g = (m.gender ?? "").toLowerCase();
+      if (g === "male")        breakdown[ag].male++;
+      else if (g === "female") breakdown[ag].female++;
+      else                     breakdown[ag].unknown++;
+      breakdown[ag].total++;
+    }
+    return breakdown;
+  }, [squad]);
+
   const hasFilters       = !!(search || filterGender || filterAgeGroup || filterPosition || filterStatus || filterMatchStatus);
   const otherFiltersCount = [filterGender, filterAgeGroup, filterPosition, filterMatchStatus].filter(Boolean).length;
 
@@ -290,6 +474,8 @@ function SquadPageInner() {
   const TABS = [
     { id: "players"   as const, label: "Players",   icon: Users },
     { id: "injuries"  as const, label: "Injuries",  icon: AlertTriangle },
+    { id: "groups"    as const, label: "Groups",    icon: BarChart2 },
+    { id: "matchday"  as const, label: "Match Day", icon: CalendarCheck },
     { id: "fatigue"   as const, label: "Fatigue",   icon: Activity },
     { id: "chemistry" as const, label: "Chemistry", icon: Zap },
   ];
@@ -802,6 +988,431 @@ function SquadPageInner() {
             </Link>
           </div>
         )}
+
+        {/* ══════════════════════ GROUPS TAB ═══════════════════════════════ */}
+        {activeTab === "groups" && (() => {
+          const rows = AGE_GROUPS.filter((ag) => groupsBreakdown[ag]);
+          const totalMale    = rows.reduce((s, ag) => s + (groupsBreakdown[ag]?.male ?? 0), 0);
+          const totalFemale  = rows.reduce((s, ag) => s + (groupsBreakdown[ag]?.female ?? 0), 0);
+          const totalUnknown = rows.reduce((s, ag) => s + (groupsBreakdown[ag]?.unknown ?? 0), 0);
+          const grandTotal   = rows.reduce((s, ag) => s + (groupsBreakdown[ag]?.total ?? 0), 0);
+
+          if (rows.length === 0) {
+            return (
+              <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
+                <BarChart2 className="mx-auto mb-3 h-8 w-8 text-gray-300" />
+                <p className="font-medium text-gray-700">No players to group yet</p>
+                <p className="text-sm text-gray-400 mt-1">Register players with their date of birth to see age groups here.</p>
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-5">
+              {/* Summary pills */}
+              <div className="flex flex-wrap gap-2">
+                <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold" style={{ color: GRS_GREEN }}>
+                  <Users className="h-4 w-4" /> {grandTotal} total
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-blue-50 border border-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">
+                  ♂ {totalMale} male
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-pink-50 border border-pink-100 px-4 py-2 text-sm font-semibold text-pink-700">
+                  ♀ {totalFemale} female
+                </div>
+                {totalUnknown > 0 && (
+                  <div className="flex items-center gap-2 rounded-full bg-gray-50 border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-500">
+                    ? {totalUnknown} unknown
+                  </div>
+                )}
+              </div>
+
+              {/* Breakdown table */}
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                <table className="w-full text-sm">
+                  <thead className="border-b bg-gray-50">
+                    <tr className="text-left text-xs text-gray-500 uppercase tracking-wide">
+                      <th className="px-4 py-3 font-medium">Age group</th>
+                      <th className="px-4 py-3 font-medium text-blue-600">♂ Male</th>
+                      <th className="px-4 py-3 font-medium text-pink-600">♀ Female</th>
+                      {totalUnknown > 0 && <th className="px-4 py-3 font-medium text-gray-400">? Unknown</th>}
+                      <th className="px-4 py-3 font-medium text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {rows.map((ag) => {
+                      const row = groupsBreakdown[ag];
+                      return (
+                        <tr
+                          key={ag}
+                          className="hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => { setParam("age_group", ag); setActiveTab("players"); }}
+                        >
+                          <td className="px-4 py-3.5 font-semibold" style={{ color: GRS_GREEN }}>{ag}</td>
+                          <td className="px-4 py-3.5 text-blue-700">{row.male > 0 ? row.male : <span className="text-gray-300">—</span>}</td>
+                          <td className="px-4 py-3.5 text-pink-700">{row.female > 0 ? row.female : <span className="text-gray-300">—</span>}</td>
+                          {totalUnknown > 0 && <td className="px-4 py-3.5 text-gray-400">{row.unknown > 0 ? row.unknown : <span className="text-gray-200">—</span>}</td>}
+                          <td className="px-4 py-3.5 text-right">
+                            <span className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold text-white" style={{ background: GRS_GREEN }}>
+                              {row.total}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot className="border-t-2 bg-gray-50">
+                    <tr className="font-semibold text-gray-700 text-sm">
+                      <td className="px-4 py-3">Total</td>
+                      <td className="px-4 py-3 text-blue-700">{totalMale}</td>
+                      <td className="px-4 py-3 text-pink-700">{totalFemale}</td>
+                      {totalUnknown > 0 && <td className="px-4 py-3 text-gray-400">{totalUnknown}</td>}
+                      <td className="px-4 py-3 text-right">
+                        <span className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold text-white" style={{ background: GRS_GREEN }}>
+                          {grandTotal}
+                        </span>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* Age group cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {rows.map((ag) => {
+                  const row = groupsBreakdown[ag];
+                  return (
+                    <button
+                      key={ag}
+                      onClick={() => { setParam("age_group", ag); setActiveTab("players"); }}
+                      className="bg-white rounded-xl border border-gray-200 p-4 text-left hover:shadow-sm hover:border-green-200 transition-all group"
+                    >
+                      <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Age group</p>
+                      <p className="text-2xl font-bold mb-2" style={{ color: GRS_GREEN }}>{ag}</p>
+                      <div className="flex gap-2 text-xs flex-wrap">
+                        {row.male > 0 && (
+                          <span className="bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 font-medium">♂ {row.male}</span>
+                        )}
+                        {row.female > 0 && (
+                          <span className="bg-pink-50 text-pink-700 rounded-full px-2 py-0.5 font-medium">♀ {row.female}</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2 group-hover:text-green-700 transition-colors">
+                        View {row.total} player{row.total !== 1 ? "s" : ""} →
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-gray-400 text-center">Tap any row or card to filter the Players tab by that age group.</p>
+            </div>
+          );
+        })()}
+
+        {/* ══════════════════════ MATCH DAY TAB ════════════════════════════ */}
+        {activeTab === "matchday" && (() => {
+          const starterCount  = Array.from(mdSelected.values()).filter((r) => r === "starter").length;
+          const subCount      = Array.from(mdSelected.values()).filter((r) => r === "substitute").length;
+          const activeSquad   = squad.filter((m) => m.status !== "injured" && !m.removed_at);
+
+          if (matchDayLoading) {
+            return (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="animate-pulse h-14 rounded-xl bg-gray-100" />
+                ))}
+              </div>
+            );
+          }
+
+          // ── Step: empty ──────────────────────────────────────────────────
+          if (mdStep === "empty") return (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
+                <CalendarCheck className="h-7 w-7" style={{ color: GRS_GREEN }} />
+              </div>
+              <h2 className="mb-1 text-lg font-bold text-gray-900">No Match Day Squad yet</h2>
+              <p className="mb-6 text-sm text-gray-500 max-w-xs mx-auto">
+                Create the squad list 24 hrs before your next match. Print it or share it with parents and the opposition team.
+              </p>
+              <button
+                onClick={() => setMdStep("form")}
+                className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                style={{ background: GRS_GREEN }}
+              >
+                <Plus className="h-4 w-4" /> Create Match Day Squad
+              </button>
+            </div>
+          );
+
+          // ── Step: form ───────────────────────────────────────────────────
+          if (mdStep === "form") return (
+            <div className="bg-white rounded-xl border border-gray-200 p-6 max-w-lg mx-auto space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-bold text-lg text-gray-900">Match details</h2>
+                <button onClick={() => setMdStep("empty")} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Match date *</label>
+                <input
+                  type="date"
+                  value={mdForm.match_date}
+                  onChange={(e) => setMdForm((f) => ({ ...f, match_date: e.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Opposition *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Harare Lions FC"
+                  value={mdForm.opponent}
+                  onChange={(e) => setMdForm((f) => ({ ...f, opponent: e.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Venue</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rufaro Stadium"
+                  value={mdForm.venue}
+                  onChange={(e) => setMdForm((f) => ({ ...f, venue: e.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase">Competition</label>
+                <input
+                  type="text"
+                  placeholder="e.g. ZIFA Division 2"
+                  value={mdForm.competition}
+                  onChange={(e) => setMdForm((f) => ({ ...f, competition: e.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+                />
+              </div>
+              <button
+                disabled={!mdForm.match_date || !mdForm.opponent}
+                onClick={() => setMdStep("pick")}
+                className="w-full rounded-xl py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-40"
+                style={{ background: GRS_GREEN }}
+              >
+                Next: Pick Players →
+              </button>
+            </div>
+          );
+
+          // ── Step: pick ───────────────────────────────────────────────────
+          if (mdStep === "pick") return (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-bold text-gray-900">Select players</h2>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    <span className="text-green-700 font-semibold">{starterCount}</span> starters ·{" "}
+                    <span style={{ color: GOLD }} className="font-semibold">{subCount}</span> subs
+                    <span className="ml-2 text-gray-300">|</span>
+                    <span className="ml-2 text-gray-400">max 11 starters · 13 subs</span>
+                  </p>
+                </div>
+                <button onClick={() => setMdStep("form")} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {activeSquad.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-8">No fit players available.</p>
+              ) : (
+                <div className="space-y-2">
+                  {activeSquad.map((m) => {
+                    const role = mdSelected.get(m.id);
+                    return (
+                      <div
+                        key={m.id}
+                        className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3"
+                        style={role === "starter" ? { borderColor: GRS_GREEN, background: "#f0fdf4" } : role === "substitute" ? { borderColor: GOLD, background: "#fffbeb" } : {}}
+                      >
+                        <span
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                          style={{ background: GRS_GREEN }}
+                        >
+                          {m.shirt_no ?? ini(m.name).slice(0, 1)}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-gray-900 truncate">{m.name}</p>
+                          <p className="text-xs text-gray-500 capitalize">{m.position} · {m.age_group}</p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <button
+                            onClick={() => setMdSelected((prev) => {
+                              const n = new Map(prev);
+                              if (n.get(m.id) === "starter") n.delete(m.id);
+                              else if (starterCount < 11 || n.has(m.id)) n.set(m.id, "starter");
+                              return n;
+                            })}
+                            className={`rounded-lg px-2.5 py-1 text-xs font-semibold border transition-colors ${role === "starter" ? "text-white border-transparent" : "bg-white text-gray-500 border-gray-200 hover:border-green-400"}`}
+                            style={role === "starter" ? { background: GRS_GREEN } : {}}
+                          >
+                            Start
+                          </button>
+                          <button
+                            onClick={() => setMdSelected((prev) => {
+                              const n = new Map(prev);
+                              if (n.get(m.id) === "substitute") n.delete(m.id);
+                              else if (subCount < 13 || n.has(m.id)) n.set(m.id, "substitute");
+                              return n;
+                            })}
+                            className={`rounded-lg px-2.5 py-1 text-xs font-semibold border transition-colors ${role === "substitute" ? "text-white border-transparent" : "bg-white text-gray-500 border-gray-200 hover:border-amber-400"}`}
+                            style={role === "substitute" ? { background: GOLD } : {}}
+                          >
+                            Sub
+                          </button>
+                          {role && (
+                            <button
+                              onClick={() => setMdSelected((prev) => { const n = new Map(prev); n.delete(m.id); return n; })}
+                              className="rounded-lg p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setMdStep("form")}
+                  className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                >
+                  ← Back
+                </button>
+                <button
+                  disabled={mdSelected.size === 0 || matchDaySaving}
+                  onClick={saveMatchDay}
+                  className="flex-2 rounded-xl px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
+                  style={{ background: GRS_GREEN }}
+                >
+                  {matchDaySaving ? "Saving…" : `Save Squad (${mdSelected.size})`}
+                </button>
+              </div>
+            </div>
+          );
+
+          // ── Step: sheet ──────────────────────────────────────────────────
+          if (mdStep === "sheet" && matchDay) return (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-bold text-lg text-gray-900">Match Day Squad</h2>
+                  <p className="text-sm text-gray-500">
+                    vs <strong>{matchDay.opponent}</strong>
+                    {matchDay.match_date && ` · ${new Date(matchDay.match_date + "T00:00:00").toLocaleDateString("en-ZW", { weekday: "short", day: "numeric", month: "short" })}`}
+                    {matchDay.venue && ` · ${matchDay.venue}`}
+                    {matchDay.competition && ` · ${matchDay.competition}`}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={printMatchDay}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <Printer className="h-3.5 w-3.5" /> PDF
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMdStep("form");
+                      setMdForm({
+                        match_date:  matchDay.match_date,
+                        opponent:    matchDay.opponent,
+                        venue:       matchDay.venue ?? "",
+                        competition: matchDay.competition ?? "",
+                      });
+                      const sel = new Map<string, "starter" | "substitute">();
+                      matchDay.starters.forEach((p)    => sel.set(p.id, "starter"));
+                      matchDay.substitutes.forEach((p) => sel.set(p.id, "substitute"));
+                      setMdSelected(sel);
+                      setMdStep("pick");
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => { setMatchDay(null); setMdStep("empty"); setMdSelected(new Map()); localStorage.removeItem("gs_match_day_squad"); }}
+                    className="flex items-center gap-1.5 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Clear
+                  </button>
+                </div>
+              </div>
+
+              <div ref={printRef} className="grid gap-4 sm:grid-cols-2">
+                {/* Starters */}
+                <div className="overflow-hidden rounded-xl border-2 bg-white" style={{ borderColor: GRS_GREEN }}>
+                  <div className="flex items-center gap-2 px-4 py-3 text-white text-sm font-bold" style={{ background: GRS_GREEN }}>
+                    <ShieldCheck className="h-4 w-4" />
+                    Starting XI — {matchDay.starters.length}
+                  </div>
+                  {matchDay.starters.length === 0 ? (
+                    <p className="px-4 py-6 text-center text-sm text-gray-400">No starters selected</p>
+                  ) : (
+                    <ol className="divide-y divide-gray-100">
+                      {matchDay.starters.map((p, i) => (
+                        <li key={p.id} className="flex items-center gap-3 px-4 py-2.5">
+                          <span className="text-xs font-bold text-gray-400 w-5 text-right shrink-0">{p.shirt_no ?? i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-gray-900 truncate">{p.name}</p>
+                            <p className="text-xs text-gray-400 capitalize">{p.position} · {p.age_group}</p>
+                          </div>
+                          {p.gender && (
+                            <span className="text-xs text-gray-300">
+                              {p.gender === "Female" ? "♀" : "♂"}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+
+                {/* Substitutes */}
+                <div className="overflow-hidden rounded-xl border-2 bg-white" style={{ borderColor: GOLD }}>
+                  <div className="flex items-center gap-2 px-4 py-3 text-white text-sm font-bold" style={{ background: GOLD }}>
+                    <Users className="h-4 w-4" />
+                    Substitutes — {matchDay.substitutes.length}
+                  </div>
+                  {matchDay.substitutes.length === 0 ? (
+                    <p className="px-4 py-6 text-center text-sm text-gray-400">No substitutes selected</p>
+                  ) : (
+                    <ol className="divide-y divide-gray-100">
+                      {matchDay.substitutes.map((p, i) => (
+                        <li key={p.id} className="flex items-center gap-3 px-4 py-2.5">
+                          <span className="text-xs font-bold text-gray-400 w-5 text-right shrink-0">{p.shirt_no ?? 12 + i}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-gray-900 truncate">{p.name}</p>
+                            <p className="text-xs text-gray-400 capitalize">{p.position} · {p.age_group}</p>
+                          </div>
+                          {p.gender && (
+                            <span className="text-xs text-gray-300">
+                              {p.gender === "Female" ? "♀" : "♂"}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+
+          return null;
+        })()}
 
         {/* ══════════════════════ CHEMISTRY TAB ════════════════════════════ */}
         {activeTab === "chemistry" && (
