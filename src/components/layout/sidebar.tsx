@@ -10,7 +10,7 @@ import {
   Activity, Video, Camera, Award, LogOut, Menu, X,
   BarChart3, Medal, Globe, Trophy, Briefcase,
   Crosshair, GraduationCap, CreditCard, Zap, Move, Flag, Shuffle, Send, Shield, Brain,
-  Bell, User, Calendar, Star, DollarSign, CheckSquare, ClipboardList, MessageCircle,
+  Bell, User, Calendar, Star, DollarSign, CheckSquare, ClipboardList, MessageCircle, MessageSquare,
   Flame, ListChecks, Swords, Mic, Library, Clapperboard, ShoppingBag,
   ChevronLeft, ChevronRight,
 } from "lucide-react";
@@ -120,6 +120,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/tournaments",      label: "Tournaments",     icon: <Trophy size={18} />,        roles: ["admin"] },
   { href: "/admin/community",        label: "Community",       icon: <Globe size={18} />,         roles: ["admin"] },
   { href: "/admin/whatsapp",         label: "WhatsApp",        icon: <MessageCircle size={18} />, roles: ["admin"] },
+  { href: "/admin/whatsapp-replies", label: "WA Replies",      icon: <MessageSquare size={18} />, roles: ["admin"] },
   { href: "/admin/health",           label: "System Health",   icon: <Activity size={18} />,      roles: ["admin"] },
   { href: "/admin/stream",           label: "Streaming",       icon: <Video size={18} />,         roles: ["admin"] },
   { href: "/admin/stats",            label: "Platform Stats",  icon: <BarChart3 size={18} />,     roles: ["admin"] },
