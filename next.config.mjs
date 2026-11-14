@@ -87,6 +87,8 @@ const nextConfig = {
       { source: '/player/showcase', destination: '/player/passport', permanent: false },
       // Duplicate: /privacy is identical to /privacy-policy — redirect to canonical
       { source: '/privacy', destination: '/privacy-policy', permanent: true },
+      // Common short URL — redirect to full sponsorships listing
+      { source: '/sponsor', destination: '/sponsorships', permanent: true },
     ];
   },
 
