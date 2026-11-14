@@ -9,7 +9,6 @@ import {
   BarChart2, CalendarCheck, Printer, Plus, Trash2, X,
 } from "lucide-react";
 import api from "@/lib/api";
-import jsPDF from "jspdf";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -344,8 +343,9 @@ function SquadPageInner() {
     }
   }, [mdForm, mdSelected, squad]);
 
-  const printMatchDay = useCallback(() => {
+  const printMatchDay = useCallback(async () => {
     if (!matchDay) return;
+    const { default: jsPDF } = await import("jspdf");
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const W = 210, margin = 15;
 
@@ -1318,7 +1318,7 @@ function SquadPageInner() {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={printMatchDay}
+                    onClick={() => void printMatchDay()}
                     className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <Printer className="h-3.5 w-3.5" /> PDF
