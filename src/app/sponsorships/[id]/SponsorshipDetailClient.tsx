@@ -698,6 +698,46 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
           </div>
         )}
 
+        {/* Owner: expired introductions panel */}
+        {isOwner && ownerIntrosLoaded && ownerIntros.filter((i) => i.status === "expired").length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-5">
+            <h2 className="font-semibold text-gray-900 mb-1 text-sm">Missed Introductions</h2>
+            <p className="text-xs text-gray-400 mb-4">
+              These sponsors reached out but their requests expired after 7 days without a response. If your case is still live, you can still contact them directly.
+            </p>
+            <div className="divide-y divide-gray-100">
+              {ownerIntros
+                .filter((i) => i.status === "expired")
+                .map((intro) => (
+                  <div key={intro.id} className="flex items-center justify-between gap-3 py-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-gray-900 truncate">
+                        {intro.sponsor_name ?? intro.sponsor_email ?? "Sponsor"}
+                      </div>
+                      {intro.offer_cents != null && (
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          Offer: USD {(intro.offer_cents / 100).toLocaleString("en-US", {
+                            minimumFractionDigits: 2, maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      )}
+                      {intro.created_at && (
+                        <div className="text-xs text-gray-400 mt-0.5">
+                          Requested {new Date(intro.created_at).toLocaleDateString("en-US", {
+                            day: "numeric", month: "short", year: "numeric",
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 flex-shrink-0">
+                      Expired
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* Story */}
         {c.story && (
           <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-5">
