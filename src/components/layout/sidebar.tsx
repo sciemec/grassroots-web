@@ -121,6 +121,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/community",        label: "Community",       icon: <Globe size={18} />,         roles: ["admin"] },
   { href: "/admin/whatsapp",         label: "WhatsApp",        icon: <MessageCircle size={18} />, roles: ["admin"] },
   { href: "/admin/whatsapp-replies", label: "WA Replies",      icon: <MessageSquare size={18} />, roles: ["admin"] },
+  { href: "/admin/introductions",    label: "Introductions",   icon: <Send size={18} />,          roles: ["admin"] },
   { href: "/admin/health",           label: "System Health",   icon: <Activity size={18} />,      roles: ["admin"] },
   { href: "/admin/stream",           label: "Streaming",       icon: <Video size={18} />,         roles: ["admin"] },
   { href: "/admin/stats",            label: "Platform Stats",  icon: <BarChart3 size={18} />,     roles: ["admin"] },
