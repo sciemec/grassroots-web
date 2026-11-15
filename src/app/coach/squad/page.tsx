@@ -268,7 +268,6 @@ function SquadPageInner() {
   }, []);
 
   useEffect(() => { fetchSquad(showArchived); }, [showArchived, fetchSquad]);
-  useEffect(() => { if (activeTab === "matchday") loadMatchDay(); }, [activeTab, loadMatchDay]);
 
   const updateStatus = async (id: string, status: string) => {
     const prevStatus = squad.find((m) => m.id === id)?.status;
@@ -316,6 +315,8 @@ function SquadPageInner() {
       setMatchDayLoading(false);
     }
   }, []);
+
+  useEffect(() => { if (activeTab === "matchday") loadMatchDay(); }, [activeTab, loadMatchDay]);
 
   const saveMatchDay = useCallback(async () => {
     if (!mdForm.match_date || !mdForm.opponent) return;
