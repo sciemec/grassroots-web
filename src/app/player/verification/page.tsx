@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, ShieldCheck, Upload, Clock, CheckCircle2,
-  XCircle, Camera, FileText, RefreshCw, Video,
+  XCircle, Camera, FileText, RefreshCw, Video, Phone,
 } from "lucide-react";
 import { CameraPermissionHelp } from "@/components/ui/camera-permission-help";
 import { useAuthStore } from "@/lib/auth-store";
@@ -23,6 +23,7 @@ interface VerificationData {
   created_at: string | null;
   reviewed_at: string | null;
   selfie_url: string | null;
+  fee_paid: boolean;
 }
 
 const STATUS_CONFIG: Record<VerifStatus, { icon: typeof ShieldCheck; label: string; color: string; bg: string; desc: string }> = {
@@ -72,6 +73,7 @@ const DOCUMENT_TYPES = [
 
 export default function PlayerVerificationPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const user = useAuthStore((s) => s.user);
   const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
@@ -83,6 +85,14 @@ export default function PlayerVerificationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+
+  // Payment state
+  const [phone, setPhone] = useState("");
+  const [payError, setPayError] = useState("");
+  const [payStep, setPayStep] = useState<"idle" | "initiating" | "waiting" | "confirming">("idle");
+  const [pollUrl, setPollUrl] = useState<string | null>(null);
+  const [paynowRef, setPaynowRef] = useState<string | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Selfie camera state
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -106,14 +116,83 @@ export default function PlayerVerificationPage() {
         created_at: null,
         reviewed_at: null,
         selfie_url: null,
+        fee_paid: false,
       }))
       .finally(() => setLoading(false));
   }, [_hasHydrated, user, router]);
 
-  // Clean up camera stream on unmount
+  // If Paynow redirected back with ?fee_paid=1 — the user approved on phone.
+  // The webhook may not have fired yet, so just refresh status from the backend.
   useEffect(() => {
-    return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); };
+    if (searchParams?.get("fee_paid") === "1") {
+      api.get("/verification/status").then((res) => setVerif(res.data)).catch(() => {});
+    }
+  }, [searchParams]);
+
+  // Clear poll interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
   }, []);
+
+  const initiateFeePayment = async () => {
+    setPayError("");
+    if (!phone || phone.replace(/\D/g, "").length < 9) {
+      setPayError("Please enter a valid EcoCash number (e.g. 0771 234 567).");
+      return;
+    }
+    setPayStep("initiating");
+    try {
+      const res = await fetch("/api/payments/verify-fee", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json() as { error?: string; poll_url?: string; paynow_ref?: string };
+      if (!res.ok || data.error) {
+        setPayError(data.error ?? "Payment initiation failed. Try again.");
+        setPayStep("idle");
+        return;
+      }
+      setPollUrl(data.poll_url ?? null);
+      setPaynowRef(data.paynow_ref ?? null);
+      setPayStep("waiting");
+      // Poll every 4 seconds
+      pollIntervalRef.current = setInterval(async () => {
+        if (!data.poll_url) return;
+        try {
+          const pollRes = await fetch(`/api/payments/verify-fee/poll?poll_url=${encodeURIComponent(data.poll_url)}`);
+          const pollData = await pollRes.json() as { paid?: boolean; paynow_ref?: string };
+          if (pollData.paid) {
+            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+            setPayStep("confirming");
+            await confirmFeeWithBackend(pollData.paynow_ref ?? data.paynow_ref ?? "");
+          }
+        } catch { /* network error — keep polling */ }
+      }, 4000);
+    } catch {
+      setPayError("Could not reach payment server. Check your connection.");
+      setPayStep("idle");
+    }
+  };
+
+  const confirmFeeWithBackend = async (ref: string) => {
+    try {
+      await api.post("/verification/pay/confirm", { paynow_ref: ref });
+      setVerif((v) => v ? { ...v, fee_paid: true } : v);
+      setPayStep("idle");
+    } catch {
+      // If confirm fails, re-fetch status — may already be recorded via webhook
+      api.get("/verification/status").then((res) => {
+        setVerif(res.data);
+        if (res.data.fee_paid) setPayStep("idle");
+        else { setPayError("Payment received but confirmation failed. Refresh the page."); setPayStep("idle"); }
+      }).catch(() => { setPayError("Payment received but could not confirm. Refresh the page."); setPayStep("idle"); });
+    }
+  };
+
 
   const startCamera = async () => {
     setCameraError("");
@@ -250,6 +329,7 @@ export default function PlayerVerificationPage() {
   }
 
   const status = verif?.status ?? "not_submitted";
+  const feePaid = verif?.fee_paid ?? false;
   const cfg = STATUS_CONFIG[status];
   const StatusIcon = cfg.icon;
   const canSubmit = !!file && !!selfieBlob && !submitting;
@@ -333,9 +413,78 @@ export default function PlayerVerificationPage() {
             </ul>
           </div>
 
-          {/* Submission form */}
+          {/* Submission form — gated behind $2 fee */}
           {(status === "not_submitted" || status === "rejected") && !submitted && (
             <div className="space-y-4">
+
+              {/* Payment step — shown when fee not yet paid */}
+              {!feePaid && (
+                <div className="rounded-xl border bg-card p-5">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500/10">
+                      <span className="text-base font-bold text-amber-600">$2</span>
+                    </div>
+                    <div>
+                      <h2 className="font-semibold">One-time verification fee</h2>
+                      <p className="text-xs text-muted-foreground">Paid once, valid for life — covers admin review cost</p>
+                    </div>
+                  </div>
+
+                  {payStep === "waiting" || payStep === "confirming" ? (
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-4 text-center">
+                      <div className="mb-2 h-5 w-5 animate-spin rounded-full border-2 border-amber-500 border-t-transparent mx-auto" />
+                      <p className="text-sm font-semibold text-amber-700">
+                        {payStep === "confirming" ? "Confirming payment…" : "Waiting for EcoCash approval…"}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Check your phone and approve the EcoCash USSD prompt for $2.00
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mb-4">
+                        <label className="mb-1.5 block text-sm font-medium">
+                          <Phone className="mb-0.5 mr-1.5 inline h-3.5 w-3.5" />
+                          EcoCash number
+                        </label>
+                        <div className="flex gap-2">
+                          <span className="flex items-center rounded-l-xl border border-r-0 bg-muted px-3 text-sm text-muted-foreground">+263</span>
+                          <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => { setPhone(e.target.value); setPayError(""); }}
+                            placeholder="77 123 4567"
+                            className="flex-1 rounded-r-xl border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                          />
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">We&apos;ll send a $2 USSD push to this number.</p>
+                      </div>
+
+                      {payError && (
+                        <div className="mb-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                          {payError}
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={initiateFeePayment}
+                        disabled={payStep === "initiating"}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                      >
+                        {payStep === "initiating" ? "Initiating…" : "Pay $2 with EcoCash"}
+                      </button>
+
+                      <p className="mt-3 text-center text-xs text-muted-foreground">
+                        InnBucks / OneMoney also accepted — enter your registered number above.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Remaining steps only shown after fee is paid */}
+              {feePaid && (<>
 
               {/* Step 1 — Selfie */}
               <div className="rounded-xl border bg-card p-5">
@@ -512,6 +661,7 @@ export default function PlayerVerificationPage() {
                   {submitting ? "Submitting…" : "Submit for verification"}
                 </button>
               </div>
+              </>)}
             </div>
           )}
 
