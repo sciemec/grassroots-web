@@ -103,6 +103,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/sponsorships",              label: "Sponsorships",      icon: <Briefcase size={18} />, roles: ["player","athlete","coach","scout","fan","admin"] },
   { href: "/sponsor/introductions",     label: "My Introductions",  icon: <Send size={18} />,      roles: ["player","athlete","coach","scout","fan"]         },
   { href: "/sponsorships/new",          label: "Post a Case",       icon: <Star size={18} />,      roles: ["coach","player"]                                  },
+  { href: "/account/cases",             label: "My Cases",           icon: <Briefcase size={18} />, roles: ["coach","player"]                                  },
 
   // ── Scout ─────────────────────────────────────────────────────────────────
   { href: "/scout/discover",    label: "Discover Talent", icon: <UserSearch size={18} />,  roles: ["scout"], feature: "passport"  },
