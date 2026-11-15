@@ -141,7 +141,8 @@ export default function AdminDashboardPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
           <HubCard href="/admin/announcements" icon={Megaphone}    label="Announcements"    desc="Platform notices & broadcasts"     accent />
           <HubCard href="/admin/fan-hub"       icon={Film}         label="Fan Hub Mod"      desc="Review, approve & remove videos"   />
-          <HubCard href="/admin/whatsapp"      icon={MessageSquare} label="WhatsApp"        desc="Bot config & message logs"         />
+          <HubCard href="/admin/whatsapp"         icon={MessageSquare} label="WhatsApp"        desc="Bot config & message logs"         />
+          <HubCard href="/admin/whatsapp-replies" icon={MessageSquare} label="WA Replies"     desc="Every inbound message from players"  />
           <HubCard href="/admin/community"     icon={Building2}    label="Community"        desc="Clubs, schools & league oversight" />
           <HubCard href="/admin/tournaments/munhumutapa-2026" icon={Trophy} label="Tournaments" desc="Munhumutapa Cup & fixtures"   />
           <HubCard href="/admin/reports"       icon={Flag}         label="Comment Reports"  desc="Review & moderate flagged comments" />
