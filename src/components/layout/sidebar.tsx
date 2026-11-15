@@ -99,6 +99,10 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/coach/marketplace-profile", label: "Coach Marketplace",icon: <ShoppingBag size={18} />, roles: ["coach"]          },
   { href: "/coach/notifications",      label: "Notifications",    icon: <Bell size={18} />,        roles: ["coach"]          },
 
+  // ── Sponsorships ──────────────────────────────────────────────────────────
+  { href: "/sponsorships",     label: "Sponsorships",    icon: <Briefcase size={18} />,   roles: ["player","athlete","coach","scout","fan","admin"] },
+  { href: "/sponsorships/new", label: "Post a Case",     icon: <Star size={18} />,        roles: ["coach","player"]                                  },
+
   // ── Scout ─────────────────────────────────────────────────────────────────
   { href: "/scout/discover",    label: "Discover Talent", icon: <UserSearch size={18} />,  roles: ["scout"], feature: "passport"  },
   { href: "/scout/reports",     label: "Scouting Reports",icon: <BarChart3 size={18} />,   roles: ["scout"], feature: "passport"  },

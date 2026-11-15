@@ -17,7 +17,8 @@ export function PublicNavbar() {
     { href: "/coach",      label: "Coach Hub" },
     { href: "/scout",      label: "Scout Hub" },
     { href: "/players",           label: "Discover Talent" },
-    { href: "/arena",      label: "The Arena" },
+    { href: "/arena",         label: "The Arena" },
+    { href: "/sponsorships",  label: "Sponsorships" },
   ];
 
   return (
