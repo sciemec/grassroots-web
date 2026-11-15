@@ -9,6 +9,7 @@ import { useThutoCommands } from "./useThutoCommands";
 import { useThutoVoice } from "./useThutoVoice";
 import api from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { getSportFeatures } from "@/config/sports";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 import { getAnalysisLog } from "@/lib/thuto-context";
 
@@ -1251,6 +1252,7 @@ export default function ThutoChat() {
   };
 
   const authToken = useAuthStore((s) => s.token) ?? "";
+  const authUser  = useAuthStore((s) => s.user);
 
   const [onboarded,       setOnboarded]       = useState(false);
   const [hydrated,        setHydrated]        = useState(false);
@@ -1487,7 +1489,18 @@ export default function ThutoChat() {
         // ── AMARA mode: inject female-aware system prompt via /api/ai-coach ──
         // (Laravel /thuto/chat owns its own system prompt so we bypass it here
         //  and use the Next.js proxy which accepts an explicit system_prompt)
-        const systemPrompt = BASE_PROMPT + AMARA_PROMPT + buildContext();
+        const sport = (authUser as { sport?: string } | null)?.sport ?? "football";
+        const { footballScholarshipContent } = getSportFeatures(sport);
+        const amaraStr = footballScholarshipContent
+          ? AMARA_PROMPT
+          : AMARA_PROMPT
+              .replace("• COSAFA Women's Championship: Best pathway to Zimbabwe national team recognition.\n", "")
+              .replace("• CAF Women's Football Development Programmes: Offer training grants for identified talents.\n", "")
+              .replace(
+                "Sport has given Zimbabwean women a platform that nothing else could — the Mighty Warriors were on the front page when they qualified. That is you, one day.",
+                "Sport has given Zimbabwean women a platform that nothing else could. Your moment is coming."
+              );
+        const systemPrompt = BASE_PROMPT + amaraStr + buildContext();
         const history = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
         const resp = await fetch("/api/ai-coach", {
           method: "POST",

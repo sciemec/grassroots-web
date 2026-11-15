@@ -387,3 +387,53 @@ Structure your response as:
 
 TONE: Professional analyst briefing a coaching staff. Concise, evidence-based, actionable. Under 400 words.`;
 }
+
+// ─── Sport Feature Flags ────────────────────────────────────────────────────
+
+export interface SportFeatures {
+  footballScholarshipContent: boolean;
+  positionHubs:               boolean;
+  tacticalIqLab:              boolean;
+  setpieces:                  boolean;
+  xgAnalysis:                 boolean;
+  valuation:                  boolean;
+  heatmaps:                   boolean;
+  matchReport:                boolean;
+}
+
+const ALL_OFF: SportFeatures = {
+  footballScholarshipContent: false,
+  positionHubs:               false,
+  tacticalIqLab:              false,
+  setpieces:                  false,
+  xgAnalysis:                 false,
+  valuation:                  false,
+  heatmaps:                   false,
+  matchReport:                true,
+};
+
+export const SPORT_FEATURES: Record<string, SportFeatures> = {
+  football: {
+    footballScholarshipContent: true,
+    positionHubs:               true,
+    tacticalIqLab:              true,
+    setpieces:                  true,
+    xgAnalysis:                 true,
+    valuation:                  true,
+    heatmaps:                   true,
+    matchReport:                true,
+  },
+  rugby:      { ...ALL_OFF },
+  athletics:  { ...ALL_OFF },
+  netball:    { ...ALL_OFF },
+  basketball: { ...ALL_OFF },
+  cricket:    { ...ALL_OFF },
+  swimming:   { ...ALL_OFF },
+  tennis:     { ...ALL_OFF },
+  volleyball: { ...ALL_OFF },
+  hockey:     { ...ALL_OFF },
+};
+
+export function getSportFeatures(sport: string): SportFeatures {
+  return SPORT_FEATURES[sport?.toLowerCase() ?? ""] ?? { ...ALL_OFF };
+}
