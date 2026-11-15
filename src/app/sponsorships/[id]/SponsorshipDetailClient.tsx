@@ -85,6 +85,7 @@ interface IntroRequest {
 interface OwnerIntro {
   id: string;
   status: string;
+  sponsor_user_id: string | null;
   offer_cents: number | null;
   sponsor_name: string | null;
   sponsor_email: string | null;
@@ -702,15 +703,19 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
                 {ownerIntros
                   .filter((i) => i.status === "accepted")
                   .map((intro) => (
-                    <Link
-                      key={intro.id}
-                      href={`/sponsorships/${id}/introductions/${intro.id}/agreement`}
-                      className="flex items-center justify-between gap-3 py-3 group"
-                    >
+                    <div key={intro.id} className="flex items-start justify-between gap-3 py-3">
                       <div className="min-w-0">
                         <div className="text-sm font-medium text-gray-900 truncate">
                           {intro.sponsor_name ?? intro.sponsor_email ?? "Sponsor"}
                         </div>
+                        {intro.sponsor_user_id && (
+                          <Link
+                            href={`/sponsor/${intro.sponsor_user_id}`}
+                            className="text-xs text-[#1a5c2a] hover:underline mt-0.5 inline-block"
+                          >
+                            View profile →
+                          </Link>
+                        )}
                         {intro.offer_cents != null && (
                           <div className="text-xs text-gray-500 mt-0.5">
                             Offer: USD {(intro.offer_cents / 100).toLocaleString("en-US", {
@@ -719,18 +724,18 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <Link
+                        href={`/sponsorships/${id}/introductions/${intro.id}/agreement`}
+                        className="flex items-center gap-2 flex-shrink-0"
+                      >
                         <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                          style={{
-                            backgroundColor: "#fef3c7",
-                            color: "#92400e",
-                          }}
+                          style={{ backgroundColor: "#fef3c7", color: "#92400e" }}
                         >
                           View Agreement
                         </span>
-                        <span className="text-gray-400 group-hover:text-[#1a5c2a] transition-colors text-sm">→</span>
-                      </div>
-                    </Link>
+                        <span className="text-gray-400 hover:text-[#1a5c2a] transition-colors text-sm">→</span>
+                      </Link>
+                    </div>
                   ))}
               </div>
             )}
@@ -753,6 +758,14 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
                       <div className="text-sm font-medium text-gray-900 truncate">
                         {intro.sponsor_name ?? intro.sponsor_email ?? "Sponsor"}
                       </div>
+                      {intro.sponsor_user_id && (
+                        <Link
+                          href={`/sponsor/${intro.sponsor_user_id}`}
+                          className="text-xs text-[#1a5c2a] hover:underline mt-0.5 inline-block"
+                        >
+                          View profile →
+                        </Link>
+                      )}
                       {intro.offer_cents != null && (
                         <div className="text-xs text-gray-500 mt-0.5">
                           Offer: USD {(intro.offer_cents / 100).toLocaleString("en-US", {
