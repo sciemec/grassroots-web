@@ -30,6 +30,7 @@ interface SponsorshipCase {
   vouches?: VouchRecord[];
   financial_literacy_complete?: boolean;
   player?: PlayerData | null;
+  auto_accept_introductions?: boolean;
 }
 
 interface SkillRating {
@@ -160,6 +161,10 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
   const [ownerIntros, setOwnerIntros] = useState<OwnerIntro[]>([]);
   const [ownerIntrosLoaded, setOwnerIntrosLoaded] = useState(false);
 
+  // Auto-accept toggle (owner only)
+  const [autoAccept, setAutoAccept] = useState(false);
+  const [autoAcceptSaving, setAutoAcceptSaving] = useState(false);
+
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
   useEffect(() => {
@@ -216,6 +221,31 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
       .then((json) => { if (Array.isArray(json?.data)) setOwnerIntros(json.data); })
       .catch(() => {});
   }, [caseData, user, token, base, id, ownerIntrosLoaded]);
+
+  // Sync auto-accept state from loaded case data
+  useEffect(() => {
+    if (caseData?.auto_accept_introductions !== undefined) {
+      setAutoAccept(!!caseData.auto_accept_introductions);
+    }
+  }, [caseData?.auto_accept_introductions]);
+
+  const toggleAutoAccept = async () => {
+    if (!token || autoAcceptSaving) return;
+    const next = !autoAccept;
+    setAutoAccept(next);
+    setAutoAcceptSaving(true);
+    try {
+      await fetch(`${base}/sponsorships/${id}/settings`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ auto_accept_introductions: next }),
+      });
+    } catch {
+      setAutoAccept(!next); // revert on error
+    } finally {
+      setAutoAcceptSaving(false);
+    }
+  };
 
   const submitIntro = async () => {
     if (!user) { router.push("/login"); return; }
@@ -743,6 +773,45 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
                     </span>
                   </div>
                 ))}
+            </div>
+          </div>
+        )}
+
+        {/* Auto-accept toggle — owner only, live cases */}
+        {isOwner && c.status === "live" && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-semibold text-gray-900 text-sm">
+                    Auto-accept introduction requests
+                  </span>
+                  {autoAccept && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                      Open — accepting all
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {autoAccept
+                    ? "All sponsor introduction requests are accepted instantly. GRS will facilitate each connection."
+                    : "You review each sponsor introduction request before it is accepted."}
+                </p>
+              </div>
+              <button
+                onClick={toggleAutoAccept}
+                disabled={autoAcceptSaving}
+                aria-label="Toggle auto-accept"
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                  autoAccept ? "bg-[#1a5c2a]" : "bg-gray-200"
+                } ${autoAcceptSaving ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    autoAccept ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
             </div>
           </div>
         )}
