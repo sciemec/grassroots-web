@@ -10,7 +10,7 @@ interface IntroRequest {
   sponsor_user_id: string;
   message: string | null;
   offer_cents: number | null;
-  status: "pending" | "accepted" | "declined" | "withdrawn";
+  status: "pending" | "accepted" | "declined" | "withdrawn" | "expired";
   responded_at: string | null;
   response_note: string | null;
   intro_sent: boolean;
@@ -40,7 +40,7 @@ interface ApiResponse {
   total?: number;
 }
 
-const STATUSES = ["all", "accepted", "pending", "declined", "withdrawn"] as const;
+const STATUSES = ["all", "accepted", "pending", "declined", "withdrawn", "expired"] as const;
 type StatusFilter = (typeof STATUSES)[number];
 
 const STATUS_STYLES: Record<string, { dot: string; badge: string }> = {
@@ -48,6 +48,7 @@ const STATUS_STYLES: Record<string, { dot: string; badge: string }> = {
   accepted:  { dot: "bg-green-500",  badge: "bg-green-50 text-green-800 border-green-200" },
   declined:  { dot: "bg-red-400",    badge: "bg-red-50 text-red-700 border-red-200" },
   withdrawn: { dot: "bg-gray-400",   badge: "bg-gray-50 text-gray-600 border-gray-200" },
+  expired:   { dot: "bg-slate-300",  badge: "bg-slate-50 text-slate-500 border-slate-200" },
 };
 
 function fmt(cents: number) {
@@ -186,6 +187,17 @@ export default function AdminIntroductionsPage() {
           <span>
             <strong>{pendingMarkCount} introduction{pendingMarkCount > 1 ? "s" : ""}</strong> accepted but not yet physically sent.
             Contact the case owner and sponsor, then click <strong>Mark Sent</strong>.
+          </span>
+        </div>
+      )}
+
+      {/* Expired alert banner */}
+      {statusFilter === "expired" && intros.length > 0 && (
+        <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 mb-5 flex items-center gap-2">
+          <span className="text-lg">⏰</span>
+          <span>
+            <strong>{total} introduction{total !== 1 ? "s" : ""}</strong> expired because the case owner did not respond within 7 days.
+            Consider contacting case owners to remind them to respond to sponsors promptly.
           </span>
         </div>
       )}
