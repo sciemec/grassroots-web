@@ -87,6 +87,7 @@ interface OwnerIntro {
   status: string;
   sponsor_user_id: string | null;
   offer_cents: number | null;
+  message: string | null;
   sponsor_name: string | null;
   sponsor_email: string | null;
   created_at: string;
@@ -161,6 +162,8 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
   // Owner-only: all accepted introductions with agreement status
   const [ownerIntros, setOwnerIntros] = useState<OwnerIntro[]>([]);
   const [ownerIntrosLoaded, setOwnerIntrosLoaded] = useState(false);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [respondError, setRespondError] = useState<string | null>(null);
 
   // Auto-accept toggle (owner only)
   const [autoAccept, setAutoAccept] = useState(false);
@@ -245,6 +248,32 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
       setAutoAccept(!next); // revert on error
     } finally {
       setAutoAcceptSaving(false);
+    }
+  };
+
+  const respondIntro = async (introId: string, action: "accept" | "decline") => {
+    if (!token) return;
+    setRespondingId(introId);
+    setRespondError(null);
+    try {
+      const r = await fetch(`${base}/sponsorships/${id}/introductions/${introId}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        setRespondError((j as { message?: string }).message ?? "Something went wrong.");
+        return;
+      }
+      const newStatus = action === "accept" ? "accepted" : "declined";
+      setOwnerIntros((prev) =>
+        prev.map((i) => (i.id === introId ? { ...i, status: newStatus } : i))
+      );
+    } catch {
+      setRespondError("Could not send response. Please try again.");
+    } finally {
+      setRespondingId(null);
     }
   };
 
@@ -685,6 +714,80 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
               <span className="font-semibold text-amber-800">Vouched by </span>
               <span className="text-amber-700">{c.voucher_org ?? c.voucher_name}</span>
               <p className="text-amber-600 text-xs mt-0.5">This case has been verified by a trusted coach or organisation.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Owner: pending introductions panel */}
+        {isOwner && ownerIntrosLoaded && ownerIntros.filter((i) => i.status === "pending").length > 0 && (
+          <div className="bg-white rounded-2xl border-2 border-[#1a5c2a] p-5 mb-5">
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="font-semibold text-gray-900 text-sm">Pending Introductions</h2>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#1a5c2a] text-white">
+                {ownerIntros.filter((i) => i.status === "pending").length}
+              </span>
+            </div>
+            <p className="text-xs text-gray-400 mb-4">
+              Review each sponsor and accept or decline their request. Accepted sponsors are connected through GRS.
+            </p>
+            {respondError && (
+              <p className="text-xs text-red-600 mb-3 bg-red-50 px-3 py-2 rounded-lg">{respondError}</p>
+            )}
+            <div className="divide-y divide-gray-100">
+              {ownerIntros
+                .filter((i) => i.status === "pending")
+                .map((intro) => (
+                  <div key={intro.id} className="py-4 first:pt-0">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-gray-900 truncate">
+                          {intro.sponsor_name ?? intro.sponsor_email ?? "Sponsor"}
+                        </div>
+                        {intro.sponsor_user_id && (
+                          <Link
+                            href={`/sponsor/${intro.sponsor_user_id}`}
+                            className="text-xs text-[#1a5c2a] hover:underline mt-0.5 inline-block"
+                          >
+                            View profile →
+                          </Link>
+                        )}
+                        <div className="text-xs text-gray-400 mt-1">
+                          Requested {new Date(intro.created_at).toLocaleDateString("en-US", {
+                            day: "numeric", month: "short", year: "numeric",
+                          })}
+                        </div>
+                      </div>
+                      {intro.offer_cents != null && (
+                        <span className="text-xs font-semibold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-full flex-shrink-0">
+                          USD {(intro.offer_cents / 100).toLocaleString("en-US", {
+                            minimumFractionDigits: 2, maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      )}
+                    </div>
+                    {intro.message && (
+                      <p className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2 mb-3 leading-relaxed italic">
+                        &ldquo;{intro.message}&rdquo;
+                      </p>
+                    )}
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => respondIntro(intro.id, "accept")}
+                        disabled={respondingId !== null}
+                        className="flex-1 bg-[#1a5c2a] text-white text-xs font-semibold py-2.5 rounded-lg hover:bg-[#145222] disabled:opacity-50 transition-colors"
+                      >
+                        {respondingId === intro.id ? "Saving…" : "Accept"}
+                      </button>
+                      <button
+                        onClick={() => respondIntro(intro.id, "decline")}
+                        disabled={respondingId !== null}
+                        className="flex-1 border border-gray-300 text-gray-600 text-xs font-semibold py-2.5 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                ))}
             </div>
           </div>
         )}
