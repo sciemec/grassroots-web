@@ -372,7 +372,7 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
   const sportEmoji = SPORT_EMOJI[c.sport?.toLowerCase()] ?? "🏅";
   const statusConfig = STATUS_LABELS[c.status] ?? { label: c.status, color: "#6b7280" };
   const myIntro = c.my_introduction;
-  const canRequestIntro = c.status === "live" && (!myIntro || myIntro.status === "withdrawn");
+  const canRequestIntro = c.status === "live" && (!myIntro || myIntro.status === "withdrawn" || myIntro.status === "expired");
   const isOwner = user?.id === c.owner_user_id;
 
   return (
@@ -437,9 +437,15 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
             </div>
           )}
           {myIntro && myIntro.status !== "withdrawn" && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm mb-3 flex items-center justify-between gap-3">
+            <div className={`rounded-xl px-4 py-3 text-sm mb-3 flex items-center justify-between gap-3 border ${
+              myIntro.status === "expired"
+                ? "bg-slate-50 border-slate-200"
+                : "bg-blue-50 border-blue-200"
+            }`}>
               <div>
-                <span className="font-semibold text-blue-800 capitalize">Request {myIntro.status}</span>
+                <span className={`font-semibold capitalize ${myIntro.status === "expired" ? "text-slate-600" : "text-blue-800"}`}>
+                  Request {myIntro.status}
+                </span>
                 {myIntro.status === "pending" && (
                   <span className="text-blue-600"> — awaiting athlete response</span>
                 )}
@@ -448,6 +454,9 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
                 )}
                 {myIntro.status === "declined" && (
                   <span className="text-gray-600"> — the athlete has declined at this time.</span>
+                )}
+                {myIntro.status === "expired" && (
+                  <span className="text-slate-500"> — the athlete did not respond within 7 days. You can re-apply below if the case is still live.</span>
                 )}
               </div>
               {myIntro.status === "pending" && (
