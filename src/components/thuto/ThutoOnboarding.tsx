@@ -2,16 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X, Send, ArrowRight, Sparkles } from "lucide-react";
+import { useAuthStore } from "@/lib/auth-store";
 
 interface Props {
   onComplete: () => void;
 }
 
 // DNA questions asked naturally after the initial goal exchange (Session 1)
-const DNA_QUESTIONS = [
-  "Do you have a football at home you can train with?",
-  "Tell me about where you usually train — a field, your yard, a street?",
-] as const;
+function getDnaQuestions(sport: string): [string, string] {
+  const equipmentQ = sport === "football"
+    ? "Do you have a football at home you can train with?"
+    : `Do you have any equipment for ${sport} training at home?`;
+  return [
+    equipmentQ,
+    "Tell me about where you usually train — a field, your yard, a street?",
+  ];
+}
 
 // Explicit stage machine — each stage maps to exactly one UI state
 type Stage =
@@ -119,6 +125,10 @@ function PlayerBubble({ text }: { text: string }) {
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function ThutoOnboarding({ onComplete }: Props) {
+  const user  = useAuthStore((s) => s.user);
+  const sport = (user as { sport?: string } | null)?.sport ?? "football";
+  const DNA_QUESTIONS = getDnaQuestions(sport);
+
   const [stage,        setStage]        = useState<Stage>("loading");
   const [typingText,   setTypingText]   = useState("");
   const [greeting,     setGreeting]     = useState("");
@@ -278,7 +288,7 @@ export default function ThutoOnboarding({ onComplete }: Props) {
         const hasBall = /yes|have|got|i do|ndine/i.test(playerDna1);
         localStorage.setItem("thuto_dna", JSON.stringify({
           has_ball: hasBall,
-          equipment: hasBall ? "football" : "no ball — use wall or round object",
+          equipment: hasBall ? sport : `no ${sport} equipment — improvise`,
           environment: msg,
         }));
         // Mark Session 1 complete — Session 2 starts next login

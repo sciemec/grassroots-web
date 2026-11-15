@@ -138,12 +138,39 @@ const STATIC_POSITION_MAP: Record<string, PositionFocusDetail> = {
       "What metrics do scouts look for on my talent passport?",
       "Give me a universal full-body conditioning drill."
     ]
+  },
+  non_football: {
+    title: "Sport Development Track",
+    badgeColor: "bg-teal-50 text-teal-700 border-teal-200",
+    accentColor: "#0f766e",
+    primaryAttributes: ["Technique", "Fitness", "Consistency", "Mental Strength"],
+    physicalFocus: ["acceleration", "stamina", "agility", "coordination"],
+    targetDrillCategories: ["technique", "fitness", "conditioning", "skills"],
+    thutoGreeting: "Welcome! I'm THUTO, your AI sports coach. I'm here to help you improve your technique, fitness and skills. Let's get to work.",
+    thutoSystemPrompt: "You are THUTO, an AI sports coach for GrassRoots Sports Zimbabwe. The player's primary sport is not football. ALWAYS help with: general technique, basic drills, skill development, goal-setting, and motivation. Be honest that GrassRoots Sports' detailed stats tools (position hubs, xG, heatmaps) are most detailed for football — but never refuse to help. NEVER give specific training-load prescriptions, weight-training programmes, injury-risk assessments, or medical advice for any sport.",
+    successMetrics: [
+      { label: "Technique Consistency", target: "Improving each week" },
+      { label: "Training Adherence", target: "> 80% of sessions" },
+      { label: "Fitness Baseline", target: "Improving" },
+      { label: "Goal Progress", target: "On track" }
+    ],
+    quickPrompts: [
+      "Give me a drill to improve my technique.",
+      "How do I build consistency in my training?",
+      "What should I focus on to get noticed by scouts?"
+    ]
   }
 };
 
 // 🔄 DYNAMIC ENGINE CONTEXT ENHANCER
 // Updates metrics and rules based on real player metadata
-export function getPositionConfig(positionKey: string, ageGroup?: string): PositionFocusDetail {
+export function getPositionConfig(positionKey: string, ageGroup?: string, sport?: string): PositionFocusDetail {
+  // Non-football sports: use the guardrail entry — position hub is football-only
+  if (sport && sport !== "football") {
+    const baseConfig = STATIC_POSITION_MAP.non_football;
+    return JSON.parse(JSON.stringify(baseConfig)) as PositionFocusDetail;
+  }
+
   // Normalize key to handle unexpected casing safely
   const lookupKey = positionKey?.toLowerCase() || "fallback";
   const baseConfig = STATIC_POSITION_MAP[lookupKey] || STATIC_POSITION_MAP.fallback;

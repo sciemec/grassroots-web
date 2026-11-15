@@ -161,6 +161,7 @@ function MealCard({ meal, color, bg }: { meal: Meal; color: string; bg: string }
 export default function NutritionGuidesPage() {
   const user  = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
+  const sport = (user as { sport?: string } | null)?.sport ?? "football";
 
   const [activeAge, setActiveAge] = useState<AgeGroup>("u16");
   const [mealInput,    setMealInput]    = useState("");
@@ -181,8 +182,8 @@ export default function NutritionGuidesPage() {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {}) },
         body: JSON.stringify({
-          message: `I'm a ${activeAge} footballer in Zimbabwe. Here's what I ate today: "${mealInput}". Based on the nutrition guide for my age group (${ageConfig.label}), give me 3 short bullet points of specific feedback — what's good, what's missing, and one swap I can make using local Zimbabwean foods.`,
-          system_prompt: "You are THUTO, a nutrition coach for Zimbabwean footballers. Be specific, practical, and always suggest local food alternatives (sadza, matemba, muriwo, groundnuts, sweet potato, mahewu, bream). Keep each bullet to one sentence. Always be encouraging.",
+          message: `I'm a ${activeAge} ${sport} athlete in Zimbabwe. Here's what I ate today: "${mealInput}". Based on the nutrition guide for my age group (${ageConfig.label}), give me 3 short bullet points of specific feedback — what's good, what's missing, and one swap I can make using local Zimbabwean foods.`,
+          system_prompt: `You are THUTO, a nutrition coach for Zimbabwean ${sport} athletes. Be specific, practical, and always suggest local food alternatives (sadza, matemba, muriwo, groundnuts, sweet potato, mahewu, bream). Keep each bullet to one sentence. Always be encouraging.`,
         }),
       });
       const data = await res.json();
