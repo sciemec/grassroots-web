@@ -8,6 +8,7 @@ import { PublicNavbar } from "@/components/layout/public-navbar";
 
 interface SponsorshipCase {
   id: string;
+  public_code?: string;
   title: string;
   sport: string;
   category: string;
@@ -171,21 +172,31 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
 
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
+  // Detect whether id is a public_code (8-char alphanumeric) or UUID (36-char)
+  const isPublicCode = id.length === 8;
+
   useEffect(() => {
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const fetchPublic = () =>
-      fetch(`${base}/sponsorships/${id}`, { headers }).then((r) => {
+    // Public endpoint — uses by-code for 8-char codes, UUID path otherwise
+    const fetchPublic = () => {
+      const url = isPublicCode
+        ? `${base}/sponsorships/by-code/${id}`
+        : `${base}/sponsorships/${id}`;
+      return fetch(url, { headers }).then((r) => {
         if (r.status === 404) { setNotFound(true); return null; }
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       });
+    };
 
     // When authenticated, try the owner/admin detail endpoint first so draft
     // cases are visible to the owner. Fall back to the public endpoint if the
     // caller is not the owner, admin, or a voucher (403).
-    const load = token
+    // The detail endpoint always uses UUID; for public_code slugs we fetch public
+    // first to get the UUID, then re-fetch detail if the user is the owner.
+    const load = token && !isPublicCode
       ? fetch(`${base}/sponsorships/${id}/detail`, { headers }).then((r) => {
           if (r.status === 403) return fetchPublic();
           if (r.status === 404) { setNotFound(true); return null; }
@@ -198,14 +209,14 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
       .then((json) => { if (json) setCaseData(json.data ?? json); })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
-  }, [id, token, base]);
+  }, [id, token, base, isPublicCode]);
 
   // Load agreement status badge when the intro has been accepted
   useEffect(() => {
     const intro = caseData?.my_introduction;
     if (!intro || intro.status !== "accepted" || !token || agreementLoaded) return;
     setAgreementLoaded(true);
-    fetch(`${base}/sponsorships/${id}/introductions/${intro.id}/agreement`, {
+    fetch(`${base}/sponsorships/${caseData!.id}/introductions/${intro.id}/agreement`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => (r.ok ? r.json() : null))
@@ -218,7 +229,7 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
     if (!caseData || !user || !token || ownerIntrosLoaded) return;
     if (user.id !== caseData.owner_user_id) return;
     setOwnerIntrosLoaded(true);
-    fetch(`${base}/sponsorships/${id}/introductions`, {
+    fetch(`${base}/sponsorships/${caseData!.id}/introductions`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => (r.ok ? r.json() : null))
@@ -239,7 +250,7 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
     setAutoAccept(next);
     setAutoAcceptSaving(true);
     try {
-      await fetch(`${base}/sponsorships/${id}/settings`, {
+      await fetch(`${base}/sponsorships/${caseData!.id}/settings`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ auto_accept_introductions: next }),
@@ -256,7 +267,7 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
     setRespondingId(introId);
     setRespondError(null);
     try {
-      const r = await fetch(`${base}/sponsorships/${id}/introductions/${introId}`, {
+      const r = await fetch(`${base}/sponsorships/${caseData!.id}/introductions/${introId}`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
@@ -287,7 +298,7 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
     if (introOffer.trim()) body.offer_cents = Math.round(parseFloat(introOffer) * 100);
 
     try {
-      const res = await fetch(`${base}/sponsorships/${id}/introductions`, {
+      const res = await fetch(`${base}/sponsorships/${caseData!.id}/introductions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -335,7 +346,7 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
         : { invite_whatsapp: vouchWhatsapp.trim() };
 
     try {
-      const res = await fetch(`${base}/sponsorships/${id}/vouch/request`, {
+      const res = await fetch(`${base}/sponsorships/${caseData!.id}/vouch/request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -372,7 +383,7 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
     setProofSubmitting(true);
     setProofError(null);
     try {
-      const res = await fetch(`${base}/sponsorships/${id}/updates`, {
+      const res = await fetch(`${base}/sponsorships/${caseData!.id}/updates`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -533,7 +544,7 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
           {/* Agreement card — shown when intro is accepted */}
           {myIntro && myIntro.status === "accepted" && (
             <Link
-              href={`/sponsorships/${id}/introductions/${myIntro.id}/agreement`}
+              href={`/sponsorships/${caseData!.id}/introductions/${myIntro.id}/agreement`}
               className="block bg-white rounded-2xl border border-gray-200 p-4 mb-3 hover:border-[#1a5c2a]/40 transition-colors group"
             >
               <div className="flex items-center justify-between gap-3">
@@ -828,7 +839,7 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
                         )}
                       </div>
                       <Link
-                        href={`/sponsorships/${id}/introductions/${intro.id}/agreement`}
+                        href={`/sponsorships/${caseData!.id}/introductions/${intro.id}/agreement`}
                         className="flex items-center gap-2 flex-shrink-0"
                       >
                         <span className="text-xs font-semibold px-2.5 py-1 rounded-full"

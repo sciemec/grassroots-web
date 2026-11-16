@@ -1,17 +1,28 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import SponsorshipDetailClient from "./SponsorshipDetailClient";
 
 interface PageProps {
   params: { id: string };
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function fetchCase(id: string) {
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+  const url = UUID_RE.test(id)
+    ? `${base}/sponsorships/${id}`
+    : `${base}/sponsorships/by-code/${id}`;
+  const res = await fetch(url, { next: { revalidate: 60 } });
+  if (!res.ok) return null;
+  const json = await res.json();
+  return json.data ?? json;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   try {
-    const res = await fetch(`${base}/sponsorships/${params.id}`, { next: { revalidate: 60 } });
-    if (!res.ok) throw new Error("Not found");
-    const json = await res.json();
-    const c = json.data ?? json;
+    const c = await fetchCase(params.id);
+    if (!c) throw new Error("Not found");
 
     const sport = c.sport ? `${c.sport.charAt(0).toUpperCase() + c.sport.slice(1)} · ` : "";
     const description = c.story_short ?? `${sport}Athlete sponsorship case on GrassRoots Sports.`;
@@ -36,6 +47,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default function SponsorshipDetailPage({ params }: PageProps) {
+export default async function SponsorshipDetailPage({ params }: PageProps) {
+  // Redirect legacy UUID links to canonical public_code URLs
+  if (UUID_RE.test(params.id)) {
+    try {
+      const c = await fetchCase(params.id);
+      if (c?.public_code) {
+        redirect(`/sponsorships/${c.public_code}`);
+      }
+    } catch {
+      // Redirect failed (e.g. case not found) — fall through to client component
+    }
+  }
+
   return <SponsorshipDetailClient id={params.id} />;
 }

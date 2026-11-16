@@ -9,6 +9,7 @@ import { PublicNavbar } from "@/components/layout/public-navbar";
 
 interface SponsorshipCase {
   id: string;
+  public_code?: string;
   title: string;
   sport: string;
   category: string;
@@ -110,7 +111,7 @@ function CaseCard({ c }: { c: SponsorshipCase }) {
   const excerpt = c.story_short ?? c.title;
 
   return (
-    <Link href={`/sponsorships/${c.id}`} className="group block bg-white rounded-2xl overflow-hidden border border-gray-200 hover:border-[#1a5c2a] hover:shadow-md transition-all">
+    <Link href={`/sponsorships/${c.public_code ?? c.id}`} className="group block bg-white rounded-2xl overflow-hidden border border-gray-200 hover:border-[#1a5c2a] hover:shadow-md transition-all">
       <div className="relative h-44 bg-gradient-to-br from-[#1a5c2a] to-[#2e7d45] overflow-hidden">
         {c.cover_image_url ? (
           <img
