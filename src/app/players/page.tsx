@@ -314,7 +314,7 @@ export default function PlayersPage() {
               <strong>Scouting mode</strong> — click any athlete to view their public profile
             </p>
             <Link
-              href="/coach/scouting"
+              href="/coach/squad"
               className="flex items-center gap-1.5 font-semibold text-xs"
               style={{ color: "#1a5c2a" }}
             >
@@ -488,8 +488,7 @@ export default function PlayersPage() {
                   { label: "All",   value: "" },
                   { label: "U13",   value: "under_13" },
                   { label: "13–17", value: "13_17" },
-                  { label: "18–25", value: "18_25" },
-                  { label: "26+",   value: "26_plus" },
+                  { label: "18+",   value: "18_plus" },
                 ] as const).map(({ label, value }) => {
                   const active = ageGroup === value;
                   return (
