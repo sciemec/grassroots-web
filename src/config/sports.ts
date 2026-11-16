@@ -399,6 +399,9 @@ export interface SportFeatures {
   valuation:                  boolean;
   heatmaps:                   boolean;
   matchReport:                boolean;
+  sprintAnalyzer:             boolean;
+  skillAnalyzers:             boolean;  // shooting, dribbling, passing, tackling, first-touch
+  tacticsLearning:            boolean;
 }
 
 const ALL_OFF: SportFeatures = {
@@ -410,6 +413,9 @@ const ALL_OFF: SportFeatures = {
   valuation:                  false,
   heatmaps:                   false,
   matchReport:                true,
+  sprintAnalyzer:             false,
+  skillAnalyzers:             false,
+  tacticsLearning:            false,
 };
 
 export const SPORT_FEATURES: Record<string, SportFeatures> = {
@@ -422,6 +428,9 @@ export const SPORT_FEATURES: Record<string, SportFeatures> = {
     valuation:                  true,
     heatmaps:                   true,
     matchReport:                true,
+    sprintAnalyzer:             true,
+    skillAnalyzers:             true,
+    tacticsLearning:            true,
   },
   rugby:      { ...ALL_OFF },
   athletics:  { ...ALL_OFF, sprintAnalyzer: true },
