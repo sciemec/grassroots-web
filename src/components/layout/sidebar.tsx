@@ -98,6 +98,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/coach/video-library",      label: "Video Library",    icon: <Library size={18} />,     roles: ["coach","admin"]  },
   { href: "/coach/success",            label: "Success Tracker",  icon: <Award size={18} />,       roles: ["coach"]          },
   { href: "/coach/marketplace-profile", label: "Coach Marketplace",icon: <ShoppingBag size={18} />, roles: ["coach"]          },
+  { href: "/coach/vouch-requests",     label: "Vouch Requests",   icon: <CheckSquare size={18} />, roles: ["coach"]          },
   { href: "/coach/notifications",      label: "Notifications",    icon: <Bell size={18} />,        roles: ["coach"]          },
 
   // ── Sponsorships ──────────────────────────────────────────────────────────
