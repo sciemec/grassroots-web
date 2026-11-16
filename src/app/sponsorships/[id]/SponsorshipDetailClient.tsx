@@ -22,6 +22,9 @@ interface SponsorshipCase {
   age_group: string | null;
   vouched: boolean;
   introduction_count: number;
+  target_cents: number | null;
+  currency?: string | null;
+  deadline_at?: string | null;
   suggested_payee: string | null;
   created_at: string;
   voucher_name?: string | null;
@@ -494,9 +497,19 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
               {c.age_group && <><span>·</span><span className="capitalize">{c.age_group.replace(/_/g, " ")}</span></>}
             </div>
           </div>
-          <div className="text-right flex-shrink-0">
-            <div className="text-xl font-bold text-[#1a5c2a]">{c.introduction_count}</div>
-            <div className="text-xs text-gray-500">sponsor{c.introduction_count === 1 ? "" : "s"} interested</div>
+          <div className="text-right flex-shrink-0 space-y-1">
+            {c.target_cents != null && (
+              <div>
+                <div className="text-xl font-bold text-[#1a5c2a]">
+                  {(c.currency ?? "USD")} {(c.target_cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                </div>
+                <div className="text-xs text-gray-500">needed</div>
+              </div>
+            )}
+            <div>
+              <div className="text-lg font-bold text-gray-700">{c.introduction_count}</div>
+              <div className="text-xs text-gray-500">sponsor{c.introduction_count === 1 ? "" : "s"} interested</div>
+            </div>
           </div>
         </div>
 

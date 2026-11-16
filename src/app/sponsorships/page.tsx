@@ -21,6 +21,8 @@ interface SponsorshipCase {
   age_group: string | null;
   vouched: boolean;
   introduction_count: number;
+  target_cents: number | null;
+  deadline_at: string | null;
   created_at: string;
 }
 
@@ -147,6 +149,22 @@ function CaseCard({ c }: { c: SponsorshipCase }) {
 
         {excerpt && (
           <p className="text-xs text-gray-500 line-clamp-2 mb-3">{excerpt}</p>
+        )}
+
+        {c.target_cents != null && (
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-bold" style={{ color: "#1a5c2a" }}>
+              Seeking USD {(c.target_cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}
+            </span>
+            {c.deadline_at && (() => {
+              const days = Math.max(0, Math.ceil((new Date(c.deadline_at).getTime() - Date.now()) / 86_400_000));
+              return (
+                <span className="text-xs" style={{ color: days <= 3 ? "#dc2626" : "#9ca3af" }}>
+                  {days === 0 ? "Last day!" : `${days}d left`}
+                </span>
+              );
+            })()}
+          </div>
         )}
 
         <div className="flex items-center justify-between mb-3">
