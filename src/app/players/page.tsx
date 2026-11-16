@@ -194,19 +194,26 @@ export default function PlayersPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [shortlisted, setShortlisted] = useState<Set<string>>(new Set());
 
-  const [search, setSearch]     = useState("");
+  const [search, setSearch]           = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sport, setSport]       = useState("");
   const [province, setProvince] = useState("");
   const [position, setPosition] = useState("");
   const [gender, setGender]     = useState("");
   const [ageGroup, setAgeGroup] = useState("");
 
+  // Debounce: only update debouncedSearch 400ms after the user stops typing
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search.trim()), 400);
+    return () => clearTimeout(id);
+  }, [search]);
+
   const fetchPlayers = useCallback(async (pageNum: number) => {
     setLoading(true);
     setError(false);
     try {
       const params = new URLSearchParams({ page: String(pageNum) });
-      if (search)   params.set("search",   search.trim());
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (sport)    params.set("sport",    sport);
       if (province) params.set("province", province);
       if (position) params.set("position", position);
@@ -226,13 +233,13 @@ export default function PlayersPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, sport, province, position, gender, ageGroup]);
+  }, [debouncedSearch, sport, province, position, gender, ageGroup]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
     fetchPlayers(1);
-  }, [search, sport, province, position, gender, ageGroup]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, sport, province, position, gender, ageGroup]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (page === 1) return;
