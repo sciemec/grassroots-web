@@ -499,7 +499,7 @@ export default function SponsorshipsPage() {
                 return (
                   <div key={intro.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                     <Link
-                      href={`/sponsorships/${intro.case_id}`}
+                      href={`/sponsorships/${c?.public_code ?? intro.case_id}`}
                       className="flex gap-4 p-4 hover:bg-gray-50 transition-colors group"
                     >
                       {/* Thumbnail */}
@@ -553,7 +553,7 @@ export default function SponsorshipsPage() {
                         </span>
                         {intro.status === "accepted" && (
                           <Link
-                            href={`/sponsorships/${intro.case_id}/introductions/${intro.id}/agreement`}
+                            href={`/sponsorships/${c?.public_code ?? intro.case_id}/introductions/${intro.id}/agreement`}
                             className="text-xs font-semibold text-[#1a5c2a] hover:underline flex-shrink-0"
                           >
                             View Agreement →
@@ -561,7 +561,7 @@ export default function SponsorshipsPage() {
                         )}
                         {intro.status === "expired" && c?.status === "live" && (
                           <Link
-                            href={`/sponsorships/${intro.case_id}`}
+                            href={`/sponsorships/${c?.public_code ?? intro.case_id}`}
                             className="text-xs font-semibold text-[#1a5c2a] hover:underline flex-shrink-0"
                           >
                             Re-apply →

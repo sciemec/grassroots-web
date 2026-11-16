@@ -11,6 +11,7 @@ const GOLD      = "#c8962a";
 
 interface Campaign {
   id: string;
+  public_code: string;
   title: string;
   beneficiary_name: string;
   category: string;
@@ -63,7 +64,7 @@ export default function CampaignStrip() {
 
   useEffect(() => {
     const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
-    fetch(`${base}/campaigns?page=1&per_page=3`)
+    fetch(`${base}/sponsorships?page=1&per_page=3`)
       .then((r) => r.json())
       .then((d) => {
         const rows = Array.isArray(d.data) ? d.data : [];
@@ -93,11 +94,11 @@ export default function CampaignStrip() {
             <p className="text-sm text-gray-500 mt-1">Every dollar goes directly to the need — kit, travel fees, trials.</p>
           </div>
           <Link
-            href="/campaigns"
+            href="/sponsorships"
             className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-colors hover:brightness-110"
             style={{ background: GRS_GREEN, color: "#fff" }}
           >
-            See all campaigns <ChevronRight size={13} />
+            See all cases <ChevronRight size={13} />
           </Link>
         </div>
 
@@ -110,7 +111,7 @@ export default function CampaignStrip() {
             const days     = daysLeft(c.deadline_at);
 
             return (
-              <Link key={c.id} href={`/campaigns/${c.id}`} style={{ textDecoration: "none" }}>
+              <Link key={c.id} href={`/sponsorships/${c.public_code ?? c.id}`} style={{ textDecoration: "none" }}>
                 <div
                   className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full"
                 >
