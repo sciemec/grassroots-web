@@ -1139,31 +1139,95 @@ export default function ThutoChat() {
         const ctx = JSON.parse(raw) as { age_group: string; position: string; sport: string; province: string; gender?: string };
         const ag  = (ctx.age_group ?? "").toLowerCase();
 
-        // Map age group string to FIFA bracket
+        // Age bracket coaching framework — sport-aware
         const is8to12  = ["u9","u10","u11","u12","under-9","under-10","under-11","under-12"].some(x => ag.includes(x));
         const is12to15 = ["u13","u14","u15","under-13","under-14","under-15"].some(x => ag.includes(x));
+        const ctxSport = (ctx.sport ?? "football").toLowerCase();
 
         let fifaBracket = "";
-        if (is8to12) {
-          fifaBracket =
-            "FIFA BRACKET (8–12): Use GAG (Game→Analytical→Game) methodology. " +
-            "Priority: ball mastery, basic shooting, dribbling, 1v1 situations. " +
-            "Keep sessions fun, game-based, repetition-heavy. NO tactical overload. " +
-            "Drills: juggling, dribbling courses, 3v3–4v4 small-sided, simple shooting. " +
-            "Coaching tone: encouragement-first, short instructions, celebrate every attempt.";
-        } else if (is12to15) {
-          fifaBracket =
-            "FIFA BRACKET (12–15): Progressive Methodology. " +
-            "Priority: tactical introduction, game-like situations, passing combinations, positional understanding. " +
-            "Drills: rondo 4v1/5v2, positional play exercises, pressing triggers, 8v8 matches. " +
-            "Begin explaining WHY behind decisions. Introduce team shape concepts. " +
-            "Coaching tone: ask questions ('What did you see?'), build football IQ alongside skills.";
-        } else if (ag) {
-          fifaBracket =
-            "FIFA BRACKET (15+): Play-Practice-Play. " +
-            "Priority: full tactical understanding, physical conditioning, positional mastery, set pieces. " +
-            "Drills: rondo variations, positional games, high-press systems, 11v11 scenarios. " +
-            "Coaching tone: professional, data-driven, outcome-focused, challenge the player.";
+        if (ctxSport === "football") {
+          if (is8to12) {
+            fifaBracket =
+              "DEVELOPMENT BRACKET (8–12): Use GAG (Game→Analytical→Game) methodology. " +
+              "Priority: ball mastery, basic shooting, dribbling, 1v1 situations. " +
+              "Keep sessions fun, game-based, repetition-heavy. NO tactical overload. " +
+              "Drills: juggling, dribbling courses, 3v3–4v4 small-sided, simple shooting. " +
+              "Coaching tone: encouragement-first, short instructions, celebrate every attempt.";
+          } else if (is12to15) {
+            fifaBracket =
+              "DEVELOPMENT BRACKET (12–15): Progressive Methodology. " +
+              "Priority: tactical introduction, game-like situations, passing combinations, positional understanding. " +
+              "Drills: rondo 4v1/5v2, positional play exercises, pressing triggers, 8v8 matches. " +
+              "Begin explaining WHY behind decisions. Introduce team shape concepts. " +
+              "Coaching tone: ask questions ('What did you see?'), build football IQ alongside skills.";
+          } else if (ag) {
+            fifaBracket =
+              "DEVELOPMENT BRACKET (15+): Play-Practice-Play. " +
+              "Priority: full tactical understanding, physical conditioning, positional mastery, set pieces. " +
+              "Drills: rondo variations, positional games, high-press systems, 11v11 scenarios. " +
+              "Coaching tone: professional, data-driven, outcome-focused, challenge the player.";
+          }
+        } else if (ctxSport === "athletics") {
+          if (is8to12) {
+            fifaBracket =
+              "ATHLETICS DEVELOPMENT (8–12): FUNdamentals stage. " +
+              "Priority: running, jumping, throwing in a playful context. Build ABCs — agility, balance, coordination, speed. " +
+              "Events: multi-event sampler, relay races, standing long jump, foam javelin. " +
+              "Coaching tone: games-first, celebrate personal progress over results.";
+          } else if (is12to15) {
+            fifaBracket =
+              "ATHLETICS DEVELOPMENT (12–15): Learning to Train stage. " +
+              "Priority: event-specific technique introduction, strength fundamentals, sprint mechanics. " +
+              "Focus: proper start position, arm drive, stride pattern, landing mechanics. " +
+              "Coaching tone: technical cues, compare to previous PBs not other athletes.";
+          } else if (ag) {
+            fifaBracket =
+              "ATHLETICS DEVELOPMENT (15+): Training to Compete stage. " +
+              "Priority: event mastery, structured periodisation, PB targets, competition preparation. " +
+              "Physiology: VO2 max intervals, lactate threshold runs, power development. " +
+              "Coaching tone: data-driven PB tracking, race analysis, competition strategy.";
+          }
+        } else if (ctxSport === "cricket") {
+          if (is8to12) {
+            fifaBracket =
+              "CRICKET DEVELOPMENT (8–12): Foundation stage. " +
+              "Priority: hand-eye coordination, basic batting grip and stance, underarm bowling, catching. " +
+              "Formats: Kwik Cricket, modified pitch lengths, soft ball. " +
+              "Coaching tone: fun drills, celebrate contact and catches.";
+          } else if (is12to15) {
+            fifaBracket =
+              "CRICKET DEVELOPMENT (12–15): Development stage. " +
+              "Priority: correct batting technique (backlift, weight transfer), bowling action, basic fielding. " +
+              "Drills: batting tees, shadow batting, bowling at stumps from 16m. " +
+              "Coaching tone: technical, ask what the batter/bowler was trying to do.";
+          } else if (ag) {
+            fifaBracket =
+              "CRICKET DEVELOPMENT (15+): Performance stage. " +
+              "Priority: shot selection, bowling variations, fitness-specific conditioning. " +
+              "Analysis: scoring zones, wagon wheels, bowling economy. " +
+              "Coaching tone: match scenarios, game intelligence, composure under pressure.";
+          }
+        } else {
+          // Generic sport development framework for all other sports
+          if (is8to12) {
+            fifaBracket =
+              "DEVELOPMENT BRACKET (8–12): FUNdamentals stage. " +
+              "Priority: movement literacy — running, jumping, catching, throwing in playful contexts. " +
+              "Keep sessions game-based and varied. Build confidence through small wins. " +
+              "Coaching tone: encouragement-first, short instruction bursts, celebrate every attempt.";
+          } else if (is12to15) {
+            fifaBracket =
+              "DEVELOPMENT BRACKET (12–15): Learning to Train stage. " +
+              "Priority: sport-specific technique introduction, basic positional/event awareness. " +
+              "Begin explaining the WHY behind technique decisions. Use partner and small-group drills. " +
+              "Coaching tone: build sport IQ alongside physical skills, compare to personal bests.";
+          } else if (ag) {
+            fifaBracket =
+              "DEVELOPMENT BRACKET (15+): Training to Compete stage. " +
+              "Priority: event/position mastery, physical conditioning, competition preparation. " +
+              "Approach: data-driven performance targets, structured periodisation, recovery awareness. " +
+              "Coaching tone: professional, outcome-focused, challenge the athlete while supporting wellbeing.";
+          }
         }
 
         parts.push(

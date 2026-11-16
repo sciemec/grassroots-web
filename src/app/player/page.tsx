@@ -27,6 +27,7 @@ import {
   IconCoin,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { useSportFeatures } from "@/hooks/useSportFeatures";
 import api from "@/lib/api";
 import WaButton from "@/components/ui/WaButton";
 
@@ -180,6 +181,7 @@ function DrillGroupCard() {
 
 export default function PlayerHubPage() {
   const token = useAuthStore((s) => s.token);
+  const { hasFeature, sport: playerSport } = useSportFeatures();
   const [profilePct, setProfilePct] = useState<number | null>(null);
   const [showProfileBanner, setShowProfileBanner] = useState(false);
   const [showPhoneBanner, setShowPhoneBanner] = useState(false);
@@ -447,22 +449,38 @@ export default function PlayerHubPage() {
           title="Match Eye"
           subtitle="Upload a clip, get AI feedback"
         />
-        <HubCard
-          href="/player/gemini-drills"
-          icon={IconTarget}
-          iconBg={O}
-          iconColor={OL}
-          title="AI Football Drill Analysis"
-          subtitle="AI video analysis — populate your Technical radar"
-        />
-        <HubCard
-          href="/player/tactical-academy"
-          icon={IconBrain}
-          iconBg={O}
-          iconColor={OL}
-          title="Tactical Academy"
-          subtitle="Learn positioning, shape &amp; decision-making"
-        />
+        {hasFeature("positionHubs") && (
+          <HubCard
+            href="/player/gemini-drills"
+            icon={IconTarget}
+            iconBg={O}
+            iconColor={OL}
+            title="AI Football Drill Analysis"
+            subtitle="AI video analysis — populate your Technical radar"
+          />
+        )}
+        {hasFeature("tacticalIqLab") && (
+          <HubCard
+            href="/player/tactical-academy"
+            icon={IconBrain}
+            iconBg={O}
+            iconColor={OL}
+            title="Tactical Academy"
+            subtitle="Learn positioning, shape &amp; decision-making"
+          />
+        )}
+
+        {/* Personal Bests — athletics & swimming only */}
+        {(playerSport === "athletics" || playerSport === "swimming") && (
+          <HubCard
+            href="/player/personal-bests"
+            icon={IconRun}
+            iconBg={O}
+            iconColor={OL}
+            title="Personal Bests"
+            subtitle="Track your PBs across every event"
+          />
+        )}
 
         {/* Section 3 — Showcase */}
         <SectionLabel label="Showcase" />
