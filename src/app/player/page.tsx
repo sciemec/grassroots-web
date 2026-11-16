@@ -25,6 +25,7 @@ import {
   IconChalkboard,
   IconHeart,
   IconCoin,
+  IconSearch,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useSportFeatures } from "@/hooks/useSportFeatures";
@@ -557,6 +558,17 @@ export default function PlayerHubPage() {
           iconColor={GL}
           title="Highlight Vault"
           subtitle="Your video library"
+        />
+
+        {/* Section — Find a Team */}
+        <SectionLabel label="Find a team" />
+        <HubCard
+          href="/player/find-team"
+          icon={IconSearch}
+          iconBg={G}
+          iconColor={GL}
+          title="Find a Team"
+          subtitle="Browse open trials and clubs across Zimbabwe"
         />
 
         {/* Section — Sponsorships */}
