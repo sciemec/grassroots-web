@@ -12,21 +12,29 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Trophy, Trash2, ChevronDown, ChevronUp, WifiOff, AlertCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trophy, Trash2, ChevronDown, ChevronUp, WifiOff, AlertCircle, Link2 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface PbEntry {
-  id:           string;
-  event:        string;
-  value:        string;   // time (e.g. "10.52") or distance/height (e.g. "7.45m")
-  unit:         string;   // "s", "m", "kg" etc.
-  date:         string;   // YYYY-MM-DD
-  venue?:       string;
-  competition?: string;
-  notes?:       string;
-  created_at:   string;
+  id:             string;
+  event:          string;
+  value:          string;   // time (e.g. "10.52") or distance/height (e.g. "7.45m")
+  unit:           string;   // "s", "m", "kg" etc.
+  date:           string;   // YYYY-MM-DD
+  venue?:         string;
+  competition?:   string;
+  notes?:         string;
+  arena_post_id?: string;   // optional Arena post attached as evidence
+  created_at:     string;
+}
+
+interface ArenaPost {
+  id:         string;
+  body:       string;
+  post_type:  string;
+  created_at: string;
 }
 
 // ── Event definitions by sport ────────────────────────────────────────────────
@@ -177,14 +185,34 @@ export default function PersonalBestsPage() {
   const [syncing,    setSyncing]    = useState(false);
 
   // Form state
-  const [selEvent, setSelEvent] = useState("");
-  const [selUnit,  setSelUnit]  = useState("");
-  const [pbValue,  setPbValue]  = useState("");
-  const [pbDate,   setPbDate]   = useState(new Date().toISOString().slice(0, 10));
-  const [pbVenue,  setPbVenue]  = useState("");
-  const [pbComp,   setPbComp]   = useState("");
+  const [selEvent,     setSelEvent]     = useState("");
+  const [selUnit,      setSelUnit]      = useState("");
+  const [pbValue,      setPbValue]      = useState("");
+  const [pbDate,       setPbDate]       = useState(new Date().toISOString().slice(0, 10));
+  const [pbVenue,      setPbVenue]      = useState("");
+  const [pbComp,       setPbComp]       = useState("");
+  const [selArenaPost, setSelArenaPost] = useState<string | null>(null);
+
+  // Arena post picker
+  const [arenaPosts,      setArenaPosts]      = useState<ArenaPost[]>([]);
+  const [showArenaPicker, setShowArenaPicker] = useState(false);
 
   const eventGroups = getEventGroups(sport);
+
+  // ── Fetch recent Arena posts when form opens ───────────────────────────────
+  useEffect(() => {
+    if (!showForm || !token || arenaPosts.length > 0) return;
+    fetch(`${API}/arena/feed`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { data?: ArenaPost[] } | null) => {
+        // Filter to current user's own posts only (body > 0, limit 20)
+        const posts = (d?.data ?? []).slice(0, 20);
+        setArenaPosts(posts);
+      })
+      .catch(() => { /* picker stays empty — non-critical */ });
+  }, [showForm, token, arenaPosts.length]);
 
   // ── Clear storage on logout ────────────────────────────────────────────────
   useEffect(() => {
@@ -268,14 +296,15 @@ export default function PersonalBestsPage() {
     setSaveError(null);
 
     const entry: PbEntry = {
-      id:          crypto.randomUUID(),
-      event:       selEvent,
-      value:       pbValue,
-      unit:        selUnit,
-      date:        pbDate,
-      venue:       pbVenue || undefined,
-      competition: pbComp  || undefined,
-      created_at:  new Date().toISOString(),
+      id:             crypto.randomUUID(),
+      event:          selEvent,
+      value:          pbValue,
+      unit:           selUnit,
+      date:           pbDate,
+      venue:          pbVenue || undefined,
+      competition:    pbComp  || undefined,
+      arena_post_id:  selArenaPost ?? undefined,
+      created_at:     new Date().toISOString(),
     };
 
     try {
@@ -314,6 +343,7 @@ export default function PersonalBestsPage() {
 
     // Reset form on success or offline-queue
     setSelEvent(""); setSelUnit(""); setPbValue(""); setPbVenue(""); setPbComp("");
+    setSelArenaPost(null); setShowArenaPicker(false);
     setShowForm(false);
   };
 
@@ -512,6 +542,54 @@ export default function PersonalBestsPage() {
                   />
                 </div>
 
+                {/* Arena post picker — optional evidence link */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowArenaPicker(v => !v)}
+                    style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "1px solid #d1d5db", borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer", width: "100%" }}
+                  >
+                    <Link2 size={14} />
+                    {selArenaPost
+                      ? `Linked: ${(arenaPosts.find(p => p.id === selArenaPost)?.body ?? "Post").slice(0, 40)}…`
+                      : "Link Arena post as evidence (optional)"}
+                    {showArenaPicker ? <ChevronUp size={14} style={{ marginLeft: "auto" }} /> : <ChevronDown size={14} style={{ marginLeft: "auto" }} />}
+                  </button>
+
+                  {showArenaPicker && (
+                    <div style={{ marginTop: 6, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden", maxHeight: 200, overflowY: "auto" }}>
+                      {arenaPosts.length === 0 ? (
+                        <div style={{ padding: "12px 14px", fontSize: 13, color: "#9ca3af" }}>No Arena posts found.</div>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => { setSelArenaPost(null); setShowArenaPicker(false); }}
+                            style={{ width: "100%", textAlign: "left", padding: "9px 14px", fontSize: 13, background: selArenaPost === null ? "#f0fdf4" : "#fff", border: "none", borderBottom: "1px solid #f3f4f6", cursor: "pointer", color: "#374151", fontWeight: 500 }}
+                          >
+                            None
+                          </button>
+                          {arenaPosts.map(post => (
+                            <button
+                              key={post.id}
+                              type="button"
+                              onClick={() => { setSelArenaPost(post.id); setShowArenaPicker(false); }}
+                              style={{ width: "100%", textAlign: "left", padding: "9px 14px", fontSize: 13, background: selArenaPost === post.id ? "#f0fdf4" : "#fff", border: "none", borderBottom: "1px solid #f3f4f6", cursor: "pointer", color: "#374151" }}
+                            >
+                              <div style={{ fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {post.body.slice(0, 60)}{post.body.length > 60 ? "…" : ""}
+                              </div>
+                              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
+                                {post.post_type} · {post.created_at.slice(0, 10)}
+                              </div>
+                            </button>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {saveError && (
                   <div style={{ fontSize: 13, color: "#991b1b", background: "#fee2e2", borderRadius: 8, padding: "8px 12px" }}>
                     {saveError}
@@ -527,7 +605,7 @@ export default function PersonalBestsPage() {
                     {saving ? "Saving…" : "Save PB"}
                   </button>
                   <button
-                    onClick={() => { setShowForm(false); setSelEvent(""); setPbValue(""); setSaveError(null); }}
+                    onClick={() => { setShowForm(false); setSelEvent(""); setPbValue(""); setSaveError(null); setSelArenaPost(null); setShowArenaPicker(false); }}
                     style={{ flex: 1, background: "#f3f4f6", color: "#374151", border: "none", borderRadius: 8, padding: "10px 0", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
                   >
                     Cancel
