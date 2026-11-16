@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useStreakStore } from "@/lib/streak-store";
+import { getSportFeatures, type SportFeatures } from "@/config/sports";
 import { NotificationBell } from "@/components/layout/notification-bell";
 
 // ── Feature flags — set false to hide features without deleting code ────────
@@ -37,8 +38,9 @@ interface NavItem {
   label:       string;
   icon:        React.ReactNode;
   roles:       string[];
-  feature?:    keyof typeof FEATURES;
-  footballOnly?: boolean; // hide for players/coaches whose primary sport is not football
+  feature?:      keyof typeof FEATURES;
+  footballOnly?: boolean;                  // hide when sport is not football
+  sportFeature?: keyof SportFeatures;      // hide when sport doesn't have this feature flag
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -59,7 +61,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/player/passport",   label: "Talent Passport", icon: <IdCard size={18} />,      roles: ["player"], feature: "passport"  },
   { href: "/player/vault",      label: "Highlight Vault", icon: <Video size={18} />,       roles: ["player"], feature: "passport"  },
   { href: "/player/position-fit",label:"Position Finder", icon: <Crosshair size={18} />,   roles: ["player"], feature: "biometrics" },
-  { href: "/player/sprint",      label: "Sprint Analyzer",    icon: <Zap size={18} />,     roles: ["player"], footballOnly: true },
+  { href: "/player/sprint",      label: "Sprint Analyzer",    icon: <Zap size={18} />,     roles: ["player"], sportFeature: "sprintAnalyzer" },
   { href: "/player/shooting",    label: "Shooting Analyzer",  icon: <Target size={18} />,  roles: ["player"], footballOnly: true },
   { href: "/player/first-touch", label: "First Touch",         icon: <Move size={18} />,   roles: ["player"], footballOnly: true },
   { href: "/player/dribbling",   label: "Dribbling Analyzer",  icon: <Shuffle size={18} />,roles: ["player"], footballOnly: true },
@@ -207,7 +209,8 @@ export function Sidebar() {
   const visibleItems = NAV_ITEMS.filter(item =>
     item.roles.includes(userRole) &&
     isFeatureEnabled(item.feature) &&
-    (!item.footballOnly || userSport === "football")
+    (!item.footballOnly || userSport === "football") &&
+    (!item.sportFeature || getSportFeatures(userSport)[item.sportFeature])
   );
 
   // Deduplicate by href
