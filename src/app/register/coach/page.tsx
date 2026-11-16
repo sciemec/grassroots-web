@@ -69,8 +69,7 @@ export default function RegisterCoachPage() {
   const contactValid =
     form.contactType === "email"
       ? form.email.includes("@") && form.email.includes(".")
-      : form.phone.replace(/\D/g, "").length >= 9 &&
-        form.email.includes("@") && form.email.includes(".");
+      : form.phone.replace(/\D/g, "").length >= 9;
 
   const canSubmit =
     contactValid &&
@@ -100,7 +99,6 @@ export default function RegisterCoachPage() {
         body.email = form.email.trim().toLowerCase();
       } else {
         body.phone = normalizePhone(form.phone.trim());
-        body.email = form.email.trim().toLowerCase();
       }
 
       let res: Response;
@@ -401,21 +399,6 @@ export default function RegisterCoachPage() {
                       placeholder="77 123 4567"
                       className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                     />
-                  </div>
-                  <div className="mt-3">
-                    <label className="block text-xs font-bold text-gray-600 mb-1.5">Email address</label>
-                    <input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => set("email", e.target.value)}
-                      placeholder="you@example.com"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      autoComplete="email"
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">Needed for password reset and match reports</p>
                   </div>
                 )}
               </div>
