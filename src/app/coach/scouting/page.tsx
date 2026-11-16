@@ -343,6 +343,24 @@ export default function ScoutingDashboardPage() {
         <div className="mx-auto max-w-3xl space-y-4 p-6">
           {activeTab === "recruitment" ? (
             <div className="space-y-4">
+              {/* Post an Opening — primary CTA */}
+              <Link
+                href="/arena/recruitment/new"
+                className="flex items-center justify-between rounded-2xl border-2 p-5 text-white transition-colors"
+                style={{ background: "#1a5c2a", borderColor: "#1a5c2a" }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20">
+                    <Plus className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-white">Post an Opening</p>
+                    <p className="text-xs text-white/70 mt-0.5">List a position, trial or opportunity — players on the platform can apply directly</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-white/60" />
+              </Link>
+
               {/* Talent Board cross-link */}
               <Link
                 href="/arena/recruitment"
@@ -353,8 +371,8 @@ export default function ScoutingDashboardPage() {
                     <Briefcase className="h-5 w-5" style={{ color: "#1a5c2a" }} />
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-foreground">Talent Board</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Post open positions · browse talent want-ads · accept applications from the Arena network</p>
+                    <p className="font-bold text-sm text-foreground">View Talent Board</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">See all open positions · manage your listings · review applications</p>
                   </div>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-[#1a5c2a] transition-colors" />

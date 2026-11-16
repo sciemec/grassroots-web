@@ -424,7 +424,7 @@ export const SPORT_FEATURES: Record<string, SportFeatures> = {
     matchReport:                true,
   },
   rugby:      { ...ALL_OFF },
-  athletics:  { ...ALL_OFF },
+  athletics:  { ...ALL_OFF, sprintAnalyzer: true },
   netball:    { ...ALL_OFF },
   basketball: { ...ALL_OFF },
   cricket:    { ...ALL_OFF },
