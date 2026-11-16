@@ -12,7 +12,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Trophy, Trash2, ChevronDown, ChevronUp, WifiOff, AlertCircle, Link2 } from "lucide-react";
+import { ArrowLeft, Plus, Trophy, Trash2, ChevronDown, ChevronUp, WifiOff, AlertCircle, Link2, ShieldCheck } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -27,6 +27,8 @@ interface PbEntry {
   competition?:   string;
   notes?:         string;
   arena_post_id?: string;   // optional Arena post attached as evidence
+  verified_by?:   string;   // coach user_id who verified this PB
+  verified_at?:   string;   // ISO timestamp of verification
   created_at:     string;
 }
 
@@ -677,7 +679,14 @@ export default function PersonalBestsPage() {
                     style={{ background: "#fff", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
                   >
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{e.event}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{e.event}</span>
+                        {e.verified_by && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, background: "#dcfce7", color: "#15803d", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>
+                            <ShieldCheck size={11} /> Coach verified
+                          </span>
+                        )}
+                      </div>
                       <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
                         {e.date} {e.competition ? `· ${e.competition}` : ""} {e.venue ? `· ${e.venue}` : ""}
                       </div>
@@ -708,7 +717,14 @@ export default function PersonalBestsPage() {
                         style={{ background: "#fff", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}
                       >
                         <div>
-                          <div style={{ fontWeight: 600, fontSize: 13, color: "#374151" }}>{e.event}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                            <span style={{ fontWeight: 600, fontSize: 13, color: "#374151" }}>{e.event}</span>
+                            {e.verified_by && (
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, background: "#dcfce7", color: "#15803d", borderRadius: 4, padding: "1px 5px", fontWeight: 600 }}>
+                                <ShieldCheck size={10} /> Verified
+                              </span>
+                            )}
+                          </div>
                           <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{e.date}{e.venue ? ` · ${e.venue}` : ""}</div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

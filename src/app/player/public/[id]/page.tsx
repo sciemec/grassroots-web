@@ -36,6 +36,18 @@ interface AnalysisHistory {
   score_history: { date: string; score: number }[];
 }
 
+interface PublicPb {
+  id:          string;
+  event:       string;
+  value:       string;
+  unit:        string;
+  date:        string;
+  venue:       string | null;
+  competition: string | null;
+  verified:    boolean;
+  verified_at: string | null;
+}
+
 interface PublicProfile {
   id: string;
   name: string;
