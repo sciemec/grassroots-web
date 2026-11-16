@@ -185,6 +185,7 @@ export default function PlayerHubPage() {
   const [profilePct, setProfilePct] = useState<number | null>(null);
   const [showProfileBanner, setShowProfileBanner] = useState(false);
   const [showPhoneBanner, setShowPhoneBanner] = useState(false);
+  const [showPhotoBanner, setShowPhotoBanner] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -205,6 +206,10 @@ export default function PlayerHubPage() {
         const missingPhone = !raw.phone && !raw.whatsapp_number;
         const phoneDismissed = localStorage.getItem("grs_phone_nudge_dismissed");
         if (!phoneDismissed && missingPhone) setShowPhoneBanner(true);
+
+        const missingPhoto = !raw.photo_url;
+        const photoDismissed = localStorage.getItem("grs_photo_nudge_dismissed");
+        if (!photoDismissed && missingPhoto) setShowPhotoBanner(true);
 
         localStorage.setItem(
           "thuto_page_data",
@@ -308,6 +313,67 @@ export default function PlayerHubPage() {
                 background: "none",
                 border: "none",
                 color: "#b89050",
+                fontSize: 16,
+                cursor: "pointer",
+                flexShrink: 0,
+                padding: "0 2px",
+                lineHeight: 1,
+              }}
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {/* Photo nudge */}
+        {showPhotoBanner && (
+          <div
+            style={{
+              background: "#1a1a2e",
+              border: "1px solid #4a6fa5",
+              borderRadius: 12,
+              padding: "12px 14px",
+              marginTop: 16,
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+            }}
+          >
+            <span style={{ fontSize: 18, flexShrink: 0 }}>📸</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: "#93c5fd", fontSize: 13, fontWeight: 700 }}>
+                Add a profile photo to get noticed
+              </div>
+              <div style={{ color: "#6b8fc7", fontSize: 11.5, marginTop: 3, lineHeight: 1.4 }}>
+                Players with a photo are 3× more likely to be viewed by scouts.
+              </div>
+              <a
+                href="/player/profile"
+                style={{
+                  display: "inline-block",
+                  marginTop: 8,
+                  background: "#4a6fa5",
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  borderRadius: 8,
+                  padding: "5px 14px",
+                  textDecoration: "none",
+                }}
+              >
+                Add photo →
+              </a>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem("grs_photo_nudge_dismissed", "1");
+                setShowPhotoBanner(false);
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#6b8fc7",
                 fontSize: 16,
                 cursor: "pointer",
                 flexShrink: 0,
