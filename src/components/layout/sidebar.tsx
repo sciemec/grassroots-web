@@ -33,11 +33,12 @@ const FEATURES = {
 };
 
 interface NavItem {
-  href:    string;
-  label:   string;
-  icon:    React.ReactNode;
-  roles:   string[];
-  feature?: keyof typeof FEATURES;
+  href:        string;
+  label:       string;
+  icon:        React.ReactNode;
+  roles:       string[];
+  feature?:    keyof typeof FEATURES;
+  footballOnly?: boolean; // hide for players/coaches whose primary sport is not football
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -58,17 +59,17 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/player/passport",   label: "Talent Passport", icon: <IdCard size={18} />,      roles: ["player"], feature: "passport"  },
   { href: "/player/vault",      label: "Highlight Vault", icon: <Video size={18} />,       roles: ["player"], feature: "passport"  },
   { href: "/player/position-fit",label:"Position Finder", icon: <Crosshair size={18} />,   roles: ["player"], feature: "biometrics" },
-  { href: "/player/sprint",      label: "Sprint Analyzer", icon: <Zap size={18} />,          roles: ["player"]                     },
-  { href: "/player/shooting",    label: "Shooting Analyzer", icon: <Target size={18} />,      roles: ["player"]                     },
-  { href: "/player/first-touch", label: "First Touch",       icon: <Move size={18} />,         roles: ["player"]                     },
-  { href: "/player/dribbling",   label: "Dribbling Analyzer",icon: <Shuffle size={18} />,      roles: ["player"]                     },
-  { href: "/player/passing",     label: "Passing Analyzer",  icon: <Send size={18} />,         roles: ["player"]                     },
-  { href: "/player/tackling",   label: "Tackling Analyzer", icon: <Shield size={18} />,       roles: ["player"]                     },
+  { href: "/player/sprint",      label: "Sprint Analyzer",    icon: <Zap size={18} />,     roles: ["player"], footballOnly: true },
+  { href: "/player/shooting",    label: "Shooting Analyzer",  icon: <Target size={18} />,  roles: ["player"], footballOnly: true },
+  { href: "/player/first-touch", label: "First Touch",         icon: <Move size={18} />,   roles: ["player"], footballOnly: true },
+  { href: "/player/dribbling",   label: "Dribbling Analyzer",  icon: <Shuffle size={18} />,roles: ["player"], footballOnly: true },
+  { href: "/player/passing",     label: "Passing Analyzer",    icon: <Send size={18} />,   roles: ["player"], footballOnly: true },
+  { href: "/player/tackling",    label: "Tackling Analyzer",   icon: <Shield size={18} />, roles: ["player"], footballOnly: true },
   { href: "/player/scholarship-reel", label: "Scholarship Reel", icon: <Video size={18} />, roles: ["player"], feature: "passport" },
   { href: "/player/academics",   label: "My Academics",  icon: <BookOpen size={18} />,      roles: ["player"] },
   { href: "/player/pathway",     label: "My Pathway",    icon: <GraduationCap size={18} />, roles: ["player"] },
   { href: "/player/subscription", label: "Subscription",  icon: <CreditCard size={18} />,    roles: ["player"] },
-  { href: "/player/tactics",     label: "Tactics Learning", icon: <Brain size={18} />,       roles: ["player"] },
+  { href: "/player/tactics",     label: "Tactics Learning", icon: <Brain size={18} />,       roles: ["player"], footballOnly: true },
   { href: "/parent/dashboard",   label: "Parent Hub",    icon: <Heart size={18} />,         roles: ["player"] },
 
   // ── Athlete (multi-sport) ─────────────────────────────────────────────────
@@ -82,7 +83,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/coach/registered-players", label: "Player Registry",  icon: <Target size={18} />,      roles: ["coach"]          },
   { href: "/coach/live-match",         label: "Live Match",       icon: <Flame size={18} />,       roles: ["coach"]          },
   { href: "/coach/matches",            label: "Matches",          icon: <Calendar size={18} />,    roles: ["coach"]          },
-  { href: "/coach/set-pieces",         label: "Set Pieces",       icon: <Flag size={18} />,        roles: ["coach"]          },
+  { href: "/coach/set-pieces",         label: "Set Pieces",       icon: <Flag size={18} />,        roles: ["coach"],          footballOnly: true },
   { href: "/coach/video-analysis",     label: "Video Analysis",   icon: <Video size={18} />,       roles: ["coach"]          },
   { href: "/coach/drill-library",      label: "Drill Library",    icon: <Dumbbell size={18} />,    roles: ["coach"]          },
   { href: "/coach/training-plans",     label: "Training Plans",   icon: <ClipboardList size={18} />, roles: ["coach"]        },
@@ -129,6 +130,9 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/whatsapp",         label: "WhatsApp",        icon: <MessageCircle size={18} />, roles: ["admin"] },
   { href: "/admin/whatsapp-replies", label: "WA Replies",      icon: <MessageSquare size={18} />, roles: ["admin"] },
   { href: "/admin/introductions",    label: "Introductions",   icon: <Send size={18} />,          roles: ["admin"] },
+  { href: "/admin/sponsorships",     label: "Sponsorships",    icon: <Briefcase size={18} />,     roles: ["admin"] },
+  { href: "/admin/sponsors",         label: "Sponsors",        icon: <User size={18} />,          roles: ["admin"] },
+  { href: "/admin/agreements",       label: "Agreements",      icon: <DollarSign size={18} />,    roles: ["admin"] },
   { href: "/admin/health",           label: "System Health",   icon: <Activity size={18} />,      roles: ["admin"] },
   { href: "/admin/stream",           label: "Streaming",       icon: <Video size={18} />,         roles: ["admin"] },
   { href: "/admin/stats",            label: "Platform Stats",  icon: <BarChart3 size={18} />,     roles: ["admin"] },
@@ -139,7 +143,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/analyst/live-match",        label: "Live Collector",     icon: <Activity size={18} />,    roles: ["analyst","admin","coach"] },
   { href: "/analyst/team-biomechanics", label: "Team Biomechanics",  icon: <Zap size={18} />,         roles: ["analyst","admin","coach"] },
   { href: "/analyst/match-eye",         label: "Match Eye",          icon: <Video size={18} />,       roles: ["analyst","admin","coach"] },
-  { href: "/analyst/xg-analysis",       label: "xG Analysis",        icon: <Target size={18} />,      roles: ["analyst","admin","coach"] },
+  { href: "/analyst/xg-analysis",       label: "xG Analysis",        icon: <Target size={18} />,      roles: ["analyst","admin","coach"], footballOnly: true },
   { href: "/analyst/tactical-report",   label: "Tactical Report",    icon: <Crosshair size={18} />,   roles: ["analyst","admin","coach"] },
   { href: "/analyst/season",            label: "Season Intelligence", icon: <TrendingUp size={18} />,  roles: ["analyst","admin","coach"] },
   { href: "/analyst/commentary",        label: "Commentary Analysis", icon: <Mic size={18} />,          roles: ["analyst","admin","coach"] },
@@ -196,10 +200,13 @@ export function Sidebar() {
 
   if (!hasHydrated) return null;
 
-  const userRole = user?.role || "fan";
+  const userRole  = user?.role || "fan";
+  const userSport = (user as { sport?: string } | null)?.sport ?? "football";
 
   const visibleItems = NAV_ITEMS.filter(item =>
-    item.roles.includes(userRole) && isFeatureEnabled(item.feature)
+    item.roles.includes(userRole) &&
+    isFeatureEnabled(item.feature) &&
+    (!item.footballOnly || userSport === "football")
   );
 
   // Deduplicate by href
