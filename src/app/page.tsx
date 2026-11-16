@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Award, Zap, ChevronRight, Users, Brain, Video, QrCode, Shield, CheckCircle } from "lucide-react";
+import { Award, Zap, ChevronRight, Users, Brain, Video, QrCode, Shield, CheckCircle, Handshake } from "lucide-react";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import LiveActivityWire from "@/components/home/LiveActivityWire";
 import {
@@ -98,6 +98,13 @@ export default function GrassrootsSportsLanding() {
               className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-xs font-black uppercase tracking-wider border border-gray-300 bg-white text-gray-700 transition-colors hover:bg-gray-50"
             >
               Discover Talent <Users size={14} />
+            </Link>
+            <Link
+              href="/sponsorships"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-xs font-black uppercase tracking-wider transition-colors hover:brightness-110"
+              style={{ background: "#1a5c2a", color: "#ffffff" }}
+            >
+              Support an Athlete <Handshake size={14} />
             </Link>
           </div>
         </div>
