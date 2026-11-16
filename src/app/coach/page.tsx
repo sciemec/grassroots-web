@@ -11,7 +11,7 @@ import {
   Users, Calendar, Video,
   UserSearch, Globe, Bell, Layers,
   ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, UserCheck, Clapperboard, ShoppingBag, Star, ClipboardList,
-  ChevronDown, ChevronUp, Film, Zap, ListOrdered, Heart,
+  ChevronDown, ChevronUp, Film, Zap, ListOrdered, Heart, Shield,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -290,6 +290,7 @@ export default function CoachHubPage() {
           <HubCard href="/coach/marketplace-profile" icon={ShoppingBag}  iconBg="#fef3c7" iconColor="#d97706" label="My Coach Profile" desc="Rates · credentials · assessment requests"        badge="new" />
           <HubCard href="/sponsorships"              icon={Heart}        iconBg="#fce7f3" iconColor="#be185d" label="Athlete Sponsorships" desc="Help your players get connected with sponsors"    badge="new" />
           <HubCard href="/coach/vouch-requests"    icon={UserCheck}    iconBg="#f0fdf4" iconColor="#1a5c2a" label="Vouch Requests"      desc="Cases where players have asked you to vouch"      />
+          <HubCard href="/coach/claim-club"         icon={Shield}       iconBg="#dcfce7" iconColor="#1a5c2a" label="Claim My Club"       desc="Link your account to your club in the directory"  badge="new" />
         </div>
 
         {/* ── 5. School Programme ────────────────────────────────────── */}
