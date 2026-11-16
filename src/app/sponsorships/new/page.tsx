@@ -71,6 +71,8 @@ export default function NewSponsorshipPage() {
   const [storyShort, setStoryShort] = useState("");
   const [story, setStory] = useState("");
   const [suggestedPayee, setSuggestedPayee] = useState("");
+  const [targetUsd, setTargetUsd] = useState("");
+  const [deadline, setDeadline] = useState("");
 
   // Guardian step (shown when age_group is under_13 or 13_17)
   const [guardianName, setGuardianName] = useState("");
@@ -101,7 +103,7 @@ export default function NewSponsorshipPage() {
   const FIELD_TO_STEP: Record<string, number> = {
     title: 1, sport: 1, category: 1,
     age_group: 2, province: 2, story_short: 2,
-    story: 3, suggested_payee: 3,
+    story: 3, suggested_payee: 3, target_cents: 3, deadline_at: 3,
     guardian_name: isMinor ? 4 : 3,
     guardian_relationship: isMinor ? 4 : 3,
     guardian_whatsapp: isMinor ? 4 : 3,
@@ -114,7 +116,7 @@ export default function NewSponsorshipPage() {
 
     const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
-    const body: Record<string, string | boolean | undefined> = {
+    const body: Record<string, string | number | boolean | undefined> = {
       title: title.trim(),
       sport: sport.toLowerCase(),
       category,
@@ -124,6 +126,8 @@ export default function NewSponsorshipPage() {
       story: story.trim(),
       suggested_payee: suggestedPayee.trim() || undefined,
       beneficiary_type: "player",
+      target_cents: targetUsd ? Math.round(parseFloat(targetUsd) * 100) : undefined,
+      deadline_at: deadline || undefined,
     };
 
     if (isMinor) {
@@ -349,6 +353,41 @@ export default function NewSponsorshipPage() {
                 </div>
               </div>
 
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-xs font-medium text-gray-700 block mb-1">
+                    Amount needed (USD) <span className="text-gray-400">(optional)</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 select-none">$</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={targetUsd}
+                      onChange={(e) => setTargetUsd(e.target.value)}
+                      placeholder="e.g. 250"
+                      className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                    />
+                  </div>
+                  <FieldError msg={fieldErr("target_cents")} />
+                </div>
+
+                <div className="flex-1">
+                  <label className="text-xs font-medium text-gray-700 block mb-1">
+                    Deadline <span className="text-gray-400">(optional)</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={deadline}
+                    min={new Date().toISOString().split("T")[0]}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 bg-white"
+                  />
+                  <FieldError msg={fieldErr("deadline_at")} />
+                </div>
+              </div>
+
               <div>
                 <label className="text-xs font-medium text-gray-700 block mb-1">
                   Suggested support / payee <span className="text-gray-400">(optional)</span>
@@ -441,6 +480,18 @@ export default function NewSponsorshipPage() {
                   <div className="flex justify-between">
                     <span className="text-gray-500">Province</span>
                     <span className="font-medium text-gray-900">{province}</span>
+                  </div>
+                )}
+                {targetUsd && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Amount needed</span>
+                    <span className="font-medium text-[#1a5c2a]">USD {parseFloat(targetUsd).toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                  </div>
+                )}
+                {deadline && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Deadline</span>
+                    <span className="font-medium text-gray-900">{new Date(deadline + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
                   </div>
                 )}
                 {isMinor && guardianName && (
