@@ -161,7 +161,8 @@ export default function RegisterPlayerPage() {
   const contactValid =
     form.contactType === "email"
       ? form.email.includes("@") && form.email.includes(".")
-      : form.phone.replace(/\D/g, "").length >= 9;
+      : form.phone.replace(/\D/g, "").length >= 9 &&
+        form.email.includes("@") && form.email.includes(".");
 
   const canSubmit =
     contactValid &&
@@ -193,6 +194,7 @@ export default function RegisterPlayerPage() {
         body.email = form.email.trim().toLowerCase();
       } else {
         body.phone = normalizePhone(form.phone.trim());
+        body.email = form.email.trim().toLowerCase();
       }
 
       const controller = new AbortController();
@@ -750,6 +752,21 @@ export default function RegisterPlayerPage() {
                       <span className="text-[#25D366]">✓</span>
                       Use your WhatsApp number — GRS will message you here after registration
                     </p>
+                  </div>
+                  <div className="mt-3">
+                    <label className="block text-xs font-bold text-gray-600 mb-1.5">Email address</label>
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => set("email", e.target.value)}
+                      placeholder="you@example.com"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      autoComplete="email"
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Needed for password reset and match reports</p>
                   </div>
                 )}
               </div>
