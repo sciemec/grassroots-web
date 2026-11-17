@@ -48,15 +48,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function SponsorshipDetailPage({ params }: PageProps) {
-  // Redirect legacy UUID links to canonical public_code URLs
+  // Redirect legacy UUID links to canonical public_code URLs.
+  // redirect() throws a NEXT_REDIRECT error internally — it must NOT be inside
+  // a try/catch or the redirect is silently swallowed.
   if (UUID_RE.test(params.id)) {
-    try {
-      const c = await fetchCase(params.id);
-      if (c?.public_code) {
-        redirect(`/sponsorships/${c.public_code}`);
-      }
-    } catch {
-      // Redirect failed (e.g. case not found) — fall through to client component
+    const c = await fetchCase(params.id).catch(() => null);
+    if (c?.public_code) {
+      redirect(`/sponsorships/${c.public_code}`);
     }
   }
 
