@@ -291,7 +291,7 @@ export default function AdminSponsorshipsPage() {
                         <td className="px-4 py-3 text-center text-gray-700 font-medium">{c.introduction_count}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center gap-2 justify-end">
-                            {c.status === "in_review" && (
+                            {(c.status === "in_review" || c.status === "pending_vouch") && (
                               <>
                                 <button onClick={() => updateCaseStatus(c.id, "live")} className="text-xs bg-green-600 text-white px-2.5 py-1 rounded-lg hover:bg-green-700 transition-colors">
                                   Approve
