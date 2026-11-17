@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Star, Users, ChevronRight } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Users, ChevronRight, MessageCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -27,6 +27,7 @@ interface ClubDetail {
   open_for_trials: boolean;
   scouting_open: boolean;
   created_by: string;
+  coach?: { id: string; name: string };
 }
 
 interface Review {
@@ -67,11 +68,15 @@ export default function ClubDetailPage() {
   const [reviews,    setReviews]    = useState<Review[]>([]);
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([]);
   const [loading,    setLoading]    = useState(true);
-  const [joining,    setJoining]    = useState(false);
-  const [showReview, setShowReview] = useState(false);
-  const [rating,     setRating]     = useState(5);
-  const [reviewBody, setReviewBody] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [joining,     setJoining]     = useState(false);
+  const [showReview,  setShowReview]  = useState(false);
+  const [rating,      setRating]      = useState(5);
+  const [reviewBody,  setReviewBody]  = useState("");
+  const [submitting,  setSubmitting]  = useState(false);
+  const [showMsg,     setShowMsg]     = useState(false);
+  const [msgDraft,    setMsgDraft]    = useState("");
+  const [sendingMsg,  setSendingMsg]  = useState(false);
+  const [msgSent,     setMsgSent]     = useState(false);
 
   useEffect(() => {
     if (!token || !id) return;
@@ -82,7 +87,7 @@ export default function ClubDetailPage() {
     ]).then(async ([clubRes, revRes, playersRes]) => {
       if (clubRes.status === "fulfilled" && clubRes.value.ok) {
         const json = await clubRes.value.json();
-        setClub(json.data ?? json);
+        setClub(json.club ?? json.data ?? json);
       }
       if (revRes.status === "fulfilled" && revRes.value.ok) {
         const json = await revRes.value.json();
@@ -126,6 +131,24 @@ export default function ClubDetailPage() {
       }
     } catch {}
     setSubmitting(false);
+  };
+
+  const sendMessage = async () => {
+    if (!msgDraft.trim() || !club?.coach?.id || !token) return;
+    setSendingMsg(true);
+    try {
+      const res = await fetch(`${API}/arena/messages/${club.coach.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
+        body: JSON.stringify({ body: msgDraft.trim() }),
+      });
+      if (res.ok) {
+        setMsgSent(true);
+        setMsgDraft("");
+        setShowMsg(false);
+      }
+    } catch {}
+    setSendingMsg(false);
   };
 
   if (!hasHydrated) return null;
@@ -231,14 +254,64 @@ export default function ClubDetailPage() {
               <Users size={15} />
               <span>{club.member_count} members</span>
             </div>
-            <button onClick={toggleJoin} disabled={joining}
-              className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full border transition-colors disabled:opacity-50"
-              style={club.is_following
-                ? { background: "#f0fdf4", borderColor: "#bbf7d0", color: GRS_GREEN }
-                : { borderColor: GRS_GREEN, color: GRS_GREEN }}>
-              {joining ? "..." : club.is_following ? "Following" : "Follow Club"}
-            </button>
+            <div className="flex items-center gap-2">
+              {club.coach?.id && club.coach.id !== user?.id && (
+                <button
+                  onClick={() => { setShowMsg((v) => !v); setMsgSent(false); }}
+                  className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full border transition-colors"
+                  style={showMsg
+                    ? { background: "#f0fdf4", borderColor: "#bbf7d0", color: GRS_GREEN }
+                    : { borderColor: "#d1d5db", color: "#374151" }}>
+                  <MessageCircle size={14} />
+                  {msgSent ? "Sent ✓" : "Message Coach"}
+                </button>
+              )}
+              <button onClick={toggleJoin} disabled={joining}
+                className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full border transition-colors disabled:opacity-50"
+                style={club.is_following
+                  ? { background: "#f0fdf4", borderColor: "#bbf7d0", color: GRS_GREEN }
+                  : { borderColor: GRS_GREEN, color: GRS_GREEN }}>
+                {joining ? "..." : club.is_following ? "Following" : "Follow Club"}
+              </button>
+            </div>
           </div>
+
+          {/* Inline message compose */}
+          {showMsg && club.coach?.id && (
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+              <p className="text-xs text-gray-500">
+                Send a message to <span className="font-semibold text-gray-700">{club.coach.name}</span>
+              </p>
+              <textarea
+                value={msgDraft}
+                onChange={(e) => setMsgDraft(e.target.value)}
+                placeholder={`Hi, I'm interested in ${club.name}...`}
+                rows={3}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none resize-none focus:border-green-400"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={sendMessage}
+                  disabled={sendingMsg || !msgDraft.trim()}
+                  className="px-4 py-2 rounded-full text-xs font-semibold text-white disabled:opacity-50"
+                  style={{ background: GRS_GREEN }}>
+                  {sendingMsg ? "Sending..." : "Send Message"}
+                </button>
+                <button
+                  onClick={() => setShowMsg(false)}
+                  className="px-4 py-2 rounded-full text-xs border border-gray-200 text-gray-600">
+                  Cancel
+                </button>
+                {msgSent && (
+                  <Link href={`/arena/messages?user=${club.coach.id}`}
+                    className="px-4 py-2 rounded-full text-xs font-semibold"
+                    style={{ color: GRS_GREEN }}>
+                    View conversation →
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Top Players */}
