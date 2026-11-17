@@ -4,6 +4,7 @@ import SponsorshipDetailClient from "./SponsorshipDetailClient";
 
 interface PageProps {
   params: { id: string };
+  searchParams?: Record<string, string | string[] | undefined>;
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -47,16 +48,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default async function SponsorshipDetailPage({ params }: PageProps) {
+export default async function SponsorshipDetailPage({ params, searchParams }: PageProps) {
   // Redirect legacy UUID links to canonical public_code URLs.
   // redirect() throws a NEXT_REDIRECT error internally — it must NOT be inside
   // a try/catch or the redirect is silently swallowed.
   if (UUID_RE.test(params.id)) {
     const c = await fetchCase(params.id).catch(() => null);
     if (c?.public_code) {
-      redirect(`/sponsorships/${c.public_code}`);
+      const qs = searchParams?.submitted === "1" ? "?submitted=1" : "";
+      redirect(`/sponsorships/${c.public_code}${qs}`);
     }
   }
 
-  return <SponsorshipDetailClient id={params.id} />;
+  const submitted = searchParams?.submitted === "1";
+  return <SponsorshipDetailClient id={params.id} submitted={submitted} />;
 }

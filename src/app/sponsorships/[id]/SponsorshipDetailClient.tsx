@@ -126,7 +126,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   closed:          { label: "Closed", color: "#6b7280" },
 };
 
-export default function SponsorshipDetailClient({ id }: { id: string }) {
+export default function SponsorshipDetailClient({ id, submitted = false }: { id: string; submitted?: boolean }) {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const router = useRouter();
@@ -487,6 +487,13 @@ export default function SponsorshipDetailClient({ id }: { id: string }) {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6">
+        {/* Case submitted success banner */}
+        {submitted && (
+          <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 text-sm font-medium mb-5">
+            Your case has been submitted! Our team will review it and you&apos;ll be notified when it goes live.
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
