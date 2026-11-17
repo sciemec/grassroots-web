@@ -1192,7 +1192,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-700 block mb-1">
-                  Sponsorship idea / USD amount <span className="text-gray-400">(optional)</span>
+                  Offer amount in USD <span className="text-gray-400">(optional)</span>
                 </label>
                 <input
                   type="number"
