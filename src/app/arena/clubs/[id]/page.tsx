@@ -46,6 +46,14 @@ interface TopPlayer {
   thuto_score?: number;
 }
 
+interface JoinRequest {
+  id: string;
+  player_id: string;
+  note?: string;
+  created_at: string;
+  player?: { id: string; name: string; position?: string; sport?: string; province?: string };
+}
+
 function StarRating({ rating, onChange }: { rating: number; onChange?: (r: number) => void }) {
   return (
     <div className="flex gap-0.5">
@@ -73,10 +81,12 @@ export default function ClubDetailPage() {
   const [rating,      setRating]      = useState(5);
   const [reviewBody,  setReviewBody]  = useState("");
   const [submitting,  setSubmitting]  = useState(false);
-  const [showMsg,     setShowMsg]     = useState(false);
-  const [msgDraft,    setMsgDraft]    = useState("");
-  const [sendingMsg,  setSendingMsg]  = useState(false);
-  const [msgSent,     setMsgSent]     = useState(false);
+  const [showMsg,       setShowMsg]       = useState(false);
+  const [msgDraft,      setMsgDraft]      = useState("");
+  const [sendingMsg,    setSendingMsg]    = useState(false);
+  const [msgSent,       setMsgSent]       = useState(false);
+  const [joinRequests,  setJoinRequests]  = useState<JoinRequest[]>([]);
+  const [respondingId,  setRespondingId]  = useState<string | null>(null);
 
   useEffect(() => {
     if (!token || !id) return;
@@ -99,6 +109,19 @@ export default function ClubDetailPage() {
       }
     }).finally(() => setLoading(false));
   }, [token, id]);
+
+  // Load pending join requests when this user is the club coach
+  useEffect(() => {
+    if (!token || !id || !user) return;
+    fetch(`${API}/arena/clubs/${id}/join-requests`, {
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
+    }).then(async (res) => {
+      if (res.ok) {
+        const json = await res.json();
+        setJoinRequests(safeArray<JoinRequest>(json.data ?? json));
+      }
+    }).catch(() => {});
+  }, [token, id, user]);
 
   const toggleJoin = async () => {
     if (!token || !club) return;
@@ -131,6 +154,24 @@ export default function ClubDetailPage() {
       }
     } catch {}
     setSubmitting(false);
+  };
+
+  const respondToJoinRequest = async (requestId: string, action: "approve" | "decline") => {
+    setRespondingId(requestId);
+    try {
+      const res = await fetch(`${API}/arena/clubs/join-requests/${requestId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
+        body: JSON.stringify({ action }),
+      });
+      if (res.ok) {
+        setJoinRequests((prev) => prev.filter((r) => r.id !== requestId));
+        if (action === "approve") {
+          setClub((c) => c ? { ...c, member_count: c.member_count + 1 } : c);
+        }
+      }
+    } catch {}
+    setRespondingId(null);
   };
 
   const sendMessage = async () => {
@@ -339,6 +380,60 @@ export default function ClubDetailPage() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Join Requests — visible to coach only */}
+        {club.coach?.id === user?.id && (
+          <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+            <h2 className="font-semibold text-sm text-gray-900">
+              Join Requests
+              {joinRequests.length > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-xs font-bold" style={{ background: GRS_GREEN }}>
+                  {joinRequests.length}
+                </span>
+              )}
+            </h2>
+
+            {joinRequests.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-3">No pending requests.</p>
+            ) : (
+              <div className="space-y-3">
+                {joinRequests.map((req) => {
+                  const pi = (req.player?.name ?? "?").split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
+                  const busy = respondingId === req.id;
+                  return (
+                    <div key={req.id} className="flex items-start gap-3 p-3 rounded-xl bg-gray-50">
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: GRS_GREEN }}>{pi}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900">{req.player?.name ?? "Unknown player"}</p>
+                        {req.player?.position && (
+                          <p className="text-xs text-gray-500 capitalize">{req.player.position}{req.player.province ? ` · ${req.player.province}` : ""}</p>
+                        )}
+                        {req.note && (
+                          <p className="text-xs text-gray-600 mt-1 italic">&ldquo;{req.note}&rdquo;</p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => respondToJoinRequest(req.id, "approve")}
+                          disabled={busy}
+                          className="px-3 py-1.5 rounded-full text-xs font-semibold text-white disabled:opacity-50"
+                          style={{ background: GRS_GREEN }}>
+                          {busy ? "..." : "Approve"}
+                        </button>
+                        <button
+                          onClick={() => respondToJoinRequest(req.id, "decline")}
+                          disabled={busy}
+                          className="px-3 py-1.5 rounded-full text-xs font-semibold border border-gray-200 text-gray-600 disabled:opacity-50">
+                          Decline
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

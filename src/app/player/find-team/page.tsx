@@ -38,6 +38,7 @@ interface Club {
   tier: string;
   member_count: number;
   is_member: boolean;
+  join_request_status?: "pending" | "approved" | "declined" | "withdrawn" | null;
   description?: string;
   open_for_trials: boolean;
 }
@@ -245,20 +246,37 @@ function TrialCard({ posting, token }: { posting: TalentPosting; token: string }
 
 // ── Club card ──────────────────────────────────────────────────────────────────
 
+type JoinState = "none" | "pending" | "approved" | "declined" | "withdrawn";
+
+function initialJoinState(club: Club): JoinState {
+  if (club.is_member) return "approved";
+  if (club.join_request_status === "pending")   return "pending";
+  if (club.join_request_status === "approved")  return "approved";
+  if (club.join_request_status === "declined")  return "declined";
+  if (club.join_request_status === "withdrawn") return "withdrawn";
+  return "none";
+}
+
 function ClubCard({ club, token }: { club: Club; token: string }) {
-  const [joined,  setJoined]  = useState(club.is_member);
-  const [joining, setJoining] = useState(false);
+  const [joinState, setJoinState] = useState<JoinState>(initialJoinState(club));
+  const [joining,   setJoining]   = useState(false);
+  const [showNote,  setShowNote]  = useState(false);
+  const [note,      setNote]      = useState("");
 
   const initials = club.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
-  const join = async () => {
+  const sendRequest = async () => {
     setJoining(true);
     try {
-      const res = await fetch(`${API}/arena/clubs/${club.id}/join`, {
+      const res = await fetch(`${API}/arena/clubs/${club.id}/join-request`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ note: note.trim() || undefined }),
       });
-      if (res.ok) setJoined(true);
+      if (res.ok || res.status === 409) {
+        setJoinState("pending");
+        setShowNote(false);
+      }
     } catch {}
     setJoining(false);
   };
@@ -324,25 +342,108 @@ function ClubCard({ club, token }: { club: Club; token: string }) {
         </div>
       </div>
 
-      {/* Button */}
-      <button
-        onClick={join}
-        disabled={joined || joining}
-        style={{
-          flexShrink: 0,
-          background: joined ? "#1e3a28" : "#1a5c2a",
-          color: joined ? "#4ade80" : "#fff",
-          fontSize: 11.5,
-          fontWeight: 700,
-          border: "none",
-          borderRadius: 8,
-          padding: "7px 12px",
-          cursor: joined || joining ? "default" : "pointer",
-          opacity: joining ? 0.6 : 1,
-        }}
-      >
-        {joined ? "Joined" : joining ? "..." : "Join"}
-      </button>
+      {/* Join button / state */}
+      <div style={{ flexShrink: 0 }}>
+        {joinState === "approved" ? (
+          <span
+            style={{
+              background: "#1e3a28",
+              color: "#4ade80",
+              fontSize: 11.5,
+              fontWeight: 700,
+              borderRadius: 8,
+              padding: "7px 12px",
+              display: "inline-block",
+            }}
+          >
+            Joined
+          </span>
+        ) : joinState === "pending" ? (
+          <span
+            style={{
+              background: "#1e2a3a",
+              color: "#60a5fa",
+              fontSize: 11.5,
+              fontWeight: 700,
+              borderRadius: 8,
+              padding: "7px 12px",
+              display: "inline-block",
+            }}
+          >
+            Requested
+          </span>
+        ) : showNote ? (
+          <div style={{ width: 180 }}>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Short note (optional)..."
+              rows={2}
+              style={{
+                width: "100%",
+                background: "#1e1e1e",
+                border: "1px solid #333",
+                borderRadius: 8,
+                color: "#fff",
+                fontSize: 11.5,
+                padding: "6px 8px",
+                resize: "none",
+                boxSizing: "border-box",
+              }}
+            />
+            <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+              <button
+                onClick={sendRequest}
+                disabled={joining}
+                style={{
+                  flex: 1,
+                  background: "#1a5c2a",
+                  color: "#fff",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  border: "none",
+                  borderRadius: 7,
+                  padding: "5px 0",
+                  cursor: joining ? "not-allowed" : "pointer",
+                  opacity: joining ? 0.6 : 1,
+                }}
+              >
+                {joining ? "..." : "Send"}
+              </button>
+              <button
+                onClick={() => setShowNote(false)}
+                style={{
+                  background: "#2a2a2a",
+                  color: "#aaa",
+                  fontSize: 11,
+                  border: "none",
+                  borderRadius: 7,
+                  padding: "5px 10px",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowNote(true)}
+            style={{
+              background: joinState === "declined" ? "#2a1a1a" : "#1a5c2a",
+              color: joinState === "declined" ? "#f87171" : "#fff",
+              fontSize: 11.5,
+              fontWeight: 700,
+              border: "none",
+              borderRadius: 8,
+              padding: "7px 12px",
+              cursor: "pointer",
+            }}
+          >
+            {joinState === "declined" ? "Re-apply" : "Join"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
