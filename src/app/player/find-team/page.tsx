@@ -76,9 +76,10 @@ function TrialCard({ posting, token }: { posting: TalentPosting; token: string }
       const res = await fetch(`${API}/arena/talent-wanted/${posting.id}/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ cover_note: note }),
+        body: JSON.stringify({ message: note }),
       });
       if (res.ok) { setApplied(true); setShowNote(false); }
+      else if (res.status === 409) { setApplied(true); setShowNote(false); }
     } catch {}
     setApplying(false);
   };
