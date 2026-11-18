@@ -561,6 +561,17 @@ export default function PlayerHubPage() {
           subtitle="Your video library"
         />
 
+        {/* Section — Find a Team */}
+        <SectionLabel label="Find a team" />
+        <HubCard
+          href="/arena/clubs"
+          icon={IconSearch}
+          iconBg={G}
+          iconColor={GL}
+          title="Find a Team"
+          subtitle="Browse and join clubs across Zimbabwe"
+        />
+
         {/* Section — Sponsorships */}
         <SectionLabel label="Sponsorships" />
         <HubCard
