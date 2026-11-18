@@ -21,6 +21,7 @@ interface Club {
   tier: string;
   member_count: number;
   is_member: boolean;
+  join_request_status: string | null;
   avatar_initials?: string;
   description?: string;
   open_for_trials: boolean;
@@ -84,14 +85,15 @@ export default function ClubsPage() {
 
   const toggleJoin = async (club: Club) => {
     if (!token) return;
+    if (club.join_request_status === "pending" || club.join_request_status === "approved") return;
     setJoining(club.id);
     try {
-      if (club.is_member) {
-        await fetch(`${API}/arena/clubs/${club.id}/leave`, { method: "DELETE", headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } });
-        setClubs((cs) => cs.map((c) => c.id === club.id ? { ...c, is_member: false, member_count: c.member_count - 1 } : c));
-      } else {
-        await fetch(`${API}/arena/clubs/${club.id}/join`, { method: "POST", headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } });
-        setClubs((cs) => cs.map((c) => c.id === club.id ? { ...c, is_member: true, member_count: c.member_count + 1 } : c));
+      const res = await fetch(`${API}/arena/clubs/${club.id}/join-request`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
+      });
+      if (res.ok) {
+        setClubs((cs) => cs.map((c) => c.id === club.id ? { ...c, join_request_status: "pending" } : c));
       }
     } catch {}
     setJoining(null);
@@ -199,12 +201,18 @@ export default function ClubsPage() {
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: "#f0fdf4", color: GRS_GREEN }}>Open for trials</span>
                       )}
                     </div>
-                    <button onClick={() => toggleJoin(club)} disabled={joining === club.id}
+                    <button
+                      onClick={() => toggleJoin(club)}
+                      disabled={joining === club.id || club.join_request_status === "pending" || club.join_request_status === "approved"}
                       className="text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50"
-                      style={club.is_member
-                        ? { background: "#f0fdf4", borderColor: "#bbf7d0", color: GRS_GREEN }
-                        : { borderColor: GRS_GREEN, color: GRS_GREEN }}>
-                      {joining === club.id ? "..." : club.is_member ? "Joined" : "Join"}
+                      style={
+                        club.join_request_status === "approved"
+                          ? { background: "#f0fdf4", borderColor: "#bbf7d0", color: GRS_GREEN }
+                          : club.join_request_status === "pending"
+                          ? { background: "#fefce8", borderColor: "#fde68a", color: "#92400e" }
+                          : { borderColor: GRS_GREEN, color: GRS_GREEN }
+                      }>
+                      {joining === club.id ? "..." : club.join_request_status === "approved" ? "Joined" : club.join_request_status === "pending" ? "Requested" : "Join"}
                     </button>
                   </div>
                 </div>
