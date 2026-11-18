@@ -163,8 +163,9 @@ const JOURNEY_STEPS = ["Draft", "Vouch", "Review", "Live"];
 // ─── component ───────────────────────────────────────────────────────────────
 
 export default function SponsorshipDetailClient({ id, submitted = false }: { id: string; submitted?: boolean }) {
-  const user  = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
+  const user        = useAuthStore((s) => s.user);
+  const token       = useAuthStore((s) => s.token);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const router = useRouter();
 
   const [caseData, setCaseData] = useState<SponsorshipCase | null>(null);
@@ -219,6 +220,11 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
   // ─── data loading ──────────────────────────────────────────────────────────
 
   useEffect(() => {
+    if (!hasHydrated) return;
+
+    setNotFound(false);
+    setLoading(true);
+
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -251,7 +257,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
-  }, [id, token, base, isPublicCode]);
+  }, [id, token, base, isPublicCode, hasHydrated]);
 
   useEffect(() => {
     const intro = caseData?.my_introduction;
