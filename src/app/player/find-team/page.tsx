@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 
@@ -12,6 +13,35 @@ function safeArray<T>(v: unknown): T[] {
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────────
+
+type JoinRequestStatus = "pending" | "approved" | "declined" | "withdrawn";
+
+interface JoinRequest {
+  id: string;
+  club_id: string;
+  club_name?: string;
+  note: string | null;
+  status: JoinRequestStatus;
+  responded_at: string | null;
+  created_at: string;
+}
+
+const STATUS_CONFIG: Record<JoinRequestStatus, {
+  label: string; bg: string; color: string; border: string; desc: string;
+}> = {
+  pending:   { label: "Pending",   bg: "#1e2a1a", color: "#86efac", border: "#2d4a2a", desc: "Waiting for the coach to respond." },
+  approved:  { label: "Approved",  bg: "#1a3a28", color: "#4ade80", border: "#2d6a42", desc: "You are now a member of this club!" },
+  declined:  { label: "Declined",  bg: "#2a1a1a", color: "#f87171", border: "#4a2a2a", desc: "Your request was not accepted. You can re-apply." },
+  withdrawn: { label: "Withdrawn", bg: "#1e1e1e", color: "#777",    border: "#2a2a2a", desc: "You withdrew this request." },
+};
+
+function timeAgoFull(iso: string) {
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (diff < 60)    return `${diff}s ago`;
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
 
 interface TalentPosting {
   id: string;
@@ -448,22 +478,146 @@ function ClubCard({ club, token }: { club: Club; token: string }) {
   );
 }
 
+// ── Request card ───────────────────────────────────────────────────────────────
+
+function RequestCard({
+  req,
+  onWithdraw,
+  acting = false,
+}: {
+  req: JoinRequest;
+  onWithdraw?: () => void;
+  acting?: boolean;
+}) {
+  const cfg = STATUS_CONFIG[req.status];
+  return (
+    <div
+      style={{
+        background: cfg.bg,
+        border: `1px solid ${cfg.border}`,
+        borderRadius: 14,
+        padding: "14px 16px",
+        marginBottom: 10,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+              background: "#1a3a28",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#6db88a", fontSize: 11, fontWeight: 700,
+            }}
+          >
+            {(req.club_name ?? "?").slice(0, 2).toUpperCase()}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>
+              {req.club_name ?? "Unknown Club"}
+            </div>
+            <div style={{ color: "#666", fontSize: 11, marginTop: 2 }}>
+              Submitted {timeAgoFull(req.created_at)}
+            </div>
+          </div>
+        </div>
+        <span
+          style={{
+            flexShrink: 0,
+            background: "#0e0e0e",
+            color: cfg.color,
+            fontSize: 10.5,
+            fontWeight: 700,
+            padding: "3px 8px",
+            borderRadius: 20,
+            border: `1px solid ${cfg.border}`,
+          }}
+        >
+          {cfg.label}
+        </span>
+      </div>
+
+      <div style={{ color: "#777", fontSize: 11.5, marginTop: 8 }}>{cfg.desc}</div>
+
+      {req.note && (
+        <div
+          style={{
+            marginTop: 8, background: "#151515", borderRadius: 8,
+            padding: "8px 10px", fontSize: 11.5, color: "#aaa",
+          }}
+        >
+          &ldquo;{req.note}&rdquo;
+        </div>
+      )}
+
+      {req.responded_at && (
+        <div style={{ color: "#555", fontSize: 11, marginTop: 6 }}>
+          Responded {timeAgoFull(req.responded_at)}
+        </div>
+      )}
+
+      <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center" }}>
+        {req.status === "pending" && onWithdraw && (
+          <button
+            onClick={onWithdraw}
+            disabled={acting}
+            style={{
+              background: "#2a1a1a",
+              color: "#f87171",
+              border: "1px solid #4a2a2a",
+              borderRadius: 8,
+              fontSize: 11.5,
+              fontWeight: 600,
+              padding: "5px 12px",
+              cursor: acting ? "not-allowed" : "pointer",
+              opacity: acting ? 0.5 : 1,
+            }}
+          >
+            Withdraw
+          </button>
+        )}
+        {req.status === "approved" && (
+          <Link
+            href={`/arena/clubs/${req.club_id}`}
+            style={{
+              background: "#1a5c2a",
+              color: "#fff",
+              borderRadius: 8,
+              fontSize: 11.5,
+              fontWeight: 600,
+              padding: "5px 12px",
+              textDecoration: "none",
+            }}
+          >
+            View Club
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-type Tab = "trials" | "clubs";
+type Tab = "trials" | "clubs" | "requests";
 
 export default function FindTeamPage() {
   const token       = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const searchParams = useSearchParams();
 
-  const [tab,          setTab]          = useState<Tab>("trials");
+  const initialTab = ((searchParams?.get("tab") ?? "") as Tab) || "trials";
+  const [tab,          setTab]          = useState<Tab>(initialTab);
   const [sport,        setSport]        = useState("");
   const [province,     setProvince]     = useState("");
   const [postings,     setPostings]     = useState<TalentPosting[]>([]);
   const [clubs,        setClubs]        = useState<Club[]>([]);
+  const [requests,     setRequests]     = useState<JoinRequest[]>([]);
   const [loading,      setLoading]      = useState(false);
   const [available,    setAvailable]    = useState(false);
   const [savingAvail,  setSavingAvail]  = useState(false);
+  const [actionId,     setActionId]     = useState<string | null>(null);
+  const [withdrawId,   setWithdrawId]   = useState<string | null>(null);
 
   // Load open_for_scouting from profile
   useEffect(() => {
@@ -510,11 +664,47 @@ export default function FindTeamPage() {
     setLoading(false);
   }, [token, sport, province]);
 
+  const fetchRequests = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/player/join-requests`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = res.ok ? await res.json() : {};
+      setRequests(safeArray<JoinRequest>(json.data ?? json));
+    } catch {
+      setRequests([]);
+    }
+    setLoading(false);
+  }, [token]);
+
   useEffect(() => {
     if (!hasHydrated || !token) return;
-    if (tab === "trials") fetchTrials();
-    else fetchClubs();
-  }, [tab, hasHydrated, token, fetchTrials, fetchClubs]);
+    if (tab === "trials")   fetchTrials();
+    else if (tab === "clubs") fetchClubs();
+    else fetchRequests();
+  }, [tab, hasHydrated, token, fetchTrials, fetchClubs, fetchRequests]);
+
+  const handleWithdraw = async (id: string) => {
+    if (!token) return;
+    setActionId(id);
+    try {
+      const res = await fetch(`${API}/arena/clubs/join-requests/${id}/withdraw`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setRequests((prev) =>
+          prev.map((r) =>
+            r.id === id ? { ...r, status: "withdrawn" as JoinRequestStatus, responded_at: new Date().toISOString() } : r
+          )
+        );
+      }
+    } catch {}
+    setActionId(null);
+    setWithdrawId(null);
+  };
 
   const toggleAvailable = async () => {
     setSavingAvail(true);
@@ -527,6 +717,10 @@ export default function FindTeamPage() {
   };
 
   if (!hasHydrated) return null;
+
+  const pending  = requests.filter((r) => r.status === "pending");
+  const approved = requests.filter((r) => r.status === "approved");
+  const history  = requests.filter((r) => r.status === "declined" || r.status === "withdrawn");
 
   const selectStyle: React.CSSProperties = {
     background: "#1e1e1e",
@@ -620,58 +814,67 @@ export default function FindTeamPage() {
         <div
           style={{
             display: "flex",
-            gap: 8,
+            gap: 6,
             marginTop: 16,
             background: "#151515",
             borderRadius: 10,
             padding: 4,
           }}
         >
-          {(["trials", "clubs"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              style={{
-                flex: 1,
-                background: tab === t ? "#c8962a" : "transparent",
-                color: tab === t ? "#fff" : "#777",
-                border: "none",
-                borderRadius: 7,
-                padding: "8px",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                textTransform: "capitalize",
-              }}
-            >
-              {t === "trials" ? "Open Trials" : "Clubs"}
-            </button>
-          ))}
+          {(["trials", "clubs", "requests"] as Tab[]).map((t) => {
+            const labels: Record<Tab, string> = {
+              trials: "Open Trials",
+              clubs: "Clubs",
+              requests: `My Requests${pending.length > 0 ? ` (${pending.length})` : ""}`,
+            };
+            return (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                style={{
+                  flex: 1,
+                  background: tab === t ? "#c8962a" : "transparent",
+                  color: tab === t ? "#fff" : "#777",
+                  border: "none",
+                  borderRadius: 7,
+                  padding: "8px 4px",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {labels[t]}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Filters */}
-        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-          <select
-            value={sport}
-            onChange={(e) => setSport(e.target.value)}
-            style={selectStyle}
-          >
-            <option value="">All sports</option>
-            {SPORTS.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          <select
-            value={province}
-            onChange={(e) => setProvince(e.target.value)}
-            style={selectStyle}
-          >
-            <option value="">All provinces</option>
-            {PROVINCES.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-        </div>
+        {/* Filters — hidden on requests tab */}
+        {tab !== "requests" && (
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <select
+              value={sport}
+              onChange={(e) => setSport(e.target.value)}
+              style={selectStyle}
+            >
+              <option value="">All sports</option>
+              {SPORTS.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            <select
+              value={province}
+              onChange={(e) => setProvince(e.target.value)}
+              style={selectStyle}
+            >
+              <option value="">All provinces</option>
+              {PROVINCES.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Content */}
         <div style={{ marginTop: 14 }}>
@@ -728,8 +931,115 @@ export default function FindTeamPage() {
               clubs.map((c) => <ClubCard key={c.id} club={c} token={token ?? ""} />)
             )
           )}
+
+          {!loading && tab === "requests" && (
+            requests.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  color: "#555",
+                  fontSize: 13,
+                  padding: "48px 24px",
+                  background: "#151515",
+                  borderRadius: 14,
+                  border: "1px solid #2a2a2a",
+                }}
+              >
+                <div style={{ fontSize: 32, marginBottom: 10 }}>📋</div>
+                <div style={{ color: "#aaa", fontWeight: 600 }}>No join requests yet</div>
+                <div style={{ color: "#666", fontSize: 12, marginTop: 4 }}>
+                  Browse clubs above and tap &ldquo;Join&rdquo; to get started.
+                </div>
+              </div>
+            ) : (
+              <>
+                {pending.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ color: "#666", fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+                      Awaiting Response · {pending.length}
+                    </div>
+                    {pending.map((r) => (
+                      <RequestCard
+                        key={r.id}
+                        req={r}
+                        onWithdraw={() => setWithdrawId(r.id)}
+                        acting={actionId === r.id}
+                      />
+                    ))}
+                  </div>
+                )}
+                {approved.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ color: "#666", fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+                      Active Memberships · {approved.length}
+                    </div>
+                    {approved.map((r) => <RequestCard key={r.id} req={r} />)}
+                  </div>
+                )}
+                {history.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ color: "#666", fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+                      History · {history.length}
+                    </div>
+                    {history.map((r) => <RequestCard key={r.id} req={r} />)}
+                  </div>
+                )}
+              </>
+            )
+          )}
         </div>
       </div>
+
+      {/* Withdraw confirm modal */}
+      {withdrawId && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            display: "flex", alignItems: "flex-end", justifyContent: "center",
+            background: "rgba(0,0,0,0.6)", padding: 16,
+          }}
+        >
+          <div
+            style={{
+              background: "#151515",
+              border: "1px solid #2a2a2a",
+              borderRadius: 20,
+              width: "100%",
+              maxWidth: 400,
+              padding: "20px 20px 24px",
+            }}
+          >
+            <div style={{ color: "#fff", fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
+              Withdraw this request?
+            </div>
+            <div style={{ color: "#777", fontSize: 12.5, marginBottom: 20 }}>
+              The club coach will no longer see your request. You can re-apply any time.
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => setWithdrawId(null)}
+                style={{
+                  flex: 1, padding: "10px", borderRadius: 10,
+                  background: "#1e1e1e", border: "1px solid #333",
+                  color: "#aaa", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                Keep It
+              </button>
+              <button
+                onClick={() => handleWithdraw(withdrawId)}
+                style={{
+                  flex: 1, padding: "10px", borderRadius: 10,
+                  background: "#7f1d1d", border: "none",
+                  color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                }}
+              >
+                Withdraw
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
