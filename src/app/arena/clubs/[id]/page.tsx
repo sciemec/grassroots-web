@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Star, Users, ChevronRight, MessageCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Users, ChevronRight, MessageCircle, Send, CheckCircle2, Clock, X } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -76,7 +76,11 @@ export default function ClubDetailPage() {
   const [reviews,    setReviews]    = useState<Review[]>([]);
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([]);
   const [loading,    setLoading]    = useState(true);
-  const [joining,     setJoining]     = useState(false);
+  const [joinRequestStatus, setJoinRequestStatus] = useState<string | null>(null);
+  const [joinRequestId,     setJoinRequestId]     = useState<string | null>(null);
+  const [showJoinModal,     setShowJoinModal]     = useState(false);
+  const [joinNote,          setJoinNote]          = useState("");
+  const [joinLoading,       setJoinLoading]       = useState(false);
   const [showReview,  setShowReview]  = useState(false);
   const [rating,      setRating]      = useState(5);
   const [reviewBody,  setReviewBody]  = useState("");
@@ -98,6 +102,9 @@ export default function ClubDetailPage() {
       if (clubRes.status === "fulfilled" && clubRes.value.ok) {
         const json = await clubRes.value.json();
         setClub(json.club ?? json.data ?? json);
+        // join_request_status and join_request_id are at the top level of the show() response
+        if (json.join_request_status !== undefined) setJoinRequestStatus(json.join_request_status);
+        if (json.join_request_id     !== undefined) setJoinRequestId(json.join_request_id);
       }
       if (revRes.status === "fulfilled" && revRes.value.ok) {
         const json = await revRes.value.json();
@@ -123,17 +130,40 @@ export default function ClubDetailPage() {
     }).catch(() => {});
   }, [token, id, user]);
 
-  const toggleJoin = async () => {
-    if (!token || !club) return;
-    const wasFollowing = club.is_following;
-    setClub({ ...club, is_following: !wasFollowing, member_count: club.member_count + (wasFollowing ? -1 : 1) });
-    setJoining(true);
+  const requestToJoin = async () => {
+    if (!token || !club || joinLoading) return;
+    setJoinLoading(true);
     try {
-      await fetch(`${API}/arena/clubs/${id}/follow`, { method: "POST", headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } });
-    } catch {
-      setClub({ ...club, is_following: wasFollowing, member_count: club.member_count });
-    }
-    setJoining(false);
+      const res = await fetch(`${API}/arena/clubs/${id}/join-request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
+        body: JSON.stringify({ note: joinNote.trim() || null }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setJoinRequestStatus("pending");
+        setJoinRequestId(json.join_request?.id ?? null);
+        setShowJoinModal(false);
+        setJoinNote("");
+      }
+    } catch {}
+    setJoinLoading(false);
+  };
+
+  const withdrawMyRequest = async () => {
+    if (!token || !joinRequestId || joinLoading) return;
+    setJoinLoading(true);
+    try {
+      const res = await fetch(`${API}/arena/clubs/join-requests/${joinRequestId}/withdraw`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
+      });
+      if (res.ok) {
+        setJoinRequestStatus("withdrawn");
+        setJoinRequestId(null);
+      }
+    } catch {}
+    setJoinLoading(false);
   };
 
   const submitReview = async () => {
@@ -307,13 +337,32 @@ export default function ClubDetailPage() {
                   {msgSent ? "Sent ✓" : "Message Coach"}
                 </button>
               )}
-              <button onClick={toggleJoin} disabled={joining}
-                className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full border transition-colors disabled:opacity-50"
-                style={club.is_following
-                  ? { background: "#f0fdf4", borderColor: "#bbf7d0", color: GRS_GREEN }
-                  : { borderColor: GRS_GREEN, color: GRS_GREEN }}>
-                {joining ? "..." : club.is_following ? "Following" : "Follow Club"}
-              </button>
+              {/* Join request button — status-aware */}
+              {joinRequestStatus === "approved" ? (
+                <span className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full"
+                  style={{ background: "#f0fdf4", color: GRS_GREEN }}>
+                  <CheckCircle2 size={14} /> Member
+                </span>
+              ) : joinRequestStatus === "pending" ? (
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-full"
+                    style={{ background: "#fef9c3", color: "#854d0e" }}>
+                    <Clock size={12} /> Pending
+                  </span>
+                  <button onClick={withdrawMyRequest} disabled={joinLoading}
+                    className="text-xs font-medium px-3 py-2 rounded-full border border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-500 transition-colors disabled:opacity-50">
+                    {joinLoading ? "..." : "Withdraw"}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowJoinModal(true)}
+                  className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full border transition-colors"
+                  style={{ borderColor: GRS_GREEN, color: GRS_GREEN }}>
+                  <Send size={13} />
+                  {joinRequestStatus === "declined" || joinRequestStatus === "withdrawn" ? "Re-apply" : "Request to Join"}
+                </button>
+              )}
             </div>
           </div>
 
@@ -354,6 +403,43 @@ export default function ClubDetailPage() {
             </div>
           )}
         </div>
+
+      {/* Join request modal */}
+      {showJoinModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="font-bold text-gray-900">Request to Join</p>
+                <p className="text-xs text-gray-500 mt-0.5">{club.name}</p>
+              </div>
+              <button onClick={() => { setShowJoinModal(false); setJoinNote(""); }}
+                className="p-1 rounded-full hover:bg-gray-100 transition-colors">
+                <X size={16} className="text-gray-500" />
+              </button>
+            </div>
+            <textarea
+              value={joinNote}
+              onChange={(e) => setJoinNote(e.target.value)}
+              placeholder="Optional: tell the coach a bit about yourself..."
+              rows={3}
+              maxLength={300}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none resize-none focus:border-green-400 mb-4"
+            />
+            <div className="flex gap-3">
+              <button onClick={() => { setShowJoinModal(false); setJoinNote(""); }}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 font-medium">
+                Cancel
+              </button>
+              <button onClick={requestToJoin} disabled={joinLoading}
+                className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
+                style={{ background: GRS_GREEN }}>
+                {joinLoading ? "Sending..." : "Send Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
         {/* Top Players */}
         {topPlayers.length > 0 && (
