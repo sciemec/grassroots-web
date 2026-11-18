@@ -564,12 +564,12 @@ export default function PlayerHubPage() {
         {/* Section — Find a Team */}
         <SectionLabel label="Find a team" />
         <HubCard
-          href="/arena/clubs"
+          href="/player/find-team"
           icon={IconSearch}
           iconBg={G}
           iconColor={GL}
           title="Find a Team"
-          subtitle="Browse and join clubs across Zimbabwe"
+          subtitle="Browse open trials and clubs across Zimbabwe"
         />
 
         {/* Section — Sponsorships */}
