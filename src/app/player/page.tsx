@@ -572,7 +572,7 @@ export default function PlayerHubPage() {
           subtitle="Browse open trials and clubs across Zimbabwe"
         />
         <HubCard
-          href="/player/find-team?tab=requests"
+          href="/player/find-team"
           icon={IconSend}
           iconBg={G}
           iconColor={GL}

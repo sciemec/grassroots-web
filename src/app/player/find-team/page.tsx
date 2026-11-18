@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 
@@ -604,10 +603,8 @@ type Tab = "trials" | "clubs" | "requests";
 export default function FindTeamPage() {
   const token       = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
-  const searchParams = useSearchParams();
 
-  const initialTab = ((searchParams?.get("tab") ?? "") as Tab) || "trials";
-  const [tab,          setTab]          = useState<Tab>(initialTab);
+  const [tab,          setTab]          = useState<Tab>("trials");
   const [sport,        setSport]        = useState("");
   const [province,     setProvince]     = useState("");
   const [postings,     setPostings]     = useState<TalentPosting[]>([]);
