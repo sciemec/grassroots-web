@@ -26,6 +26,7 @@ import {
   IconHeart,
   IconCoin,
   IconSearch,
+  IconSend,
 } from "@tabler/icons-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useSportFeatures } from "@/hooks/useSportFeatures";
@@ -569,6 +570,14 @@ export default function PlayerHubPage() {
           iconColor={GL}
           title="Find a Team"
           subtitle="Browse open trials and clubs across Zimbabwe"
+        />
+        <HubCard
+          href="/player/join-requests"
+          icon={IconSend}
+          iconBg={G}
+          iconColor={GL}
+          title="My Club Requests"
+          subtitle="Track your pending and approved join requests"
         />
 
         {/* Section — Sponsorships */}
