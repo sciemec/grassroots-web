@@ -119,6 +119,7 @@ export default function AdminDashboardPage() {
           <HubCard href="/admin/coach-credentials" icon={Lock}     label="Coach Credentials"  desc="Review & verify coaching badges"   />
           <HubCard href="/admin/club-claims"       icon={ShieldCheck} label="Club Claims"       desc="Approve coaches claiming their clubs" />
           <HubCard href="/admin/join-requests"    icon={Users}      label="Join Requests"     desc="Player requests to join Arena clubs"  />
+          <HubCard href="/admin/arena-approvals"  icon={Flag}       label="Arena Approvals"   desc="Approve clubs &amp; talent listings before they go live" accent />
         </div>
 
         {/* ── 2. Revenue & Subscriptions ───────────────────────────────── */}
