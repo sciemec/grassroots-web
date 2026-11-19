@@ -13,8 +13,6 @@ interface FormData {
   agreed: boolean;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://bhora-ai.onrender.com/api/v1";
-
 export default function GuardianRegisterPage() {
   const router = useRouter();
 
@@ -46,7 +44,7 @@ export default function GuardianRegisterPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/auth/register`, {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
