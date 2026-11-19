@@ -193,7 +193,7 @@ export default function NewSponsorshipPage() {
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Submit a Sponsorship Case</h1>
           <p className="text-sm text-gray-500 mt-1">
-            GRS will review your case before it goes live. Step {step} of {totalSteps}.
+            Step {step} of {totalSteps} · Draft → Vouch → GRS review → Live
           </p>
         </div>
 
@@ -209,6 +209,9 @@ export default function NewSponsorshipPage() {
           {/* STEP 1 — Basics */}
           {step === 1 && (
             <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-800 mb-2">
+                <strong>How it works:</strong> Fill in the details below → after submitting, ask a coach or club admin to vouch for the case → GRS reviews it → it goes live for sponsors to find.
+              </div>
               <h2 className="font-semibold text-gray-900 mb-3">Case Basics</h2>
 
               <div>

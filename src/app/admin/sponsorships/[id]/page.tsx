@@ -53,6 +53,7 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
   const [error, setError]       = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -83,6 +84,32 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
       setActionMsg(`Status updated to "${newStatus.replace(/_/g, " ")}"`);
     } catch (err: unknown) {
       setActionMsg((err as Error).message ?? "Could not update status.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const publishCase = async () => {
+    if (!caseData || updating) return;
+    setUpdating(true);
+    setActionMsg(null);
+    setPublishError(null);
+    try {
+      const res = await fetch(`${base}/sponsorships/${caseData.id}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        // 422 = failed gate checks — show exactly what's blocking publication
+        const msg = j.message ?? j.error ?? "Could not publish this case.";
+        setPublishError(msg);
+        return;
+      }
+      setCaseData((prev) => prev ? { ...prev, status: "live" } : prev);
+      setActionMsg("Case is now Live.");
+    } catch {
+      setPublishError("Network error — could not reach the server.");
     } finally {
       setUpdating(false);
     }
@@ -160,16 +187,22 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
           {actionMsg}
         </div>
       )}
+      {publishError && (
+        <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl px-4 py-3 text-sm mb-4">
+          <div className="font-semibold mb-0.5">Cannot approve — gate check failed</div>
+          <div>{publishError}</div>
+        </div>
+      )}
 
       {/* Admin actions */}
       <div className="flex gap-2 flex-wrap mb-6">
         {canApprove && (
           <button
-            onClick={() => updateStatus("live")}
+            onClick={publishCase}
             disabled={updating}
             className="bg-green-600 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-60"
           >
-            {updating ? "Updating…" : "Approve → Live"}
+            {updating ? "Checking…" : "Approve → Live"}
           </button>
         )}
         {canReject && (

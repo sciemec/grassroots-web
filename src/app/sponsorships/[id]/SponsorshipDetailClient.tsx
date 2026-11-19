@@ -184,13 +184,15 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
   const [introSuccess,   setIntroSuccess]    = useState(false);
 
   // vouch request (owner, draft / pending_vouch)
-  const [showVouchForm,   setShowVouchForm]   = useState(false);
-  const [vouchMode,       setVouchMode]       = useState<"platform" | "whatsapp">("platform");
-  const [vouchUserId,     setVouchUserId]     = useState("");
-  const [vouchWhatsapp,   setVouchWhatsapp]   = useState("");
-  const [vouchSubmitting, setVouchSubmitting] = useState(false);
-  const [vouchError,      setVouchError]      = useState<string | null>(null);
-  const [vouchSuccess,    setVouchSuccess]    = useState(false);
+  const [showVouchForm,     setShowVouchForm]     = useState(false);
+  const [vouchMode,         setVouchMode]         = useState<"platform" | "whatsapp">("platform");
+  const [vouchUserId,       setVouchUserId]       = useState("");
+  const [vouchWhatsapp,     setVouchWhatsapp]     = useState("");
+  const [vouchSubmitting,   setVouchSubmitting]   = useState(false);
+  const [vouchError,        setVouchError]        = useState<string | null>(null);
+  const [vouchSuccess,      setVouchSuccess]      = useState(false);
+  const [eligibleCoaches,   setEligibleCoaches]   = useState<{ id: string; name: string; phone: string | null }[]>([]);
+  const [eligibleLoading,   setEligibleLoading]   = useState(false);
 
   // proof of use (owner, live)
   const [showProofForm,   setShowProofForm]   = useState(false);
@@ -987,25 +989,44 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
 
               {!showVouchForm ? (
                 <button
-                  onClick={() => { setShowVouchForm(true); setVouchSuccess(false); }}
+                  onClick={() => {
+                    setShowVouchForm(true);
+                    setVouchSuccess(false);
+                    if (eligibleCoaches.length === 0 && !eligibleLoading) {
+                      setEligibleLoading(true);
+                      fetch(`${base}/sponsorships/${caseData!.id}/eligible-vouchers`, {
+                        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+                      })
+                        .then((r) => r.ok ? r.json() : Promise.reject())
+                        .then((j) => setEligibleCoaches(j.data ?? []))
+                        .catch(() => {/* no eligible coaches found — fallback to manual entry */})
+                        .finally(() => setEligibleLoading(false));
+                    }
+                  }}
                   className="w-full border-2 border-dashed border-[#1a5c2a]/30 hover:border-[#1a5c2a]/60 text-[#1a5c2a] text-sm font-medium py-2.5 rounded-xl transition-colors"
                 >
                   + Request a Voucher
                 </button>
               ) : (
                 <div className="border border-gray-200 rounded-xl p-4">
+                  {/* Plain-English explanation */}
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 mb-3 text-xs text-amber-800">
+                    <p className="font-semibold mb-0.5">What is a vouch?</p>
+                    <p>A vouch is a written confirmation from a coach, teacher, or club official who personally knows this athlete. It tells GRS the case is real. Once a voucher confirms, GRS reviews the case and—if approved—it goes live for sponsors to find.</p>
+                  </div>
+
                   <div className="flex gap-2 mb-3">
                     <button
                       onClick={() => setVouchMode("platform")}
                       className={`flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors ${vouchMode === "platform" ? "bg-[#1a5c2a] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                     >
-                      Platform User
+                      Choose a Coach
                     </button>
                     <button
                       onClick={() => setVouchMode("whatsapp")}
                       className={`flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors ${vouchMode === "whatsapp" ? "bg-[#1a5c2a] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                     >
-                      WhatsApp Invite
+                      Invite by WhatsApp
                     </button>
                   </div>
                   {vouchError && (
@@ -1013,19 +1034,51 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
                   )}
                   {vouchMode === "platform" ? (
                     <div className="mb-3">
-                      <label className="text-xs font-medium text-gray-700 block mb-1">Coach or Official&apos;s User ID</label>
-                      <input
-                        type="text"
-                        value={vouchUserId}
-                        onChange={(e) => setVouchUserId(e.target.value)}
-                        placeholder="Paste the coach's user ID from their profile"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
-                      />
-                      <p className="text-xs text-gray-400 mt-1">The person must have a coach or admin role on GRS.</p>
+                      {eligibleLoading ? (
+                        <p className="text-xs text-gray-400 py-2">Loading eligible coaches…</p>
+                      ) : eligibleCoaches.length > 0 ? (
+                        <>
+                          <label className="text-xs font-medium text-gray-700 block mb-1">Coaches who know this athlete</label>
+                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                            {eligibleCoaches.map((coach) => (
+                              <button
+                                key={coach.id}
+                                onClick={() => setVouchUserId(coach.id)}
+                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-colors ${
+                                  vouchUserId === coach.id
+                                    ? "border-[#1a5c2a] bg-[#f0fdf4]"
+                                    : "border-gray-200 hover:border-gray-300 bg-white"
+                                }`}
+                              >
+                                <span className="w-7 h-7 rounded-full bg-[#1a5c2a] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                                  {(coach.name ?? "?")[0].toUpperCase()}
+                                </span>
+                                <span className="text-sm font-medium text-gray-800 truncate">{coach.name}</span>
+                                {vouchUserId === coach.id && (
+                                  <span className="ml-auto text-[#1a5c2a] text-xs font-semibold">Selected</span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-xs text-gray-500 mb-2">No coaches found who have this athlete on their squad or registry. You can invite one by WhatsApp instead, or enter their GRS user ID below if you know it.</p>
+                          <label className="text-xs font-medium text-gray-700 block mb-1">Coach&apos;s GRS User ID</label>
+                          <input
+                            type="text"
+                            value={vouchUserId}
+                            onChange={(e) => setVouchUserId(e.target.value)}
+                            placeholder="Paste the coach's user ID from their profile"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">The person must have a coach or admin role on GRS.</p>
+                        </>
+                      )}
                     </div>
                   ) : (
                     <div className="mb-3">
-                      <label className="text-xs font-medium text-gray-700 block mb-1">WhatsApp Number</label>
+                      <label className="text-xs font-medium text-gray-700 block mb-1">Coach&apos;s WhatsApp number</label>
                       <input
                         type="tel"
                         value={vouchWhatsapp}
@@ -1033,7 +1086,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
                         placeholder="e.g. 0771 234 567"
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
                       />
-                      <p className="text-xs text-gray-400 mt-1">We&apos;ll send them a WhatsApp message with a vouching link.</p>
+                      <p className="text-xs text-gray-400 mt-1">We&apos;ll send them a WhatsApp message with a link to vouch for this case.</p>
                     </div>
                   )}
                   <div className="flex gap-2">
@@ -1048,7 +1101,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
                       disabled={vouchSubmitting || (vouchMode === "platform" ? !vouchUserId.trim() : !vouchWhatsapp.trim())}
                       className="flex-1 bg-[#1a5c2a] text-white text-xs font-semibold py-2 rounded-lg hover:bg-[#145222] disabled:opacity-60"
                     >
-                      {vouchSubmitting ? "Sending…" : "Send Request"}
+                      {vouchSubmitting ? "Sending…" : "Send Vouch Request"}
                     </button>
                   </div>
                 </div>

@@ -176,6 +176,26 @@ export default function AdminSponsorshipsPage() {
     }
   };
 
+  // Approve → Live must go through the guarded publish() path so gate
+  // checks (vouch, financial literacy, minor consent) are enforced.
+  const approveCase = async (caseId: string) => {
+    try {
+      const res = await fetch(`${base}/sponsorships/${caseId}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        const msg = j.message ?? j.error ?? "Could not publish this case.";
+        alert(`Gate check failed:\n\n${msg}`);
+        return;
+      }
+      setCases((prev) => prev.map((c) => c.id === caseId ? { ...c, status: "live" } : c));
+    } catch {
+      alert("Network error — could not reach the server.");
+    }
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -296,7 +316,7 @@ export default function AdminSponsorshipsPage() {
                           <div className="flex items-center gap-2 justify-end">
                             {(c.status === "in_review" || c.status === "pending_vouch") && (
                               <>
-                                <button onClick={() => updateCaseStatus(c.id, "live")} className="text-xs bg-green-600 text-white px-2.5 py-1 rounded-lg hover:bg-green-700 transition-colors">
+                                <button onClick={() => approveCase(c.id)} className="text-xs bg-green-600 text-white px-2.5 py-1 rounded-lg hover:bg-green-700 transition-colors">
                                   Approve
                                 </button>
                                 <button onClick={() => updateCaseStatus(c.id, "rejected")} className="text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-lg hover:bg-red-200 transition-colors">
