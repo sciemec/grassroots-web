@@ -123,12 +123,45 @@ export default function RegisterAnalystPage() {
 
       if (!res.ok) {
         if (res.status === 503 || res.status === 504) throw new Error("__waking__");
-        const data = await res.json().catch(() => ({}));
-        const msg =
-          data.message ||
-          (data.errors ? Object.values(data.errors).flat().join(" ") : null) ||
-          "Registration failed. Please try again.";
-        throw new Error(msg);
+
+        const data = await res.json().catch(() => ({})) as {
+          message?: string;
+          errors?: Record<string, string[]>;
+        };
+
+        if (data.errors && Object.keys(data.errors).length > 0) {
+          const fieldLabels: Record<string, string> = {
+            email:    "Email",
+            phone:    "Phone number",
+            password: "Password",
+            name:     "Name",
+          };
+          const msgs = Object.entries(data.errors).map(([field, messages]) => {
+            const label = fieldLabels[field] ?? field;
+            const rawMsg = messages[0] ?? "";
+            if (rawMsg.includes("already been taken") && field === "email") {
+              return "This email is already registered — try signing in instead.";
+            }
+            if (rawMsg.includes("already been taken") && field === "phone") {
+              return "This phone number is already registered — try signing in instead.";
+            }
+            return `${label}: ${rawMsg}`;
+          });
+          throw new Error(msgs.join(" · "));
+        }
+
+        const raw = data.message ?? "Registration failed. Please try again.";
+        const friendly: Record<string, string> = {
+          "Validation failed":
+            "Some details are invalid. Check your phone number or email and try again.",
+          "The email has already been taken.":
+            "This email is already registered — try signing in instead.",
+          "The phone has already been taken.":
+            "This phone number is already registered — try signing in instead.",
+          "The phone number has already been taken.":
+            "This phone number is already registered — try signing in instead.",
+        };
+        throw new Error(friendly[raw] ?? raw);
       }
 
       const data = await res.json();
