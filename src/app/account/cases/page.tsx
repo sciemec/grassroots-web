@@ -60,7 +60,7 @@ export default function MyCasesPage() {
     if (!hasHydrated) return;
     if (!user) { router.replace("/login"); return; }
 
-    fetch(`${BASE}/sponsorships`, {
+    fetch(`${BASE}/sponsorships/mine`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())

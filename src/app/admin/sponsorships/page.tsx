@@ -43,6 +43,9 @@ interface Agreement {
 
 interface CasesApiResponse {
   data: SponsorshipCase[];
+  // Laravel paginator puts these at the top level, not inside meta
+  total?: number;
+  last_page?: number;
   meta?: { current_page: number; last_page: number; total: number };
 }
 
@@ -127,8 +130,8 @@ export default function AdminSponsorshipsPage() {
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() as Promise<CasesApiResponse>; })
       .then((json) => {
         setCases(json.data ?? []);
-        setCasesLastPage(json.meta?.last_page ?? 1);
-        setCasesTotal(json.meta?.total ?? 0);
+        setCasesLastPage(json.last_page ?? json.meta?.last_page ?? 1);
+        setCasesTotal(json.total ?? json.meta?.total ?? 0);
       })
       .catch(() => setCasesError("Failed to load cases."))
       .finally(() => setCasesLoading(false));
