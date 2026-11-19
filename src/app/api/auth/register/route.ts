@@ -11,6 +11,11 @@ export async function POST(req: NextRequest) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 90_000);
 
+    // Forward the real visitor IP so Laravel's throttle counts per visitor,
+    // not per Next.js container (which is a single shared IP from Laravel's view).
+    const forwardedFor = req.headers.get('x-forwarded-for');
+    const realIp       = req.headers.get('x-real-ip');
+
     let response: Response;
     try {
       response = await fetch(`${BACKEND_BASE}/auth/register`, {
@@ -18,6 +23,8 @@ export async function POST(req: NextRequest) {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          ...(forwardedFor ? { 'X-Forwarded-For': forwardedFor } : {}),
+          ...(realIp       ? { 'X-Real-IP':       realIp }       : {}),
         },
         body: JSON.stringify(body),
         signal: controller.signal,
