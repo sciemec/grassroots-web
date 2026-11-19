@@ -1,12 +1,12 @@
-// Grassroots Sport Pro — Service Worker v2
+// Grassroots Sport Pro — Service Worker v3
 // Uses native Cache API only — NO CDN imports, works fully offline.
 // Bump CACHE_VERSION on every deployment to bust stale caches.
-const CACHE_VERSION = "v1794435833190";
+const CACHE_VERSION = "v1732000000000";
 
 const STATIC_CACHE = `gs-static-${CACHE_VERSION}`;   // Next.js hashed JS/CSS chunks
 const PAGES_CACHE  = `gs-pages-${CACHE_VERSION}`;    // HTML shells for hub pages
 const ASSETS_CACHE = `gs-assets-${CACHE_VERSION}`;   // images, fonts
-const API_CACHE    = "gs-api";                        // API responses (no version — updated in place)
+const API_CACHE    = `gs-api-${CACHE_VERSION}`;       // API responses (versioned — old cache dropped on activate)
 const DATA_CACHE   = "gs-knowledge";                  // /data/*.json knowledge base
 
 const OFFLINE_URL  = "/offline";
@@ -104,7 +104,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 4. API GET calls (bhora-ai backend) — NetworkFirst, 24 h cache fallback
+  // 4a. Sponsorship API paths — NetworkFirst, 5 s timeout, cache = offline fallback only
+  //     Shorter timeout ensures stale data is not served when the network is reachable.
+  if (isApiOrigin && request.method === "GET" && url.pathname.includes("/sponsorships")) {
+    event.respondWith(networkFirst(request, API_CACHE, 5_000));
+    return;
+  }
+
+  // 4b. All other API GET calls — NetworkFirst, 10 s timeout
   if (isApiOrigin && request.method === "GET") {
     event.respondWith(networkFirst(request, API_CACHE, 10_000));
     return;
