@@ -507,7 +507,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
   const statusCfg   = STATUS_CONFIG[c.status] ?? { label: c.status, color: "#6b7280", bg: "#f3f4f6", step: -1 };
   const myIntro     = c.my_introduction;
   const canRequestIntro = c.status === "live"
-    && (user?.role === "player" || user?.role === "coach")
+    && !isOwner
     && (!myIntro || myIntro.status === "withdrawn" || myIntro.status === "expired");
   const isOwner     = user?.id === c.owner_user_id;
   const deadlineDays = c.deadline_at ? daysUntil(c.deadline_at) : null;
