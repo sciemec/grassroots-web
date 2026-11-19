@@ -91,7 +91,7 @@ export default function RegisterAthletePage() {
       const timeout = setTimeout(() => controller.abort(), 90_000);
       let res: Response;
       try {
-        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+        res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
