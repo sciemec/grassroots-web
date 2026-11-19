@@ -507,8 +507,11 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
   const statusCfg   = STATUS_CONFIG[c.status] ?? { label: c.status, color: "#6b7280", bg: "#f3f4f6", step: -1 };
   const myIntro     = c.my_introduction;
   const isOwner     = user?.id === c.owner_user_id;
+  const INTRO_ALLOWED_ROLES: string[] = ["fan", "business", "scout", "coach", "admin"];
   const canRequestIntro = c.status === "live"
     && !isOwner
+    && !!user
+    && INTRO_ALLOWED_ROLES.includes(user.role)
     && (!myIntro || myIntro.status === "withdrawn" || myIntro.status === "expired");
   const deadlineDays = c.deadline_at ? daysUntil(c.deadline_at) : null;
   const deadlineSoon = deadlineDays !== null && deadlineDays >= 0 && deadlineDays <= 7;
@@ -930,7 +933,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
               {!user ? (
                 <Link
-                  href="/login"
+                  href={`/login?redirect=/sponsorships/${c.id}`}
                   className="block w-full text-center bg-[#1a5c2a] hover:bg-[#145222] text-white font-semibold text-sm py-3 rounded-xl transition-colors"
                 >
                   Sign in to Ask to Connect
@@ -1253,7 +1256,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-40">
           {!user ? (
             <Link
-              href="/login"
+              href={`/login?redirect=/sponsorships/${c.id}`}
               className="block w-full text-center bg-[#1a5c2a] text-white font-semibold text-sm py-3 rounded-xl"
             >
               Sign in to Ask to Connect

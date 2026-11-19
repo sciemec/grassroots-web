@@ -5,7 +5,7 @@ import { persist } from "zustand/middleware";
 // Types & Helper Functions
 // ==========================================
 
-export type UserRole = "admin" | "coach" | "scout" | "player" | "athlete" | "fan" | "analyst" | "guardian";
+export type UserRole = "admin" | "coach" | "scout" | "player" | "athlete" | "fan" | "analyst" | "guardian" | "business";
 
 export interface AuthUser {
   id: string;
