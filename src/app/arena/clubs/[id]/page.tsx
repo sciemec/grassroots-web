@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Star, Users, ChevronRight, MessageCircle, Send, CheckCircle2, Clock, X } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Users, ChevronRight, MessageCircle, Send, CheckCircle2, Clock, X, Flag, ShieldCheck } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -27,6 +27,8 @@ interface ClubDetail {
   open_for_trials: boolean;
   scouting_open: boolean;
   created_by: string;
+  is_verified?: boolean;
+  status?: string;
   coach?: { id: string; name: string };
 }
 
@@ -91,6 +93,11 @@ export default function ClubDetailPage() {
   const [msgSent,       setMsgSent]       = useState(false);
   const [joinRequests,  setJoinRequests]  = useState<JoinRequest[]>([]);
   const [respondingId,  setRespondingId]  = useState<string | null>(null);
+  const [showReport,    setShowReport]    = useState(false);
+  const [reportReason,  setReportReason]  = useState("other");
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportSending, setReportSending] = useState(false);
+  const [reportSent,    setReportSent]    = useState(false);
 
   useEffect(() => {
     if (!token || !id) return;
@@ -222,6 +229,23 @@ export default function ClubDetailPage() {
     setSendingMsg(false);
   };
 
+  const submitReport = async () => {
+    if (!token || reportSending || !id) return;
+    setReportSending(true);
+    try {
+      const res = await fetch(`${API}/arena/clubs/${id}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
+        body: JSON.stringify({ reason: reportReason, details: reportDetails.trim() || null }),
+      });
+      if (res.ok || res.status === 409) {
+        setReportSent(true);
+        setShowReport(false);
+      }
+    } catch {}
+    setReportSending(false);
+  };
+
   if (!hasHydrated) return null;
 
   if (!user) {
@@ -299,12 +323,29 @@ export default function ClubDetailPage() {
 
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
 
+        {/* Suspended banner */}
+        {club.status === "suspended" && (
+          <div className="flex items-start gap-3 rounded-xl px-4 py-3 text-sm font-medium"
+            style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c" }}>
+            <Flag size={16} className="mt-0.5 flex-shrink-0" />
+            <span>This club has been suspended while a report is under review by GRS. Some features may be restricted.</span>
+          </div>
+        )}
+
         {/* Club header card */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-2xl flex-shrink-0" style={{ background: GRS_GREEN }}>{initials}</div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-bold text-gray-900">{club.name}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg font-bold text-gray-900">{club.name}</h1>
+                {club.is_verified && (
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: "#dbeafe", color: "#1d4ed8" }}>
+                    <ShieldCheck size={11} /> Verified
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-3 mt-1 flex-wrap text-xs text-gray-500">
                 <span className="capitalize">{club.sport}</span>
                 <span className="flex items-center gap-1"><MapPin size={11} />{club.province}</span>
@@ -567,6 +608,63 @@ export default function ClubDetailPage() {
             ))}
           </div>
         </div>
+
+        {/* Report this club */}
+        {!reportSent ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            {!showReport ? (
+              <button onClick={() => setShowReport(true)}
+                className="flex items-center gap-2 text-sm text-gray-400 hover:text-red-600 transition-colors">
+                <Flag size={14} />
+                Report this club
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-800 flex items-center gap-1.5"><Flag size={14} /> Report this club</p>
+                  <button onClick={() => setShowReport(false)} className="p-1 rounded-full hover:bg-gray-100">
+                    <X size={14} className="text-gray-400" />
+                  </button>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Reason</label>
+                  <select value={reportReason} onChange={(e) => setReportReason(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none bg-white">
+                    <option value="contact_minor">Contacted a minor directly</option>
+                    <option value="fake_club">Fake or fraudulent club</option>
+                    <option value="harassment">Harassment</option>
+                    <option value="spam">Spam</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Details (optional)</label>
+                  <textarea value={reportDetails} onChange={(e) => setReportDetails(e.target.value)}
+                    placeholder="Describe what happened..."
+                    rows={3} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none resize-none" />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={submitReport} disabled={reportSending}
+                    className="px-4 py-2 rounded-full text-xs font-semibold text-white disabled:opacity-50"
+                    style={{ background: "#b91c1c" }}>
+                    {reportSending ? "Submitting..." : "Submit Report"}
+                  </button>
+                  <button onClick={() => setShowReport(false)}
+                    className="px-4 py-2 rounded-full text-xs border border-gray-200 text-gray-600">
+                    Cancel
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400">Reports are reviewed by GRS. A club with 3+ unresolved reports is automatically suspended.</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl px-4 py-3 text-sm flex items-center gap-2"
+            style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: GRS_GREEN }}>
+            <CheckCircle2 size={15} />
+            Report submitted. Our team will review this club.
+          </div>
+        )}
 
         {/* Back link */}
         <Link href="/arena/clubs" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
