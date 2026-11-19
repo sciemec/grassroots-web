@@ -54,10 +54,12 @@ export default function AdminJoinRequestsPage() {
   const [page, setPage]         = useState(1);
   const [total, setTotal]       = useState(0);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async (p = 1) => {
     if (!token) return;
     setLoading(true);
+    setLoadError(null);
     try {
       const params = new URLSearchParams({ page: String(p) });
       if (filter !== "all") params.set("status", filter);
@@ -69,8 +71,15 @@ export default function AdminJoinRequestsPage() {
         setRequests(json.data ?? []);
         setTotal(json.total ?? 0);
         setPage(p);
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setLoadError(`HTTP ${res.status}: ${body.message ?? JSON.stringify(body)}`);
+        setRequests([]);
       }
-    } catch { setRequests([]); }
+    } catch (e) {
+      setLoadError(String(e));
+      setRequests([]);
+    }
     finally { setLoading(false); }
   }, [token, filter]);
 
@@ -126,6 +135,13 @@ export default function AdminJoinRequestsPage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
+
+        {/* Debug error banner */}
+        {loadError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700 font-mono break-all">
+            <strong>Load error:</strong> {loadError}
+          </div>
+        )}
 
         {/* Stats row */}
         <div className="grid grid-cols-4 gap-2">
