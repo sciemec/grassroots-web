@@ -136,13 +136,6 @@ export default function AdminJoinRequestsPage() {
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
 
-        {/* Debug error banner */}
-        {loadError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700 font-mono break-all">
-            <strong>Load error:</strong> {loadError}
-          </div>
-        )}
-
         {/* Stats row */}
         <div className="grid grid-cols-4 gap-2">
           {(["pending", "approved", "declined", "withdrawn"] as const).map((s) => {

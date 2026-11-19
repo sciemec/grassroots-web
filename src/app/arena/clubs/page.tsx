@@ -66,7 +66,6 @@ export default function ClubsPage() {
   const [sport,    setSport]    = useState("");
   const [province, setProvince] = useState("");
   const [joining,  setJoining]  = useState<string | null>(null);
-  const [joinError, setJoinError] = useState<string | null>(null);
 
   const SPORTS    = ["Football", "Rugby", "Netball", "Basketball", "Cricket", "Athletics", "Swimming", "Tennis", "Volleyball", "Hockey"];
   const PROVINCES = ["Harare", "Bulawayo", "Manicaland", "Mashonaland Central", "Mashonaland East", "Mashonaland West", "Masvingo", "Matabeleland North", "Matabeleland South", "Midlands"];
@@ -88,7 +87,6 @@ export default function ClubsPage() {
     if (!token) return;
     if (club.join_request_status === "pending" || club.join_request_status === "approved") return;
     setJoining(club.id);
-    setJoinError(null);
     try {
       const res = await fetch(`${API}/arena/clubs/${club.id}/join-request`, {
         method: "POST",
@@ -96,13 +94,8 @@ export default function ClubsPage() {
       });
       if (res.ok) {
         setClubs((cs) => cs.map((c) => c.id === club.id ? { ...c, join_request_status: "pending" } : c));
-      } else {
-        const body = await res.json().catch(() => ({}));
-        setJoinError(`HTTP ${res.status}: ${body.message ?? JSON.stringify(body)}`);
       }
-    } catch (e) {
-      setJoinError(String(e));
-    }
+    } catch { /* silent */ }
     setJoining(null);
   };
 
@@ -138,13 +131,6 @@ export default function ClubsPage() {
     <div style={{ minHeight: "100vh", background: BG }}>
       <ArenaNav userName={userName} />
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
-
-        {/* Debug error banner — remove after diagnosing join request issue */}
-        {joinError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700 font-mono break-all">
-            <strong>Join request error:</strong> {joinError}
-          </div>
-        )}
 
         {/* Header */}
         <div className="flex items-center justify-between">
