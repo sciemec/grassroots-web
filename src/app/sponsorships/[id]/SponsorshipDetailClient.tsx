@@ -215,7 +215,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
   const [autoAcceptSaving, setAutoAcceptSaving] = useState(false);
 
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
-  const isPublicCode = id.length === 8;
+  const isPublicCode = typeof id === "string" && id.length === 8;
 
   // ─── data loading ──────────────────────────────────────────────────────────
 
