@@ -197,7 +197,7 @@ function CaseCard({ c }: { c: Case }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              href={`/sponsorships/${c.id}`}
+              href={`/account/cases/${c.id}`}
               className="font-semibold text-gray-900 hover:underline truncate"
             >
               {c.title}
@@ -242,7 +242,7 @@ function CaseCard({ c }: { c: Case }) {
       {/* Action row */}
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
         <Link
-          href={`/sponsorships/${c.id}`}
+          href={`/account/cases/${c.id}`}
           className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
           style={{ backgroundColor: "#1a5c2a" }}
         >

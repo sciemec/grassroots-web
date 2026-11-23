@@ -166,7 +166,7 @@ export default function OverdueProofsPage() {
                     {/* Top row: campaign + days overdue */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
                       <button
-                        onClick={() => router.push(`/admin/campaigns/${d.campaign_id}`)}
+                        onClick={() => router.push(`/admin/sponsorships/${d.campaign_id}`)}
                         style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
                       >
                         <div style={{ fontSize: 13, fontWeight: 700, color: GRS_GREEN, textDecoration: "underline", textDecorationColor: "#bbf7d0" }}>
@@ -210,7 +210,7 @@ export default function OverdueProofsPage() {
                     {/* Actions */}
                     <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
                       <button
-                        onClick={() => router.push(`/admin/campaigns/${d.campaign_id}`)}
+                        onClick={() => router.push(`/admin/sponsorships/${d.campaign_id}`)}
                         style={{
                           backgroundColor: GRS_GREEN, color: "#fff", border: "none", borderRadius: 8,
                           padding: "7px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer",

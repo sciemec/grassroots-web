@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
+import TrustBadge, { TrustLevel } from "@/components/sponsorship/TrustBadge";
 
 interface CaseDetail {
   id: string;
@@ -26,6 +27,10 @@ interface CaseDetail {
   introduction_count: number;
   created_at: string;
   owner: { id: string; name: string; email: string } | null;
+  trust_level?: string | null;
+  grs_verified?: boolean;
+  grs_verified_note?: string | null;
+  grs_verified_via_call?: boolean;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -54,6 +59,10 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
   const [updating, setUpdating] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [showGrsForm, setShowGrsForm] = useState(false);
+  const [grsNote, setGrsNote] = useState("");
+  const [grsViaCall, setGrsViaCall] = useState(false);
+  const [grsSaving, setGrsSaving] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -176,9 +185,12 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
             <span>{dateShort(c.created_at)}</span>
           </div>
         </div>
-        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${STATUS_COLORS[c.status] ?? "bg-gray-100 text-gray-700"}`}>
-          {c.status.replace(/_/g, " ")}
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${STATUS_COLORS[c.status] ?? "bg-gray-100 text-gray-700"}`}>
+            {c.status.replace(/_/g, " ")}
+          </span>
+          <TrustBadge level={c.trust_level as TrustLevel} />
+        </div>
       </div>
 
       {/* Action feedback */}
@@ -232,6 +244,17 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
             Re-open for review
           </button>
         )}
+        {!c.grs_verified && (canApprove || c.status === "draft") && (
+          <button
+            onClick={() => setShowGrsForm((v) => !v)}
+            className="bg-blue-50 text-blue-700 border border-blue-200 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-blue-100 transition-colors"
+          >
+            GRS Verify
+          </button>
+        )}
+        {c.grs_verified && (
+          <span className="text-xs text-blue-700 font-semibold self-center">✓ GRS Verified</span>
+        )}
         <Link
           href={`/admin/introductions?case=${c.id}`}
           className="ml-auto text-xs text-[#1a5c2a] hover:underline self-center"
@@ -239,6 +262,73 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
           {c.introduction_count} intro{c.introduction_count !== 1 ? "s" : ""} →
         </Link>
       </div>
+
+      {/* GRS verify form */}
+      {showGrsForm && !c.grs_verified && (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4 mb-5">
+          <h3 className="text-sm font-semibold text-blue-900 mb-1">GRS Evidence Verification</h3>
+          <p className="text-xs text-blue-700 mb-3">
+            Use this when no adult voucher is available. Review the athlete&apos;s Talent Passport,
+            Arena videos, and registration date, then document your verification below.
+          </p>
+          <textarea
+            value={grsNote}
+            onChange={(e) => setGrsNote(e.target.value)}
+            rows={3}
+            placeholder="Describe the evidence reviewed (e.g. TP scores, Arena clips, registration date, voice call details)…"
+            className="w-full border border-blue-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 mb-3 bg-white"
+          />
+          <label className="flex items-center gap-2 text-xs text-blue-800 mb-4 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={grsViaCall}
+              onChange={(e) => setGrsViaCall(e.target.checked)}
+              className="rounded"
+            />
+            Verified by call or voice note
+          </label>
+          <div className="flex gap-2">
+            <button
+              disabled={grsSaving || grsNote.trim().length < 10}
+              onClick={async () => {
+                setGrsSaving(true);
+                try {
+                  const res = await fetch(`${base}/admin/sponsorships/${c.id}/grs-verify`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ note: grsNote.trim(), verified_via_call: grsViaCall }),
+                  });
+                  const j = await res.json();
+                  if (!res.ok) throw new Error(j.message ?? "Failed");
+                  setCaseData((prev) =>
+                    prev
+                      ? { ...prev, grs_verified: true, grs_verified_note: grsNote.trim(), status: "in_review" }
+                      : prev
+                  );
+                  setShowGrsForm(false);
+                  setActionMsg("Case GRS-verified and moved to in_review.");
+                } catch (err: unknown) {
+                  setActionMsg((err as Error).message ?? "Could not GRS-verify.");
+                } finally {
+                  setGrsSaving(false);
+                }
+              }}
+              className="bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-blue-800 disabled:opacity-50 transition-colors"
+            >
+              {grsSaving ? "Saving…" : "Confirm GRS Verification"}
+            </button>
+            <button
+              onClick={() => { setShowGrsForm(false); setGrsNote(""); setGrsViaCall(false); }}
+              className="bg-white text-gray-700 border border-gray-200 text-sm px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Meta cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">

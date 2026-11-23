@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { PublicNavbar } from "@/components/layout/public-navbar";
+import TrustBadge, { TrustLevel } from "@/components/sponsorship/TrustBadge";
 
 // ─── Case browse types ────────────────────────────────────────────────────────
 
@@ -20,6 +21,7 @@ interface SponsorshipCase {
   province: string | null;
   age_group: string | null;
   vouched: boolean;
+  trust_level?: string | null;
   introduction_count: number;
   target_cents: number | null;
   deadline_at: string | null;
@@ -129,9 +131,9 @@ function CaseCard({ c }: { c: SponsorshipCase }) {
         <span className="absolute top-3 left-3 bg-white/90 text-[#1a5c2a] text-xs font-semibold px-2 py-0.5 rounded-full capitalize">
           {sportEmoji} {c.sport}
         </span>
-        {c.vouched && (
-          <span className="absolute top-3 right-3 bg-[#f0b429] text-[#1a3a1a] text-xs font-bold px-2 py-0.5 rounded-full">
-            ✓ Vouched
+        {c.trust_level && c.trust_level !== "unverified" && (
+          <span className="absolute top-3 right-3">
+            <TrustBadge level={c.trust_level as TrustLevel} />
           </span>
         )}
       </div>
@@ -434,7 +436,7 @@ export default function SponsorshipsPage() {
             <section className="bg-[#1a5c2a] text-white py-10 px-4 text-center">
               <h2 className="text-xl font-bold mb-2">Are you an athlete looking for a sponsor?</h2>
               <p className="text-white/70 text-sm mb-5 max-w-md mx-auto">
-                Create your GRS profile, get vouched by a coach, and submit your case to connect with sponsors.
+                Create your GRS profile, get vouched and submit your case to connect with sponsors.
               </p>
               <div className="flex justify-center gap-3 flex-wrap">
                 <Link href="/register" className="bg-[#f0b429] text-[#1a3a1a] font-semibold text-sm px-5 py-2.5 rounded-full hover:bg-[#e0a420] transition-colors">

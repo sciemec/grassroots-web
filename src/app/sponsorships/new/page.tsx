@@ -32,6 +32,8 @@ const AGE_GROUPS = [
 
 const MINOR_AGE_GROUPS = new Set(["under_13", "13_17"]);
 
+type SquadPlayer = { id: string; name: string; sport: string | null };
+
 function StepIndicator({ step, total }: { step: number; total: number }) {
   return (
     <div className="flex items-center gap-1.5 mb-6">
@@ -79,8 +81,24 @@ export default function NewSponsorshipPage() {
   const [guardianRelationship, setGuardianRelationship] = useState("");
   const [guardianWhatsapp, setGuardianWhatsapp] = useState("");
 
+  // Team case (coach only)
+  const [beneficiaryType, setBeneficiaryType] = useState<"player" | "team">("player");
+  const [squadPlayers, setSquadPlayers] = useState<SquadPlayer[]>([]);
+  const [squadLoading, setSquadLoading] = useState(false);
+  const [featuredPlayerIds, setFeaturedPlayerIds] = useState<Set<string>>(new Set());
+
+  const isCoach = user?.role === "coach" || user?.role === "admin";
+  const isTeam  = isCoach && beneficiaryType === "team";
   const isMinor = MINOR_AGE_GROUPS.has(ageGroup);
-  const totalSteps = isMinor ? 5 : 4;
+
+  // Step layout: 1=basics, 2=athlete, 3=story, [4=squad if team], [4or5=guardian if minor], last=review
+  const totalSteps = isTeam ? (isMinor ? 6 : 5) : (isMinor ? 5 : 4);
+  // Squad step index (only exists for team cases)
+  const squadStep = isTeam ? 4 : null;
+  // Guardian step index
+  const guardianStep = isMinor ? (isTeam ? 5 : 4) : null;
+  // Review step index
+  const reviewStep = totalSteps;
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -95,7 +113,8 @@ export default function NewSponsorshipPage() {
     if (step === 1) return title.trim().length > 5 && sport && category;
     if (step === 2) return ageGroup.trim() !== "";
     if (step === 3) return story.trim().length > 20;
-    if (step === 4 && isMinor) return guardianName.trim().length > 1 && guardianWhatsapp.trim().length > 7;
+    if (squadStep && step === squadStep) return featuredPlayerIds.size > 0;
+    if (guardianStep && step === guardianStep) return guardianName.trim().length > 1 && guardianWhatsapp.trim().length > 7;
     return true;
   };
 
@@ -104,9 +123,9 @@ export default function NewSponsorshipPage() {
     title: 1, sport: 1, category: 1,
     age_group: 2, province: 2, story_short: 2,
     story: 3, suggested_payee: 3, target_cents: 3, deadline_at: 3,
-    guardian_name: isMinor ? 4 : 3,
-    guardian_relationship: isMinor ? 4 : 3,
-    guardian_whatsapp: isMinor ? 4 : 3,
+    guardian_name:         guardianStep ?? 3,
+    guardian_relationship: guardianStep ?? 3,
+    guardian_whatsapp:     guardianStep ?? 3,
   };
 
   const submit = async () => {
@@ -125,7 +144,7 @@ export default function NewSponsorshipPage() {
       story_short: storyShort.trim() || undefined,
       story: story.trim(),
       suggested_payee: suggestedPayee.trim() || undefined,
-      beneficiary_type: "player",
+      beneficiary_type: beneficiaryType,
       target_cents: targetUsd ? Math.round(parseFloat(targetUsd) * 100) : undefined,
       deadline_at: deadline || undefined,
     };
@@ -135,6 +154,10 @@ export default function NewSponsorshipPage() {
       body.guardian_relationship = guardianRelationship.trim() || undefined;
       body.guardian_whatsapp = guardianWhatsapp.trim() || undefined;
       body.is_minor_beneficiary = true;
+    }
+
+    if (isTeam && featuredPlayerIds.size > 0) {
+      (body as Record<string, unknown>).featured_player_ids = Array.from(featuredPlayerIds);
     }
 
     try {
@@ -173,7 +196,7 @@ export default function NewSponsorshipPage() {
       }
 
       const caseId = (json.data ?? json).id;
-      router.push(`/sponsorships/${caseId}?submitted=1`);
+      router.push(`/account/cases/${caseId}?submitted=1`);
     } catch {
       setTopError("Network error. Please try again.");
     } finally {
@@ -210,7 +233,7 @@ export default function NewSponsorshipPage() {
           {step === 1 && (
             <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-800 mb-2">
-                <strong>How it works:</strong> Fill in the details below → after submitting, ask a coach or club admin to vouch for the case → GRS reviews it → it goes live for sponsors to find.
+                <strong>How it works:</strong> Fill in the details below → after submitting, ask a coach, teacher, school head, or community leader to vouch for this case → GRS reviews it → it goes live for sponsors to find. If no one is available, GRS can verify the case directly.
               </div>
               <h2 className="font-semibold text-gray-900 mb-3">Case Basics</h2>
 
@@ -265,6 +288,39 @@ export default function NewSponsorshipPage() {
                 </select>
                 <FieldError msg={fieldErr("category")} />
               </div>
+
+              {isCoach && (
+                <div>
+                  <label className="text-xs font-medium text-gray-700 block mb-1">Case type</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setBeneficiaryType("player")}
+                      className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-colors ${
+                        beneficiaryType === "player"
+                          ? "bg-[#1a5c2a] text-white border-[#1a5c2a]"
+                          : "bg-white text-gray-600 border-gray-300 hover:border-[#1a5c2a]"
+                      }`}
+                    >
+                      Individual athlete
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBeneficiaryType("team")}
+                      className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-colors ${
+                        beneficiaryType === "team"
+                          ? "bg-[#1a5c2a] text-white border-[#1a5c2a]"
+                          : "bg-white text-gray-600 border-gray-300 hover:border-[#1a5c2a]"
+                      }`}
+                    >
+                      Team / Squad
+                    </button>
+                  </div>
+                  {beneficiaryType === "team" && (
+                    <p className="text-xs text-gray-500 mt-1">You will select which squad players are featured in the next steps.</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -408,8 +464,60 @@ export default function NewSponsorshipPage() {
             </div>
           )}
 
-          {/* STEP 4 — Guardian details (minors only) */}
-          {step === 4 && isMinor && (
+          {/* SQUAD STEP — Team cases only (coach) */}
+          {squadStep && step === squadStep && (
+            <div className="space-y-4">
+              <h2 className="font-semibold text-gray-900 mb-1">Featured Squad Players</h2>
+              <p className="text-xs text-gray-500 mb-3">
+                Select which players from your squad are part of this team case. At least one is required.
+              </p>
+
+              {squadLoading ? (
+                <p className="text-xs text-gray-400 py-2">Loading your squad…</p>
+              ) : squadPlayers.length === 0 ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">
+                  No squad players found. Register players under <strong>My Squad</strong> first, then come back to submit a team case.
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                  {squadPlayers.map((p) => {
+                    const selected = featuredPlayerIds.has(p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          setFeaturedPlayerIds((prev) => {
+                            const next = new Set(prev);
+                            selected ? next.delete(p.id) : next.add(p.id);
+                            return next;
+                          });
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-colors ${
+                          selected
+                            ? "border-[#1a5c2a] bg-[#f0fdf4]"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
+                        }`}
+                      >
+                        <span className="w-7 h-7 rounded-full bg-[#1a5c2a] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                          {(p.name ?? "?")[0].toUpperCase()}
+                        </span>
+                        <span className="text-sm font-medium text-gray-800 truncate">{p.name}</span>
+                        {selected && <span className="ml-auto text-[#1a5c2a] text-xs font-semibold">Selected</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {featuredPlayerIds.size > 0 && (
+                <p className="text-xs text-[#1a5c2a] font-medium">{featuredPlayerIds.size} player{featuredPlayerIds.size !== 1 ? "s" : ""} selected</p>
+              )}
+            </div>
+          )}
+
+          {/* GUARDIAN STEP — Minors only */}
+          {guardianStep && step === guardianStep && (
             <div className="space-y-4">
               <h2 className="font-semibold text-gray-900 mb-1">Guardian Details</h2>
               <p className="text-xs text-gray-500 mb-3">
@@ -455,8 +563,8 @@ export default function NewSponsorshipPage() {
             </div>
           )}
 
-          {/* STEP 4 (non-minor) or STEP 5 (minor) — Review */}
-          {((step === 4 && !isMinor) || (step === 5 && isMinor)) && (
+          {/* Final step — Review & Submit */}
+          {step === reviewStep && (
             <div className="space-y-4">
               <h2 className="font-semibold text-gray-900 mb-3">Review & Submit</h2>
 
@@ -469,6 +577,18 @@ export default function NewSponsorshipPage() {
                   <span className="text-gray-500">Sport</span>
                   <span className="font-medium text-gray-900 capitalize">{sport}</span>
                 </div>
+                {isCoach && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Case type</span>
+                    <span className="font-medium text-gray-900">{beneficiaryType === "team" ? "Team / Squad" : "Individual athlete"}</span>
+                  </div>
+                )}
+                {isTeam && featuredPlayerIds.size > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Featured players</span>
+                    <span className="font-medium text-gray-900">{featuredPlayerIds.size}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-500">Category</span>
                   <span className="font-medium text-gray-900 capitalize">{category.replace(/_/g, " ")}</span>
@@ -506,7 +626,7 @@ export default function NewSponsorshipPage() {
               </div>
 
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800">
-                <strong>What happens next:</strong> Your case will be saved as a draft. To go live, you will need a voucher — a coach or verified organisation who can confirm this case. GRS will then review it before it appears publicly.
+                <strong>What happens next:</strong> Your case will be saved as a draft. To go live, you need a vouch from a coach, teacher, school head, or community leader — or GRS can verify the case directly if no voucher is available. GRS then reviews it before it appears publicly for sponsors.
               </div>
             </div>
           )}
@@ -523,7 +643,22 @@ export default function NewSponsorshipPage() {
             )}
             {step < totalSteps ? (
               <button
-                onClick={() => setStep((s) => s + 1)}
+                onClick={() => {
+                  const next = step + 1;
+                  setStep(next);
+                  // Fetch squad when entering the squad selection step
+                  if (squadStep && next === squadStep && squadPlayers.length === 0 && !squadLoading) {
+                    const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+                    setSquadLoading(true);
+                    fetch(`${base}/coach/squad`, {
+                      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+                    })
+                      .then((r) => r.ok ? r.json() : Promise.reject())
+                      .then((j) => setSquadPlayers(j.data ?? []))
+                      .catch(() => {/* keep empty list — warning shown in UI */})
+                      .finally(() => setSquadLoading(false));
+                  }
+                }}
                 disabled={!canNext()}
                 className="flex-1 bg-[#1a5c2a] text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-[#145222] transition-colors disabled:opacity-50"
               >
