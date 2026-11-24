@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { PublicNavbar } from "@/components/layout/public-navbar";
+import StrongCaseTip from "@/components/sponsorship/StrongCaseTip";
 
 const SPORTS = [
   "Football", "Rugby", "Athletics", "Netball",
@@ -690,6 +691,10 @@ export default function NewSponsorshipPage() {
               </button>
             )}
           </div>
+        </div>
+
+        <div className="mt-4">
+          <StrongCaseTip />
         </div>
       </div>
     </div>

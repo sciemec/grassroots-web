@@ -8,6 +8,7 @@ import {
   ArrowLeft, CheckCircle2, Circle, Clock, Eye, AlertCircle,
 } from "lucide-react";
 import VouchPanel from "@/components/sponsorship/VouchPanel";
+import StrongCaseTip from "@/components/sponsorship/StrongCaseTip";
 import EligibilityChecklist from "@/components/sponsorship/EligibilityChecklist";
 import MediaManager from "@/components/sponsorship/MediaManager";
 
@@ -169,6 +170,51 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
   const [vouchError,       setVouchError]       = useState<string | null>(null);
   const [vouchSuccess,     setVouchSuccess]     = useState(false);
   const [autoAcceptSaving, setAutoAcceptSaving] = useState(false);
+
+  // Update composer
+  const [updateText,    setUpdateText]    = useState("");
+  const [updatePosting, setUpdatePosting] = useState(false);
+  const [updatePosted,  setUpdatePosted]  = useState(false);
+  const [updateCopied,  setUpdateCopied]  = useState(false);
+
+  const UPDATE_TEMPLATES = [
+    { label: "Weekly update",  text: "Week X update: Training hard and making good progress. [Add your detail here.]" },
+    { label: "Match result",   text: "Match update: We played [opponent] on [date] and [result]. [Describe what happened.]" },
+    { label: "Milestone",      text: "Milestone reached: [Describe the achievement.] This brings us closer to our goal." },
+    { label: "Thank you",      text: "A huge thank you to everyone supporting this case. [Add your personal message.]" },
+    { label: "Items received", text: "Great news — we received [items]. This makes a real difference. Thank you!" },
+  ];
+
+  const postUpdate = async () => {
+    if (!caseData || !token || !updateText.trim()) return;
+    setUpdatePosting(true);
+    try {
+      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/updates`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ body: updateText.trim() }),
+      });
+      if (res.ok) {
+        setUpdatePosted(true);
+        setUpdateText("");
+        setTimeout(() => setUpdatePosted(false), 3000);
+      }
+    } catch { /* silent */ } finally {
+      setUpdatePosting(false);
+    }
+  };
+
+  const copyUpdateForWhatsApp = () => {
+    if (!updateText.trim()) return;
+    navigator.clipboard.writeText(updateText.trim()).then(() => {
+      setUpdateCopied(true);
+      setTimeout(() => setUpdateCopied(false), 2000);
+    });
+  };
 
   // Report draft
   const [report,          setReport]          = useState<DraftReport | null>(null);
@@ -488,6 +534,11 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
         {/* Progress checklist */}
         <ProgressChecklist caseData={caseData} />
 
+        {/* How to build a strong case tip */}
+        {(caseData.status === "draft" || caseData.status === "pending_vouch") && (
+          <StrongCaseTip />
+        )}
+
         {/* Vouch panel (only when vouching is relevant) */}
         {needsVouch && (
           <VouchPanel
@@ -600,6 +651,48 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
 
         {/* Media gallery */}
         <MediaManager caseId={params.id} token={token} isTeam={caseData.beneficiary_type === "team"} />
+
+        {/* Update composer — only for live cases */}
+        {caseData.status === "live" && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="font-semibold text-gray-900 text-sm mb-3">Post an Update</h2>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {UPDATE_TEMPLATES.map((t) => (
+                <button
+                  key={t.label}
+                  onClick={() => setUpdateText(t.text)}
+                  className="text-xs px-2.5 py-1 rounded-full border border-[#1a5c2a]/30 text-[#1a5c2a] hover:bg-[#1a5c2a]/5 transition-colors"
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={updateText}
+              onChange={(e) => setUpdateText(e.target.value)}
+              placeholder="Share a progress update with your sponsors…"
+              rows={4}
+              maxLength={1000}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 resize-none"
+            />
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={copyUpdateForWhatsApp}
+                disabled={!updateText.trim()}
+                className="flex-1 border border-[#1a5c2a] text-[#1a5c2a] text-xs font-semibold py-2 rounded-xl hover:bg-[#1a5c2a]/5 disabled:opacity-40 transition-colors"
+              >
+                {updateCopied ? "Copied!" : "Copy for WhatsApp"}
+              </button>
+              <button
+                onClick={postUpdate}
+                disabled={updatePosting || !updateText.trim()}
+                className="flex-1 bg-[#1a5c2a] text-white text-xs font-semibold py-2 rounded-xl hover:bg-[#145222] disabled:opacity-50 transition-colors"
+              >
+                {updatePosting ? "Posting…" : updatePosted ? "Posted!" : "Post Update"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Introduction settings */}
         <div className="bg-white rounded-2xl border border-gray-200 p-5">

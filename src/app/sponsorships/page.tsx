@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import TrustBadge, { TrustLevel } from "@/components/sponsorship/TrustBadge";
+import StrongCaseTip from "@/components/sponsorship/StrongCaseTip";
 
 // ─── Case browse types ────────────────────────────────────────────────────────
 
@@ -364,6 +365,12 @@ export default function SponsorshipsPage() {
 
           {/* Case grid */}
           <main className="max-w-5xl mx-auto px-4 py-8">
+            {user && (
+              <div className="mb-6 max-w-sm">
+                <StrongCaseTip />
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">
                 {error}
