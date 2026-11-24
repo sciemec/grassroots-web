@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import TrustBadge, { TrustLevel } from "@/components/sponsorship/TrustBadge";
+import EligibilityChecklist from "@/components/sponsorship/EligibilityChecklist";
 
 interface CaseDetail {
   id: string;
@@ -63,6 +64,7 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
   const [grsNote, setGrsNote] = useState("");
   const [grsViaCall, setGrsViaCall] = useState(false);
   const [grsSaving, setGrsSaving] = useState(false);
+  const [overrideReason, setOverrideReason] = useState("");
 
   useEffect(() => {
     if (!token) return;
@@ -104,9 +106,12 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
     setActionMsg(null);
     setPublishError(null);
     try {
+      const body: Record<string, string> = {};
+      if (overrideReason.trim().length >= 10) body.override_reason = overrideReason.trim();
       const res = await fetch(`${base}/sponsorships/${caseData.id}/publish`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
       });
       const j = await res.json();
       if (!res.ok) {
@@ -199,6 +204,19 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
           {actionMsg}
         </div>
       )}
+      {/* Eligibility checklist — always visible for admin while case not live */}
+      {c.status !== "live" && c.status !== "closed" && c.status !== "rejected" && (
+        <div className="mb-5">
+          <EligibilityChecklist
+            caseId={c.id}
+            token={token ?? ""}
+            adminMode
+            overrideReason={overrideReason}
+            onOverrideReasonChange={setOverrideReason}
+          />
+        </div>
+      )}
+
       {publishError && (
         <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl px-4 py-3 text-sm mb-4">
           <div className="font-semibold mb-0.5">Cannot approve — gate check failed</div>

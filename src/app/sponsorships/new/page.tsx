@@ -625,6 +625,22 @@ export default function NewSponsorshipPage() {
                 )}
               </div>
 
+              {/* Eligibility requirements reminder */}
+              <div className="bg-[#1a5c2a]/5 border border-[#1a5c2a]/20 rounded-xl p-4 text-xs text-[#1a5c2a] space-y-2">
+                <p className="font-semibold text-sm">Eligibility requirements to go live</p>
+                <ul className="space-y-1 list-none">
+                  <li>✓ Profile photo on your player account</li>
+                  <li>✓ GRS Passport — at least 3 physical axes &amp; 2 technical axes</li>
+                  <li>✓ 5 Arena videos on 5 different days spanning 14+ days</li>
+                  {parseFloat(targetUsd || "0") > 300 && (
+                    <li className="text-amber-800 font-medium">⚠ Target &gt; $300 — Level 2 required (5 physical + 3 technical + 10 videos + Coach Position Test)</li>
+                  )}
+                </ul>
+                <p className="text-gray-600 mt-1">
+                  After submitting, your Eligibility Checklist will appear on your case page.
+                </p>
+              </div>
+
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800">
                 <strong>What happens next:</strong> Your case will be saved as a draft. To go live, you need a vouch from a coach, teacher, school head, or community leader — or GRS can verify the case directly if no voucher is available. GRS then reviews it before it appears publicly for sponsors.
               </div>

@@ -105,6 +105,8 @@ interface Post {
   activity_data?: Record<string, string | number | boolean | null | undefined>;
   share_token?: string;
   visibility?: string;
+  for_player_id?: string | null;
+  for_team_id?: string | null;
   user?: { id: string; name: string; role: string; sport?: string; province?: string; passport_token?: string };
 }
 
@@ -214,6 +216,13 @@ export default function ArenaPage() {
   const [savingEdit,     setSavingEdit]     = useState(false);
   const [deletingPostId,  setDeletingPostId]  = useState<string | null>(null);
   const [promotingPostId, setPromotingPostId] = useState<string | null>(null);
+
+  // ── Tag-for-sponsorship state ─────────────────────────────────────────────
+  const [tagPickerPostId,   setTagPickerPostId]   = useState<string | null>(null);
+  const [tagSquad,          setTagSquad]          = useState<{ id: string; name: string }[]>([]);
+  const [tagSquadLoading,   setTagSquadLoading]   = useState(false);
+  const [tagPlayerId,       setTagPlayerId]        = useState("");
+  const [tagSaving,         setTagSaving]          = useState(false);
 
   // ── Tab state ────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<"for-you" | "following" | "connections" | "videos" | "pathways">("for-you");
@@ -783,6 +792,39 @@ export default function ArenaPage() {
     setPromotingPostId(null);
   };
 
+  const openTagPicker = async (postId: string) => {
+    setTagPickerPostId(postId);
+    setTagPlayerId("");
+    setPostMenuOpen(null);
+    if (user?.role === "coach" && tagSquad.length === 0) {
+      setTagSquadLoading(true);
+      try {
+        const res = await fetch(`${API}/coach/squad`, {
+          headers: { Authorization: `Bearer ${authToken}`, Accept: "application/json" },
+        });
+        const j = await res.json();
+        setTagSquad(j.data ?? []);
+      } catch { /* keep empty */ }
+      setTagSquadLoading(false);
+    }
+  };
+
+  const handleTag = async () => {
+    if (!tagPickerPostId || !tagPlayerId) return;
+    setTagSaving(true);
+    try {
+      const res = await fetch(`${API}/arena-posts/${tagPickerPostId}/tag`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ for_player_id: tagPlayerId }),
+      });
+      if (!res.ok) throw new Error();
+      setPosts(prev => prev.map(p => p.id !== tagPickerPostId ? p : { ...p, for_player_id: tagPlayerId }));
+      setTagPickerPostId(null);
+    } catch { alert("Could not tag this video. Please try again."); }
+    setTagSaving(false);
+  };
+
   const handleShare = async (postId: string) => {
     // If the post already has a share_token cached locally, use it immediately
     const cached = posts.find(p => p.id === postId)?.share_token;
@@ -921,6 +963,62 @@ export default function ArenaPage() {
       {/* Menu backdrop — closes ⋮ menu on outside click */}
       {postMenuOpen && (
         <div className="fixed inset-0 z-10" onClick={() => setPostMenuOpen(null)} />
+      )}
+
+      {/* Tag-for-sponsorship picker modal */}
+      {tagPickerPostId && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40"
+          onClick={() => setTagPickerPostId(null)}>
+          <div className="bg-white w-full sm:w-96 rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-semibold text-gray-900 mb-1">Tag video for sponsorship</h3>
+            <p className="text-xs text-gray-500 mb-4">Link this video to a player&apos;s eligibility count.</p>
+            {tagSquadLoading ? (
+              <p className="text-sm text-gray-400">Loading squad…</p>
+            ) : user?.role === "admin" ? (
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Player ID</label>
+                <input
+                  value={tagPlayerId}
+                  onChange={(e) => setTagPlayerId(e.target.value)}
+                  placeholder="Paste player UUID…"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                />
+              </div>
+            ) : tagSquad.length === 0 ? (
+              <p className="text-sm text-gray-400">No active squad members found.</p>
+            ) : (
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Select squad member</label>
+                <select
+                  value={tagPlayerId}
+                  onChange={(e) => setTagPlayerId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                >
+                  <option value="">— choose player —</option>
+                  {tagSquad.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={handleTag}
+                disabled={tagSaving || !tagPlayerId}
+                className="flex-1 bg-[#1a5c2a] text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-[#145222] disabled:opacity-50 transition-colors"
+              >
+                {tagSaving ? "Saving…" : "Tag video"}
+              </button>
+              <button
+                onClick={() => setTagPickerPostId(null)}
+                className="flex-1 border border-gray-200 text-gray-700 text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Login toast */}
@@ -1588,6 +1686,14 @@ export default function ArenaPage() {
                                   <Globe size={14} /> {promotingPostId === post.id ? "Saving…" : "Make Public"}
                                 </button>
                               )}
+                              {post.video_url && (user?.role === "coach" || user?.role === "admin") && (
+                                <button
+                                  onClick={() => openTagPicker(post.id)}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-[#1a5c2a] hover:bg-green-50 transition">
+                                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                                  Tag for sponsorship
+                                </button>
+                              )}
                               <button onClick={() => handleDeletePost(post.id)}
                                 disabled={isDeleting}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 transition disabled:opacity-50">
@@ -1633,6 +1739,14 @@ export default function ArenaPage() {
                     {post.video_url && (
                       <div className="relative aspect-video bg-black">
                         <video src={post.video_url} className="w-full h-full object-cover" controls />
+                      </div>
+                    )}
+                    {post.video_url && post.for_player_id && (
+                      <div className="px-4 pt-1.5">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1a5c2a] bg-green-50 border border-[#1a5c2a]/20 rounded-full px-2 py-0.5">
+                          <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                          Tagged for sponsorship
+                        </span>
                       </div>
                     )}
                     {post.image_url && !post.video_url && (

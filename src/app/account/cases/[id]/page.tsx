@@ -8,6 +8,7 @@ import {
   ArrowLeft, CheckCircle2, Circle, Clock, Eye, AlertCircle,
 } from "lucide-react";
 import VouchPanel from "@/components/sponsorship/VouchPanel";
+import EligibilityChecklist from "@/components/sponsorship/EligibilityChecklist";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -379,6 +380,11 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
           <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
             Vouch request sent!
           </div>
+        )}
+
+        {/* Eligibility checklist — show while draft or in_review */}
+        {(caseData.status === "draft" || caseData.status === "in_review") && token && (
+          <EligibilityChecklist caseId={caseData.id} token={token} />
         )}
 
         {/* Case summary card */}
