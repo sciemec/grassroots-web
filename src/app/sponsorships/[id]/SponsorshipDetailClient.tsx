@@ -47,6 +47,7 @@ interface SponsorshipCase {
   player?: PlayerData | null;
   auto_accept_introductions?: boolean;
   media?: MediaItem[];
+  report?: CaseReport | null;
   // raw backend fields that need normalising
   vouched_by?: { org_name?: string | null; confirmed_at?: string | null } | null;
   financial_literacy?: { owner?: boolean; player?: boolean; guardian?: boolean } | null;
@@ -92,6 +93,15 @@ interface CaseUpdate {
   title?: string;
   body: string;
   created_at: string;
+}
+
+interface CaseReport {
+  id: string;
+  writer: "thuto" | "amara";
+  public_summary: string;
+  level_band: string;
+  generated_at: string;
+  status: "draft" | "approved" | "flagged";
 }
 
 interface IntroRequest {
@@ -230,6 +240,12 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
 
   // gallery lightbox
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
+
+  // report flag (owner)
+  const [showFlagForm,   setShowFlagForm]   = useState(false);
+  const [flagNote,       setFlagNote]       = useState("");
+  const [flagSubmitting, setFlagSubmitting] = useState(false);
+  const [flagSuccess,    setFlagSuccess]    = useState(false);
 
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
   const isPublicCode = typeof id === "string" && id.length === 8;
@@ -474,6 +490,27 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
       setProofError("Network error. Please try again.");
     } finally {
       setProofSubmitting(false);
+    }
+  };
+
+  const flagReport = async () => {
+    if (!caseData || !token) return;
+    setFlagSubmitting(true);
+    try {
+      const r = await fetch(`${base}/sponsorships/${caseData.id}/report/flag`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ flag_note: flagNote.trim() }),
+      });
+      if (r.ok) {
+        setFlagSuccess(true);
+        setShowFlagForm(false);
+        setFlagNote("");
+      }
+    } catch {
+      // silent
+    } finally {
+      setFlagSubmitting(false);
     }
   };
 
@@ -744,15 +781,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
             </>
           )}
 
-          {/* Story */}
-          {c.story && (
-            <div className="bg-white rounded-2xl border border-gray-200 p-5">
-              <h2 className="font-semibold text-gray-900 mb-3">The Story</h2>
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{c.story}</p>
-            </div>
-          )}
-
-          {/* Media gallery */}
+          {/* Media gallery — before story per public page order */}
           {galleryItems.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
               <h2 className="font-semibold text-gray-900 mb-4">Gallery</h2>
@@ -873,6 +902,85 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
                   </div>
                 );
               })()}
+            </div>
+          )}
+
+          {/* Story */}
+          {c.story && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <h2 className="font-semibold text-gray-900 mb-3">The Story</h2>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{c.story}</p>
+            </div>
+          )}
+
+          {/* THUTO/Amara AI report */}
+          {c.report?.public_summary && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <h2 className="font-semibold text-gray-900">
+                    {c.report.writer === "amara" ? "Amara" : "THUTO"} Assessment
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Independent report written by AI from verified GRS passport data.
+                    Updated {new Date(c.report.generated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.
+                  </p>
+                </div>
+                {c.report.level_band && (
+                  <span className="flex-shrink-0 text-xs font-semibold bg-[#1a5c2a]/10 text-[#1a5c2a] px-2.5 py-1 rounded-full capitalize">
+                    {c.report.level_band}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-gray-700 leading-relaxed">{c.report.public_summary}</p>
+
+              {/* Owner: flag button */}
+              {isOwner && !flagSuccess && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  {!showFlagForm ? (
+                    <button
+                      onClick={() => setShowFlagForm(true)}
+                      className="text-xs text-gray-500 hover:text-red-600 transition-colors"
+                    >
+                      Something wrong with this report? Flag it for review →
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-gray-700 block">
+                        What is incorrect or needs changing?
+                      </label>
+                      <textarea
+                        value={flagNote}
+                        onChange={(e) => setFlagNote(e.target.value)}
+                        maxLength={500}
+                        rows={3}
+                        placeholder="Describe what needs to be corrected…"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { setShowFlagForm(false); setFlagNote(""); }}
+                          className="flex-1 border border-gray-300 text-gray-600 text-xs font-medium py-1.5 rounded-lg hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={flagReport}
+                          disabled={flagSubmitting || flagNote.trim().length < 10}
+                          className="flex-1 bg-red-600 text-white text-xs font-semibold py-1.5 rounded-lg hover:bg-red-700 disabled:opacity-60"
+                        >
+                          {flagSubmitting ? "Sending…" : "Flag for review"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {isOwner && flagSuccess && (
+                <p className="mt-3 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  Report flagged — GRS admin will review and update it.
+                </p>
+              )}
             </div>
           )}
 

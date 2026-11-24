@@ -34,6 +34,18 @@ interface CaseDetail {
   grs_verified_via_call?: boolean;
 }
 
+interface AdminReport {
+  id: string;
+  writer: "thuto" | "amara";
+  version: number;
+  public_summary: string;
+  level_band: string;
+  generated_at: string;
+  status: "draft" | "approved" | "flagged";
+  flag_note?: string | null;
+  private_detail?: Record<string, unknown> | null;
+}
+
 const STATUS_COLORS: Record<string, string> = {
   live:          "bg-green-100 text-green-800",
   in_review:     "bg-amber-100 text-amber-800",
@@ -66,6 +78,14 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
   const [grsSaving, setGrsSaving] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
 
+  // Report panel
+  const [report,           setReport]           = useState<AdminReport | null>(null);
+  const [reportLoaded,     setReportLoaded]      = useState(false);
+  const [reportWorking,    setReportWorking]     = useState(false);
+  const [reportMsg,        setReportMsg]         = useState<string | null>(null);
+  const [showPrivateDetail,setShowPrivateDetail] = useState(false);
+  const [resolveNote,      setResolveNote]       = useState("");
+
   useEffect(() => {
     if (!token) return;
     fetch(`${base}/sponsorships/${id}`, {
@@ -76,6 +96,89 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
       .catch(() => setError("Could not load case."))
       .finally(() => setLoading(false));
   }, [id, token, base]);
+
+  // Load report once token is ready
+  useEffect(() => {
+    if (!token || !id || reportLoaded) return;
+    setReportLoaded(true);
+    fetch(`${base}/admin/sponsorships/${id}/report`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.data) setReport(j.data); })
+      .catch(() => {});
+  }, [token, id, base, reportLoaded]);
+
+  const generateReport = async () => {
+    if (!token || reportWorking) return;
+    setReportWorking(true);
+    setReportMsg(null);
+    try {
+      const r = await fetch(`${base}/admin/sponsorships/${id}/report/generate`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.data) {
+        setReport(j.data);
+        setReportMsg("Report generated successfully.");
+      } else {
+        setReportMsg((j as { message?: string }).message ?? "Generation failed.");
+      }
+    } catch {
+      setReportMsg("Network error.");
+    } finally {
+      setReportWorking(false);
+    }
+  };
+
+  const approveReport = async () => {
+    if (!token || !report || reportWorking) return;
+    setReportWorking(true);
+    setReportMsg(null);
+    try {
+      const r = await fetch(`${base}/admin/sponsorships/${id}/report/approve`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.ok) {
+        setReport((prev) => prev ? { ...prev, status: "approved" } : prev);
+        setReportMsg("Report approved and now public.");
+      } else {
+        const j = await r.json().catch(() => ({}));
+        setReportMsg((j as { message?: string }).message ?? "Approval failed.");
+      }
+    } catch {
+      setReportMsg("Network error.");
+    } finally {
+      setReportWorking(false);
+    }
+  };
+
+  const resolveFlagReport = async () => {
+    if (!token || !report || reportWorking) return;
+    setReportWorking(true);
+    setReportMsg(null);
+    try {
+      const r = await fetch(`${base}/admin/sponsorships/${id}/report/resolve-flag`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ resolve_note: resolveNote.trim() || undefined }),
+      });
+      if (r.ok) {
+        setReport((prev) => prev ? { ...prev, status: "approved" } : prev);
+        setReportMsg("Flag resolved — report re-approved.");
+        setResolveNote("");
+      } else {
+        const j = await r.json().catch(() => ({}));
+        setReportMsg((j as { message?: string }).message ?? "Could not resolve flag.");
+      }
+    } catch {
+      setReportMsg("Network error.");
+    } finally {
+      setReportWorking(false);
+    }
+  };
 
   const updateStatus = async (newStatus: string) => {
     if (!caseData || updating) return;
@@ -347,6 +450,113 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
           </div>
         </div>
       )}
+
+      {/* ── THUTO/Amara Report Panel ───────────────────────────────────── */}
+      <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4 mb-5">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            {report?.writer === "amara" ? "Amara" : "THUTO"} Assessment Report
+          </h2>
+          <div className="flex items-center gap-2 flex-wrap">
+            {report && (
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                report.status === "approved" ? "bg-green-100 text-green-800" :
+                report.status === "flagged"  ? "bg-red-100 text-red-700" :
+                                               "bg-gray-100 text-gray-600"
+              }`}>
+                {report.status} · v{report.version}
+              </span>
+            )}
+            <button
+              onClick={generateReport}
+              disabled={reportWorking}
+              className="text-xs font-semibold text-white bg-[#1a5c2a] px-3 py-1.5 rounded-lg hover:bg-[#145222] disabled:opacity-60"
+            >
+              {reportWorking ? "Working…" : report ? "Re-generate" : "Generate"}
+            </button>
+            {report && report.status !== "approved" && (
+              <button
+                onClick={approveReport}
+                disabled={reportWorking}
+                className="text-xs font-semibold text-white bg-green-600 px-3 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-60"
+              >
+                Approve
+              </button>
+            )}
+          </div>
+        </div>
+
+        {reportMsg && (
+          <div className={`text-xs rounded-lg px-3 py-2 mb-3 font-medium ${
+            reportMsg.toLowerCase().includes("fail") || reportMsg.toLowerCase().includes("error")
+              ? "bg-red-50 border border-red-200 text-red-700"
+              : "bg-green-50 border border-green-200 text-green-800"
+          }`}>
+            {reportMsg}
+          </div>
+        )}
+
+        {!report && (
+          <p className="text-sm text-gray-400 italic">No report generated yet. Click Generate to create one.</p>
+        )}
+
+        {report && (
+          <>
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="text-xs text-gray-400">
+                Generated {new Date(report.generated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+              </div>
+              {report.level_band && (
+                <span className="flex-shrink-0 text-xs font-semibold bg-[#1a5c2a]/10 text-[#1a5c2a] px-2 py-0.5 rounded-full capitalize">
+                  {report.level_band}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-700 leading-relaxed mb-3">{report.public_summary}</p>
+
+            {/* Flag details */}
+            {report.status === "flagged" && (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-3">
+                <div className="text-xs font-semibold text-red-700 mb-1">Flagged by owner</div>
+                {report.flag_note && <p className="text-xs text-red-600">{report.flag_note}</p>}
+                <div className="mt-2 space-y-1">
+                  <input
+                    type="text"
+                    placeholder="Resolve note (optional)"
+                    value={resolveNote}
+                    onChange={(e) => setResolveNote(e.target.value)}
+                    className="w-full text-xs border border-red-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-red-300"
+                  />
+                  <button
+                    onClick={resolveFlagReport}
+                    disabled={reportWorking}
+                    className="w-full text-xs font-semibold text-white bg-red-600 py-1.5 rounded-lg hover:bg-red-700 disabled:opacity-60"
+                  >
+                    {reportWorking ? "Resolving…" : "Resolve flag & re-approve"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Private detail toggle */}
+            {report.private_detail && (
+              <div>
+                <button
+                  onClick={() => setShowPrivateDetail((v) => !v)}
+                  className="text-xs text-[#1a5c2a] hover:underline"
+                >
+                  {showPrivateDetail ? "Hide private detail ↑" : "View private detail ↓"}
+                </button>
+                {showPrivateDetail && (
+                  <pre className="mt-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-xl p-3 overflow-x-auto whitespace-pre-wrap">
+                    {JSON.stringify(report.private_detail, null, 2)}
+                  </pre>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Meta cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">

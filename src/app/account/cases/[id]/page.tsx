@@ -44,6 +44,17 @@ interface CaseData {
   province: string | null;
   age_group: string | null;
   auto_accept_introductions: boolean;
+  beneficiary_type?: string | null;
+}
+
+interface DraftReport {
+  id: string;
+  writer: "thuto" | "amara";
+  public_summary: string;
+  level_band: string;
+  generated_at: string;
+  status: "draft" | "approved" | "flagged";
+  flag_note?: string | null;
 }
 
 function StepIcon({ done, active }: { done: boolean; active: boolean }) {
@@ -159,6 +170,14 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
   const [vouchSuccess,     setVouchSuccess]     = useState(false);
   const [autoAcceptSaving, setAutoAcceptSaving] = useState(false);
 
+  // Report draft
+  const [report,          setReport]          = useState<DraftReport | null>(null);
+  const [reportLoaded,    setReportLoaded]     = useState(false);
+  const [showFlagForm,    setShowFlagForm]     = useState(false);
+  const [flagNote,        setFlagNote]         = useState("");
+  const [flagSubmitting,  setFlagSubmitting]   = useState(false);
+  const [flagSuccess,     setFlagSuccess]      = useState(false);
+
   useEffect(() => {
     if (!hasHydrated) return;
 
@@ -212,6 +231,40 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
 
     fetchCase();
   }, [hasHydrated, token, params.id, user, router]);
+
+  // Load draft report once case data is available
+  useEffect(() => {
+    if (!caseData || !token || reportLoaded) return;
+    setReportLoaded(true);
+    fetch(`${BASE}/sponsorships/${caseData.id}/report/draft`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.data) setReport(j.data); })
+      .catch(() => {});
+  }, [caseData, token, reportLoaded]);
+
+  const flagReport = async () => {
+    if (!caseData || !token) return;
+    setFlagSubmitting(true);
+    try {
+      const r = await fetch(`${BASE}/sponsorships/${caseData.id}/report/flag`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ flag_note: flagNote.trim() }),
+      });
+      if (r.ok) {
+        setFlagSuccess(true);
+        setShowFlagForm(false);
+        setFlagNote("");
+        setReport((prev) => prev ? { ...prev, status: "flagged" } : prev);
+      }
+    } catch {
+      // silent
+    } finally {
+      setFlagSubmitting(false);
+    }
+  };
 
   const requestVouch = async () => {
     if (!caseData) return;
@@ -470,8 +523,83 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
           />
         )}
 
+        {/* THUTO/Amara report panel (read-only draft view) */}
+        {report && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <h2 className="font-semibold text-gray-900 text-sm">
+                  {report.writer === "amara" ? "Amara" : "THUTO"} Assessment
+                  {report.status === "draft" && (
+                    <span className="ml-2 text-xs font-normal text-gray-400">(draft — not public yet)</span>
+                  )}
+                  {report.status === "flagged" && (
+                    <span className="ml-2 text-xs font-semibold text-red-600">Flagged for review</span>
+                  )}
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Generated {new Date(report.generated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.
+                  Admin must approve before it appears on your public page.
+                </p>
+              </div>
+              {report.level_band && (
+                <span className="flex-shrink-0 text-xs font-semibold bg-[#1a5c2a]/10 text-[#1a5c2a] px-2.5 py-1 rounded-full capitalize">
+                  {report.level_band}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-700 leading-relaxed mb-4">{report.public_summary}</p>
+
+            {/* Flag */}
+            {report.status !== "flagged" && !flagSuccess && (
+              <div className="border-t border-gray-100 pt-3">
+                {!showFlagForm ? (
+                  <button
+                    onClick={() => setShowFlagForm(true)}
+                    className="text-xs text-gray-500 hover:text-red-600 transition-colors"
+                  >
+                    Something wrong? Flag this report for review →
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-gray-700 block">What needs to be corrected?</label>
+                    <textarea
+                      value={flagNote}
+                      onChange={(e) => setFlagNote(e.target.value)}
+                      maxLength={500}
+                      rows={3}
+                      placeholder="Describe the issue…"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setShowFlagForm(false); setFlagNote(""); }}
+                        className="flex-1 border border-gray-300 text-gray-600 text-xs font-medium py-1.5 rounded-lg hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={flagReport}
+                        disabled={flagSubmitting || flagNote.trim().length < 10}
+                        className="flex-1 bg-red-600 text-white text-xs font-semibold py-1.5 rounded-lg hover:bg-red-700 disabled:opacity-60"
+                      >
+                        {flagSubmitting ? "Sending…" : "Flag for review"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {(flagSuccess || report.status === "flagged") && (
+              <p className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
+                Flagged — GRS admin will review and regenerate this report.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Media gallery */}
-        <MediaManager caseId={params.id} token={token} />
+        <MediaManager caseId={params.id} token={token} isTeam={caseData.beneficiary_type === "team"} />
 
         {/* Introduction settings */}
         <div className="bg-white rounded-2xl border border-gray-200 p-5">

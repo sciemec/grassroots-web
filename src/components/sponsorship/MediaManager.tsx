@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  ChevronUp, ChevronDown, Trash2, Star, Upload, Film, Youtube, X, Plus,
+  ChevronUp, ChevronDown, Trash2, Star, Upload, Film, Youtube, X, Plus, Lock, Users,
 } from "lucide-react";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
@@ -19,6 +19,7 @@ interface MediaItem {
   sort_order: number;
   is_cover: boolean;
   consent_ok: boolean;
+  tagged_squad_member_ids?: string[] | null;
 }
 
 interface ArenaPost {
@@ -29,12 +30,21 @@ interface ArenaPost {
   created_at: string;
 }
 
+interface SquadMember {
+  id: string;
+  first_name: string;
+  surname?: string | null;
+  shirt_no?: number | null;
+  position?: string | null;
+}
+
 interface Props {
   caseId: string;
   token: string | null;
+  isTeam?: boolean;
 }
 
-export default function MediaManager({ caseId, token }: Props) {
+export default function MediaManager({ caseId, token, isTeam = false }: Props) {
   const [items,         setItems]         = useState<MediaItem[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [addMode,       setAddMode]       = useState<"photo" | "arena" | "youtube" | null>(null);
@@ -58,6 +68,14 @@ export default function MediaManager({ caseId, token }: Props) {
   // Caption inline edit
   const [editingId,     setEditingId]     = useState<string | null>(null);
   const [editingCaption,setEditingCaption] = useState("");
+
+  // Squad / tag players (team cases only)
+  const [squadMembers,  setSquadMembers]  = useState<SquadMember[]>([]);
+  const [squadLoaded,   setSquadLoaded]   = useState(false);
+  const [squadLoading,  setSquadLoading]  = useState(false);
+  const [taggingId,     setTaggingId]     = useState<string | null>(null);
+  const [stagedTagIds,  setStagedTagIds]  = useState<string[]>([]);
+  const [tagSaving,     setTagSaving]     = useState(false);
 
   const headers = { Authorization: `Bearer ${token}`, Accept: "application/json" };
 
@@ -227,6 +245,55 @@ export default function MediaManager({ caseId, token }: Props) {
     setSaving(false);
   };
 
+  // ── Squad member loading (team cases) ────────────────────────────────────
+
+  const ensureSquadLoaded = async () => {
+    if (squadLoaded || squadLoading) return;
+    setSquadLoading(true);
+    try {
+      const r = await fetch(`${BASE}/sponsorships/${caseId}/media/squad-members`, { headers });
+      const j = await r.json().catch(() => ({}));
+      if (j.data) setSquadMembers(j.data);
+      setSquadLoaded(true);
+    } catch {
+      // silent — squad won't show if request fails
+    } finally {
+      setSquadLoading(false);
+    }
+  };
+
+  const openTagPicker = (item: MediaItem) => {
+    setStagedTagIds(item.tagged_squad_member_ids ?? []);
+    setTaggingId(item.id);
+    ensureSquadLoaded();
+  };
+
+  const toggleTag = (memberId: string) => {
+    setStagedTagIds((prev) =>
+      prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]
+    );
+  };
+
+  const saveTags = async (mediaId: string) => {
+    setTagSaving(true);
+    const r = await fetch(`${BASE}/sponsorships/${caseId}/media/${mediaId}/players`, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ squad_member_ids: stagedTagIds }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.data) {
+      setItems((prev) =>
+        prev.map((i) => (i.id === mediaId ? { ...i, ...j.data } : i))
+      );
+      notify(stagedTagIds.length === 0 ? "Tags cleared." : "Players tagged.");
+    } else {
+      notify((j as { message?: string }).message ?? "Could not save tags.", true);
+    }
+    setTagSaving(false);
+    setTaggingId(null);
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -253,6 +320,7 @@ export default function MediaManager({ caseId, token }: Props) {
       </div>
       <p className="text-xs text-gray-500 mb-4">
         Add photos, Arena videos, or YouTube links. Set one as the cover for the public page.
+        {isTeam && " Tag squad members in team photos to enable consent visibility."}
       </p>
 
       {/* Notifications */}
@@ -271,113 +339,202 @@ export default function MediaManager({ caseId, token }: Props) {
       {items.length > 0 ? (
         <div className="space-y-2 mb-4">
           {items.map((item, i) => (
-            <div
-              key={item.id}
-              className={`flex items-center gap-3 rounded-xl border p-2 ${
-                item.is_cover ? "border-[#1a5c2a] bg-[#1a5c2a]/5" : "border-gray-200"
-              }`}
-            >
-              {/* Thumbnail */}
-              <div className="w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 relative">
-                {item.thumbnail_url ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={item.thumbnail_url} alt="" className="w-full h-full object-cover" />
-                ) : item.type === "photo" ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={item.url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <Film size={20} />
-                  </div>
-                )}
-                {item.type === "video" && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-5 h-5 bg-black/50 rounded-full flex items-center justify-center">
-                      <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-l-[7px] border-transparent border-l-white ml-0.5" />
+            <div key={item.id}>
+              <div
+                className={`flex items-center gap-3 rounded-xl border p-2 ${
+                  item.is_cover ? "border-[#1a5c2a] bg-[#1a5c2a]/5" : "border-gray-200"
+                }`}
+              >
+                {/* Thumbnail */}
+                <div className="w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 relative">
+                  {item.thumbnail_url ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={item.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                  ) : item.type === "photo" ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={item.url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <Film size={20} />
                     </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="text-xs font-medium text-gray-700 capitalize">
-                    {item.source === "youtube" ? "YouTube" : item.source === "arena" ? "Arena" : "Photo"}
-                  </span>
-                  {item.is_cover && (
-                    <span className="text-xs font-semibold text-[#1a5c2a] bg-[#1a5c2a]/10 px-1.5 py-0.5 rounded-full">
-                      Cover
-                    </span>
                   )}
-                  {!item.consent_ok && (
-                    <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
-                      Hidden (consent)
-                    </span>
+                  {item.type === "video" && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-5 h-5 bg-black/50 rounded-full flex items-center justify-center">
+                        <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-l-[7px] border-transparent border-l-white ml-0.5" />
+                      </div>
+                    </div>
+                  )}
+                  {/* Padlock overlay for team items without consent */}
+                  {isTeam && !item.consent_ok && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <Lock size={14} className="text-white" />
+                    </div>
                   )}
                 </div>
-                {/* Caption */}
-                {editingId === item.id ? (
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="text"
-                      value={editingCaption}
-                      onChange={(e) => setEditingCaption(e.target.value)}
-                      maxLength={200}
-                      autoFocus
-                      className="flex-1 text-xs border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#1a5c2a]/30"
-                      onKeyDown={(e) => { if (e.key === "Enter") saveCaption(item.id); if (e.key === "Escape") setEditingId(null); }}
-                    />
-                    <button onClick={() => saveCaption(item.id)} className="text-xs text-[#1a5c2a] font-medium">Save</button>
-                    <button onClick={() => setEditingId(null)} className="text-xs text-gray-400">✕</button>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                    <span className="text-xs font-medium text-gray-700 capitalize">
+                      {item.source === "youtube" ? "YouTube" : item.source === "arena" ? "Arena" : "Photo"}
+                    </span>
+                    {item.is_cover && (
+                      <span className="text-xs font-semibold text-[#1a5c2a] bg-[#1a5c2a]/10 px-1.5 py-0.5 rounded-full">
+                        Cover
+                      </span>
+                    )}
+                    {isTeam && !item.consent_ok && (
+                      <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                        <Lock size={9} />
+                        Private — tag players
+                      </span>
+                    )}
+                    {isTeam && item.consent_ok && (item.tagged_squad_member_ids?.length ?? 0) > 0 && (
+                      <span className="text-xs text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full">
+                        {item.tagged_squad_member_ids!.length} tagged
+                      </span>
+                    )}
+                    {!isTeam && !item.consent_ok && (
+                      <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
+                        Hidden (consent)
+                      </span>
+                    )}
                   </div>
-                ) : (
+                  {/* Caption */}
+                  {editingId === item.id ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        value={editingCaption}
+                        onChange={(e) => setEditingCaption(e.target.value)}
+                        maxLength={200}
+                        autoFocus
+                        className="flex-1 text-xs border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#1a5c2a]/30"
+                        onKeyDown={(e) => { if (e.key === "Enter") saveCaption(item.id); if (e.key === "Escape") setEditingId(null); }}
+                      />
+                      <button onClick={() => saveCaption(item.id)} className="text-xs text-[#1a5c2a] font-medium">Save</button>
+                      <button onClick={() => setEditingId(null)} className="text-xs text-gray-400">✕</button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setEditingId(item.id); setEditingCaption(item.caption ?? ""); }}
+                      className="text-xs text-gray-400 hover:text-gray-600 truncate block max-w-full text-left"
+                    >
+                      {item.caption ?? "Add caption…"}
+                    </button>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {isTeam && (
+                    <button
+                      onClick={() => taggingId === item.id ? setTaggingId(null) : openTagPicker(item)}
+                      disabled={saving}
+                      className={`p-1 rounded transition-colors ${
+                        taggingId === item.id
+                          ? "text-[#1a5c2a] bg-[#1a5c2a]/10"
+                          : "text-gray-400 hover:text-[#1a5c2a]"
+                      }`}
+                      title="Tag squad members"
+                    >
+                      <Users size={15} />
+                    </button>
+                  )}
                   <button
-                    onClick={() => { setEditingId(item.id); setEditingCaption(item.caption ?? ""); }}
-                    className="text-xs text-gray-400 hover:text-gray-600 truncate block max-w-full text-left"
+                    onClick={() => moveItem(i, -1)}
+                    disabled={i === 0 || saving}
+                    className="p-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-25"
+                    aria-label="Move up"
                   >
-                    {item.caption ?? "Add caption…"}
+                    <ChevronUp size={15} />
                   </button>
-                )}
+                  <button
+                    onClick={() => moveItem(i, 1)}
+                    disabled={i === items.length - 1 || saving}
+                    className="p-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-25"
+                    aria-label="Move down"
+                  >
+                    <ChevronDown size={15} />
+                  </button>
+                  {!item.is_cover && (
+                    <button
+                      onClick={() => setCover(item.id)}
+                      disabled={saving}
+                      className="p-1 rounded text-gray-400 hover:text-[#c8962a] disabled:opacity-50"
+                      title="Set as cover"
+                    >
+                      <Star size={15} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => deleteItem(item.id)}
+                    disabled={saving}
+                    className="p-1 rounded text-gray-400 hover:text-red-500 disabled:opacity-50"
+                    aria-label="Delete"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button
-                  onClick={() => moveItem(i, -1)}
-                  disabled={i === 0 || saving}
-                  className="p-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-25"
-                  aria-label="Move up"
-                >
-                  <ChevronUp size={15} />
-                </button>
-                <button
-                  onClick={() => moveItem(i, 1)}
-                  disabled={i === items.length - 1 || saving}
-                  className="p-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-25"
-                  aria-label="Move down"
-                >
-                  <ChevronDown size={15} />
-                </button>
-                {!item.is_cover && (
-                  <button
-                    onClick={() => setCover(item.id)}
-                    disabled={saving}
-                    className="p-1 rounded text-gray-400 hover:text-[#c8962a] disabled:opacity-50"
-                    title="Set as cover"
-                  >
-                    <Star size={15} />
-                  </button>
-                )}
-                <button
-                  onClick={() => deleteItem(item.id)}
-                  disabled={saving}
-                  className="p-1 rounded text-gray-400 hover:text-red-500 disabled:opacity-50"
-                  aria-label="Delete"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
+              {/* Squad tag picker (team cases) */}
+              {isTeam && taggingId === item.id && (
+                <div className="ml-2 mt-1 border border-[#1a5c2a]/30 rounded-xl p-3 bg-[#1a5c2a]/3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-gray-700">Tag players in this item</span>
+                    <button onClick={() => setTaggingId(null)} className="text-gray-400 hover:text-gray-700">
+                      <X size={13} />
+                    </button>
+                  </div>
+                  {squadLoading ? (
+                    <p className="text-xs text-gray-400 py-2">Loading squad…</p>
+                  ) : squadMembers.length === 0 ? (
+                    <p className="text-xs text-gray-400 py-2">No squad members found. Add members to your squad first.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {squadMembers.map((m) => {
+                        const selected = stagedTagIds.includes(m.id);
+                        const name = `${m.first_name}${m.surname ? ` ${m.surname}` : ""}`;
+                        return (
+                          <button
+                            key={m.id}
+                            onClick={() => toggleTag(m.id)}
+                            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                              selected
+                                ? "bg-[#1a5c2a] text-white border-[#1a5c2a]"
+                                : "bg-white text-gray-700 border-gray-300 hover:border-[#1a5c2a]"
+                            }`}
+                          >
+                            {m.shirt_no ? `#${m.shirt_no} ` : ""}{name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setTaggingId(null)}
+                      className="flex-1 border border-gray-300 text-gray-600 text-xs font-medium py-1.5 rounded-lg hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => saveTags(item.id)}
+                      disabled={tagSaving || squadLoading}
+                      className="flex-1 bg-[#1a5c2a] text-white text-xs font-semibold py-1.5 rounded-lg hover:bg-[#145222] disabled:opacity-60"
+                    >
+                      {tagSaving ? "Saving…" : "Save tags"}
+                    </button>
+                  </div>
+                  {stagedTagIds.length === 0 && (
+                    <p className="text-xs text-gray-400 mt-2">
+                      No players tagged — item will stay private.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
