@@ -6,6 +6,17 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 
+interface MediaItem {
+  id: string;
+  type: "photo" | "video";
+  source: "arena" | "upload" | "youtube";
+  arena_post_id: string | null;
+  url: string;
+  thumbnail_url: string | null;
+  caption: string | null;
+  is_cover: boolean;
+}
+
 interface SponsorshipCase {
   id: string;
   public_code?: string;
@@ -35,6 +46,7 @@ interface SponsorshipCase {
   financial_literacy_complete?: boolean;
   player?: PlayerData | null;
   auto_accept_introductions?: boolean;
+  media?: MediaItem[];
   // raw backend fields that need normalising
   vouched_by?: { org_name?: string | null; confirmed_at?: string | null } | null;
   financial_literacy?: { owner?: boolean; player?: boolean; guardian?: boolean } | null;
@@ -215,6 +227,9 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
   // auto-accept
   const [autoAccept,       setAutoAccept]      = useState(false);
   const [autoAcceptSaving, setAutoAcceptSaving] = useState(false);
+
+  // gallery lightbox
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
 
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
   const isPublicCode = typeof id === "string" && id.length === 8;
@@ -508,6 +523,12 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
   const sportEmoji  = SPORT_EMOJI[c.sport?.toLowerCase()] ?? "🏅";
   const statusCfg   = STATUS_CONFIG[c.status] ?? { label: c.status, color: "#6b7280", bg: "#f3f4f6", step: -1 };
   const myIntro     = c.my_introduction;
+  const mediaItems  = c.media ?? [];
+  const coverItem   = mediaItems.find((m) => m.is_cover);
+  // Cover image: prefer media cover, fall back to legacy cover_image_url
+  const heroImageUrl = coverItem?.url ?? c.cover_image_url ?? null;
+  // Gallery: non-cover items for the thumbnail strip
+  const galleryItems = mediaItems;
   const isOwner     = user?.id === c.owner_user_id;
   const INTRO_ALLOWED_ROLES: string[] = ["fan", "business", "scout", "coach", "admin"];
   const canRequestIntro = c.status === "live"
@@ -530,8 +551,8 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
 
       {/* ── Cover hero ─────────────────────────────────────────────────────── */}
       <div className="relative h-60 md:h-80 overflow-hidden">
-        {c.cover_image_url ? (
-          <img src={c.cover_image_url} alt={c.title} className="w-full h-full object-cover" />
+        {heroImageUrl ? (
+          <img src={heroImageUrl} alt={c.title} className="w-full h-full object-cover" />
         ) : (
           <div
             className="w-full h-full flex items-center justify-center text-8xl"
@@ -728,6 +749,130 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
               <h2 className="font-semibold text-gray-900 mb-3">The Story</h2>
               <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{c.story}</p>
+            </div>
+          )}
+
+          {/* Media gallery */}
+          {galleryItems.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <h2 className="font-semibold text-gray-900 mb-4">Gallery</h2>
+
+              {/* Horizontally scrollable thumbnail strip */}
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+                {galleryItems.map((item, idx) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setGalleryIndex(idx)}
+                    className={`flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden relative border-2 transition-colors ${
+                      item.is_cover ? "border-[#1a5c2a]" : "border-transparent hover:border-gray-300"
+                    }`}
+                  >
+                    {item.thumbnail_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={item.thumbnail_url} alt={item.caption ?? ""} className="w-full h-full object-cover" />
+                    ) : item.type === "photo" ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={item.url} alt={item.caption ?? ""} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-2xl">
+                        ▶
+                      </div>
+                    )}
+                    {item.type === "video" && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <div className="w-7 h-7 bg-black/60 rounded-full flex items-center justify-center">
+                          <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[9px] border-transparent border-l-white ml-1" />
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Lightbox */}
+              {galleryIndex !== null && galleryItems[galleryIndex] && (() => {
+                const item = galleryItems[galleryIndex];
+                return (
+                  <div
+                    className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4"
+                    onClick={() => setGalleryIndex(null)}
+                  >
+                    <button
+                      className="absolute top-4 right-4 text-white/70 hover:text-white text-2xl font-light"
+                      onClick={() => setGalleryIndex(null)}
+                    >
+                      ✕
+                    </button>
+
+                    {/* Nav arrows */}
+                    {galleryIndex > 0 && (
+                      <button
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white text-3xl font-light"
+                        onClick={(e) => { e.stopPropagation(); setGalleryIndex(galleryIndex - 1); }}
+                      >
+                        ‹
+                      </button>
+                    )}
+                    {galleryIndex < galleryItems.length - 1 && (
+                      <button
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white text-3xl font-light"
+                        onClick={(e) => { e.stopPropagation(); setGalleryIndex(galleryIndex + 1); }}
+                      >
+                        ›
+                      </button>
+                    )}
+
+                    {/* Media content — videos load only on tap (data-light) */}
+                    <div
+                      className="max-w-2xl w-full"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {item.type === "photo" ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={item.url}
+                          alt={item.caption ?? ""}
+                          className="w-full max-h-[70vh] object-contain rounded-xl"
+                        />
+                      ) : item.source === "youtube" ? (
+                        <div className="aspect-video rounded-xl overflow-hidden">
+                          <iframe
+                            src={item.url.replace("watch?v=", "embed/").replace("youtu.be/", "www.youtube.com/embed/").replace("shorts/", "embed/")}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="w-full h-full"
+                            title={item.caption ?? "Video"}
+                          />
+                        </div>
+                      ) : (
+                        <video
+                          src={item.url}
+                          controls
+                          autoPlay
+                          className="w-full max-h-[70vh] rounded-xl bg-black"
+                          playsInline
+                        />
+                      )}
+                      {item.caption && (
+                        <p className="text-white/80 text-sm text-center mt-3">{item.caption}</p>
+                      )}
+                    </div>
+
+                    {/* Dot indicators */}
+                    <div className="absolute bottom-6 flex gap-1.5">
+                      {galleryItems.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={(e) => { e.stopPropagation(); setGalleryIndex(i); }}
+                          className={`w-2 h-2 rounded-full transition-colors ${
+                            i === galleryIndex ? "bg-white" : "bg-white/40"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 

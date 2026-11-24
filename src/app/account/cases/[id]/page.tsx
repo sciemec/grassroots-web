@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import VouchPanel from "@/components/sponsorship/VouchPanel";
 import EligibilityChecklist from "@/components/sponsorship/EligibilityChecklist";
+import MediaManager from "@/components/sponsorship/MediaManager";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -468,6 +469,9 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
             requestVouch={requestVouch}
           />
         )}
+
+        {/* Media gallery */}
+        <MediaManager caseId={params.id} token={token} />
 
         {/* Introduction settings */}
         <div className="bg-white rounded-2xl border border-gray-200 p-5">
