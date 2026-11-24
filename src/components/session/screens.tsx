@@ -9,8 +9,9 @@
 // Split into separate files in production; combined here for Claude Code.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import api from '@/lib/api';
 import {
   InstructionCard, MeasurementInput, CounterInput,
   QualityRating, NavBar, SessionTimer,
@@ -33,14 +34,25 @@ const GREEN  = '#2ecc71';
 // ═══════════════════════════════════════════════════════════════════════════════
 export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
   const authUser = useAuthStore((s) => s.user);
-  const isCoach  = authUser?.role === 'coach';
+  const isCoach  = authUser?.role === 'coach' || authUser?.role === 'admin';
 
-  const [playerName,   setPlayerName]   = useState('');
-  const [age,          setAge]          = useState<number>(14);
-  const [gender,       setGender]       = useState<'male' | 'female'>('male');
-  const [position,     setPosition]     = useState<Position>('midfielder');
-  const [verifiedBy,   setVerifiedBy]   = useState('');
-  const [playerUserId, setPlayerUserId] = useState('');
+  const [playerName,    setPlayerName]    = useState('');
+  const [age,           setAge]           = useState<number>(14);
+  const [gender,        setGender]        = useState<'male' | 'female'>('male');
+  const [position,      setPosition]      = useState<Position>('midfielder');
+  const [verifiedBy,    setVerifiedBy]    = useState('');
+  const [squadMemberId, setSquadMemberId] = useState('');
+  const [squadMembers,  setSquadMembers]  = useState<{ id: string; name: string; position: string | null }[]>([]);
+  const [squadLoading,  setSquadLoading]  = useState(false);
+
+  useEffect(() => {
+    if (!isCoach) return;
+    setSquadLoading(true);
+    api.get('/coach/squad')
+      .then((res) => setSquadMembers(res.data?.data ?? []))
+      .catch(() => { /* squad unavailable — coach can still proceed without linking */ })
+      .finally(() => setSquadLoading(false));
+  }, [isCoach]);
 
   const ALL_TESTS = ['t1_jump','t2_sprint','t3_balance','t4_reaction','t5_endurance','t6_ball'] as const;
   const [selectedTests, setSelectedTests] = useState<string[]>([...ALL_TESTS]);
@@ -71,22 +83,22 @@ export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
     (sum, t) => sum + parseInt(TEST_META[t]?.duration ?? '5'), 0
   );
 
-  const canStart = playerName.trim().length > 0 && verifiedBy.trim().length > 0 && selectedTests.length > 0;
+  const canStart = playerName.trim().length > 0
+    && (isCoach ? !!squadMemberId : verifiedBy.trim().length > 0)
+    && selectedTests.length > 0;
 
   const handleStart = () => {
-    const trimmedPlayerId = playerUserId.trim();
     const config: SessionConfig = {
       playerName:    playerName.trim(),
       age,
       gender,
       position,
       sessionDate:   new Date().toISOString().split('T')[0],
-      verifiedBy:    verifiedBy.trim(),
-      coachVerified: true,
-      // Coaches can paste the player's account ID from their passport URL so the
-      // session appears on the correct player's passport.
-      // Players don't need this — the backend sets player_user_id automatically.
-      playerUserId:  isCoach && trimmedPlayerId ? trimmedPlayerId : undefined,
+      verifiedBy:    verifiedBy.trim() || authUser?.name || 'Coach',
+      coachVerified: isCoach,
+      // squad_member_id is sent to the backend; not player_user_id.
+      // Players submitting for themselves leave both undefined.
+      squadMemberId: isCoach && squadMemberId ? squadMemberId : undefined,
       activeTests:   [...selectedTests, 'results'] as any,
     };
     onUpdate({ config, startedAt: new Date().toISOString() });
@@ -236,22 +248,55 @@ export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
               />
             </div>
 
-            {/* Player Account ID — coaches only */}
+            {/* Squad picker — coaches and admins must select a player */}
             {isCoach && (
               <div>
                 <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 6 }}>
-                  Player account ID <span style={{ fontWeight: 400 }}>(optional)</span>
+                  Squad player <span style={{ color: '#e55' }}>*</span>
                 </div>
-                <input
-                  type="text"
-                  value={playerUserId}
-                  onChange={e => setPlayerUserId(e.target.value)}
-                  placeholder="Paste player's passport ID to link this session"
-                  style={inputStyle}
-                />
-                <div style={{ fontSize: 10, color: MUTED, marginTop: 5 }}>
-                  Found in the player's passport URL — links this session to their profile.
-                </div>
+                {squadLoading ? (
+                  <div style={{ fontSize: 12, color: MUTED, padding: '10px 0' }}>Loading squad…</div>
+                ) : squadMembers.length === 0 ? (
+                  <div style={{ fontSize: 12, color: MUTED, padding: '10px 0' }}>
+                    No active squad members found. Add players on the Squad page first.
+                  </div>
+                ) : (
+                  <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {squadMembers.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setSquadMemberId(m.id)}
+                        style={{
+                          padding: '10px 12px', borderRadius: 10, cursor: 'pointer',
+                          textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10,
+                          border: squadMemberId === m.id ? `1.5px solid ${GOLD}` : `1px solid ${BORDER}`,
+                          background: squadMemberId === m.id ? `${GOLD}18` : '#161616',
+                        }}
+                      >
+                        <span style={{
+                          width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                          background: '#1c3d22', color: '#4ade80',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 12, fontWeight: 700,
+                        }}>
+                          {(m.name ?? '?')[0].toUpperCase()}
+                        </span>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{m.name}</div>
+                          {m.position && (
+                            <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{m.position}</div>
+                          )}
+                        </div>
+                        {squadMemberId === m.id && (
+                          <span style={{ marginLeft: 'auto', fontSize: 10, color: GOLD, fontWeight: 700 }}>
+                            Selected
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -320,7 +365,9 @@ export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
         >
           {canStart
             ? `Start session — ${selectedTests.length} test${selectedTests.length !== 1 ? 's' : ''}`
-            : 'Enter player name and coach name to begin'}
+            : isCoach
+              ? 'Enter player name and select a squad player to begin'
+              : 'Enter player name and coach name to begin'}
         </button>
       </div>
 

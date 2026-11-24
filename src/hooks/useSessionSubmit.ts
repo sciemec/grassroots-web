@@ -63,46 +63,8 @@ export function useSessionSubmit() {
     };
 
     try {
-      // ── Step 1: Save the test session to PostgreSQL ──────────────────────
-      const sessionRes = await fetch('/api/sessions', {
-        method:  'POST',
-        headers: authHeaders,
-        body: JSON.stringify({
-          playerId,
-          ageGroup:         result.ageGroup,
-          position:         result.position,
-          sessionDate:      result.sessionDate,
-          // Raw measurements
-          sprintTime:       result.domains.linearSpeed.raw || null,
-          jumpHeight:       result.domains.explosivePower.raw || null,
-          chitimaTotalSec:  result.domains.endurance.raw || null,
-          reactionCatch:    result.domains.cognitiveSpeed.raw || null,
-          jugglingSeq:      result.domains.ballMastery.raw || null,
-          // Scores
-          aqScore:          result.aq,
-          sprintPercentile: result.domains.linearSpeed.percentile,
-          jumpPercentile:   result.domains.explosivePower.percentile,
-          balancePercentile: result.domains.balance.percentile,
-          reactionPercentile: result.domains.cognitiveSpeed.percentile,
-          chitimaPercentile: result.domains.endurance.percentile,
-          ballPercentile:   result.domains.ballMastery.percentile,
-          tier:             result.tier,
-          // Position quotients
-          pqStriker:        result.pq.striker,
-          pqWinger:         result.pq.winger,
-          pqMidfielder:     result.pq.midfielder,
-          pqDefender:       result.pq.defender,
-          pqGoalkeeper:     result.pq.goalkeeper,
-          // Narrative
-          scoutNarrative:   result.scoutNarrative,
-          coachVerified:    result.coachVerified,
-          verifiedBy:       result.verifiedBy,
-          injuryRisk:       result.injuryRiskFlag,
-          balanceAsymmetry: result.balanceAsymmetry,
-        }),
-      });
-
-      if (!sessionRes.ok) errors.push('Failed to save test session');
+      // ── Step 1 (removed): session save now handled directly by callers
+      //    via api.post('/sessions/grs-test', ...) before calling submit().
 
       // ── Step 2: Update gamification ──────────────────────────────────────
       const gamRes = await fetch('/api/gamification', {

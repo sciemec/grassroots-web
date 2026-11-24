@@ -52,6 +52,9 @@ export interface SessionConfig {
   // UUID of the player being tested.
   // Auto-set by the backend for player-role users; optionally supplied by coaches.
   playerUserId?: string;
+  // coach_squad_members.id — set by SetupScreen when a coach picks a squad player.
+  // Sent to the backend as squad_member_id; takes precedence over playerUserId.
+  squadMemberId?: string;
   // Which tests to run (coach can skip tests not available today)
   activeTests:   TestId[];
 }

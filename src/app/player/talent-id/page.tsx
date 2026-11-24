@@ -18,6 +18,7 @@ import PlayerCard from '@/components/ui/PlayerCard';
 import type { PlayerCardData } from '@/components/ui/PlayerCard';
 import { useSessionSubmit } from '@/hooks/useSessionSubmit';
 import { useAuthStore } from '@/lib/auth-store';
+import api from '@/lib/api';
 import { usePoseDetector } from '@/hooks/usePoseDetector';
 import SprintTestPage from '@/components/tests/SprintTestPage';
 
@@ -43,7 +44,8 @@ export default function TalentIdPage() {
   const [age,  setAge]      = useState(14);
   const [pos,  setPos]      = useState<Position>('midfielder');
   const [name, setName]     = useState('');
-  const [result, setResult] = useState<GRSResult | null>(null);
+  const [result,    setResult]    = useState<GRSResult | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // ── Test inputs ───────────────────────────────────────────────────────────
   const [jumpCm,      setJumpCm]      = useState<number | ''>('');
@@ -119,15 +121,44 @@ export default function TalentIdPage() {
 
     setResult(res);
     setStep('results');
+    setSaveError(null);
 
-    const playerId = user?.id ?? 'guest';
-    const prevAQ   = (() => {
+    // ── 1. Save session to DB (direct — not via useSessionSubmit) ──────────
+    const partials: Record<string, number> = {};
+    if (jumpCm     !== '') partials.jumpHeightCm      = +jumpCm;
+    if (sprintSec  !== '') partials.sprint20mSec       = +sprintSec;
+    if (balRO)             partials.balanceRightOpen   = balRO;
+    if (balLO)             partials.balanceLeftOpen    = balLO;
+    if (balRC)             partials.balanceRightClosed = balRC;
+    if (balLC)             partials.balanceLeftClosed  = balLC;
+    if (catchRate  !== '') partials.reactionCatchRate  = +catchRate;
+    if (chitimaSec !== '') partials.chitimaTotalSec    = +chitimaSec;
+    if (degScore !== undefined) partials.chitimaDegScore = degScore;
+    if (juggling   !== '') partials.jugglingSequence   = +juggling;
+    if (turnQuality)       partials.turnQualityScore   = turnQuality;
+
+    api.post('/sessions/grs-test', {
+      player_name:  name || user?.name || 'Player',
+      age,
+      position:     pos,
+      session_date: new Date().toISOString().split('T')[0],
+      aq_score:     res.aq,
+      tier:         res.tier,
+      dq_value:     res.dq,
+      partials,
+    }).catch((err) => {
+      console.error('Session save failed:', err);
+      setSaveError('Your results could not be saved. Please try again or visit the full session page.');
+    });
+
+    // ── 2. Gamification only — rank, XP, streak, drill unlock ─────────────
+    const prevAQ = (() => {
       try {
         const sessions = JSON.parse(localStorage.getItem('grs_sessions') ?? '[]');
         return sessions[0]?.aq ?? undefined;
       } catch { return undefined; }
     })();
-    submit({ playerId, result: res, previousAQ: prevAQ }).catch(() => {});
+    submit({ playerId: user?.id ?? 'guest', result: res, previousAQ: prevAQ }).catch(() => {});
   };
 
   const cardData: PlayerCardData | null = result ? {
@@ -440,6 +471,12 @@ export default function TalentIdPage() {
         {/* ── RESULTS ───────────────────────────────────────────────────────── */}
         {step === 'results' && result && cardData && (
           <div className="space-y-4">
+
+            {saveError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+                {saveError}
+              </div>
+            )}
 
             <PlayerCard data={cardData} />
 

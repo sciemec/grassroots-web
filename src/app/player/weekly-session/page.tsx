@@ -32,6 +32,7 @@ import {
 } from '@/lib/session-manager';
 import { useAuthStore }     from '@/lib/auth-store';
 import { useSessionSubmit } from '@/hooks/useSessionSubmit';
+import api                  from '@/lib/api';
 import { SessionHeader } from '@/components/session/shared';
 import {
   SetupScreen,
@@ -232,21 +233,31 @@ export default function WeeklySessionPage() {
     const token = useAuthStore.getState().token;
     if (!token || token === 'dev-token') return;
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/grs-test`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
-      body: JSON.stringify({
-        player_name:    state.config.playerName,
-        age:            state.config.age,
-        position:       state.config.position,
-        session_date:   state.config.sessionDate,
-        verified_by:    state.config.verifiedBy,
-        aq_score:       state.result.aq,
-        tier:           state.result.tier,
-        dq_value:       state.result.dq,
-        partials:       state.partials,
-        player_user_id: state.config.playerUserId ?? null,
-      }),
+    // Remap SessionPartials endurance* → chitima* (canonical grs-engine keys)
+    // before sending. Strip internal quality ratings not needed by the backend.
+    const rawPartials = { ...state.partials } as Record<string, unknown>;
+    if ('enduranceTotalSec' in rawPartials) {
+      rawPartials.chitimaTotalSec = rawPartials.enduranceTotalSec;
+      delete rawPartials.enduranceTotalSec;
+    }
+    if ('enduranceDegScore' in rawPartials) {
+      rawPartials.chitimaDegScore = rawPartials.enduranceDegScore;
+      delete rawPartials.enduranceDegScore;
+    }
+    delete rawPartials.enduranceRound1Quality;
+    delete rawPartials.enduranceRound3Quality;
+
+    api.post('/sessions/grs-test', {
+      player_name:     state.config.playerName,
+      age:             state.config.age,
+      position:        state.config.position,
+      session_date:    state.config.sessionDate,
+      verified_by:     state.config.verifiedBy,
+      aq_score:        state.result.aq,
+      tier:            state.result.tier,
+      dq_value:        state.result.dq,
+      partials:        rawPartials,
+      squad_member_id: state.config.squadMemberId ?? null,
     }).catch(() => {});
 
     if (user?.id && state.result) {
