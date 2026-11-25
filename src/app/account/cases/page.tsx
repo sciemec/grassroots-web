@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import {
   ArrowLeft, Briefcase, Plus, ExternalLink, Users,
-  Clock, CheckCircle2, XCircle, AlertCircle, Eye,
+  Clock, CheckCircle2, XCircle, AlertCircle, Eye, Pencil, Trash2,
 } from "lucide-react";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -22,6 +22,7 @@ type Case = {
   deadline_at: string | null;
   published_at: string | null;
   created_at: string;
+  wizard_step?: number;
 };
 
 const STATUS_CONFIG: Record<
@@ -168,7 +169,12 @@ export default function MyCasesPage() {
               </h2>
               <div className="space-y-3">
                 {group.map((c) => (
-                  <CaseCard key={c.id} c={c} />
+                  <CaseCard
+                    key={c.id}
+                    c={c}
+                    token={token}
+                    onDeleteDraft={() => setCases((prev) => prev.filter((x) => x.id !== c.id))}
+                  />
                 ))}
               </div>
             </section>
@@ -179,8 +185,25 @@ export default function MyCasesPage() {
   );
 }
 
-function CaseCard({ c }: { c: Case }) {
+function CaseCard({ c, token, onDeleteDraft }: { c: Case; token: string | null; onDeleteDraft?: () => void }) {
   const cfg = STATUS_CONFIG[c.status];
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm("Permanently delete this draft? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      const r = await fetch(`${BASE}/sponsorships/${c.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token ?? ""}`, Accept: "application/json" },
+      });
+      if (r.ok) {
+        onDeleteDraft?.();
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4">
@@ -256,6 +279,25 @@ function CaseCard({ c }: { c: Case }) {
           <Users size={13} />
           Introductions
         </Link>
+        {c.status === "draft" && (
+          <>
+            <Link
+              href={`/sponsorships/new?case=${c.id}`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#1a5c2a] px-3 py-1.5 text-xs font-semibold text-[#1a5c2a] hover:bg-[#f0fdf4]"
+            >
+              <Pencil size={13} />
+              Continue editing
+            </Link>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+            >
+              <Trash2 size={13} />
+              {deleting ? "Deleting…" : "Delete draft"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

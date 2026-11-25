@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { PublicNavbar } from "@/components/layout/public-navbar";
@@ -89,7 +89,7 @@ function fmt(cents: number) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function NewSponsorshipWizard() {
+export default function NewSponsorshipWizard({ searchParams }: { searchParams?: { case?: string } }) {
   const user       = useAuthStore((s) => s.user);
   const token      = useAuthStore((s) => s.token);
   const hydrated   = useAuthStore((s) => s._hasHydrated);
@@ -133,6 +133,17 @@ export default function NewSponsorshipWizard() {
   // Step 4 — Media
   const [hasCover, setHasCover] = useState(false);
 
+  // ── Resume & autosave ─────────────────────────────────────────────────────
+  const resumeId = searchParams?.case ?? null;
+  const [resumeLoading, setResumeLoading] = useState(!!resumeId);
+  type SaveStatus = "idle" | "saving" | "saved" | "error";
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Existing-draft banner (shown on fresh /sponsorships/new when no ?case param)
+  const [existingDraft, setExistingDraft] = useState<{ id: string; title: string } | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
   // Step 5 — Packages & tiers
   const [packages,     setPackages]     = useState<SponsorPackage[]>([]);
   const [pkgLoading,   setPkgLoading]   = useState(false);
@@ -161,6 +172,161 @@ export default function NewSponsorshipWizard() {
     if (!user) router.replace("/login");
   }, [hydrated, user, router]);
 
+  // ── Resume from ?case={id} ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!hydrated || !token || !user || !resumeId) return;
+    setResumeLoading(true);
+    fetch(`${BASE}/sponsorships/${resumeId}/detail`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const d = j?.data;
+        if (!d || d.status !== "draft" || d.owner_user_id !== user.id) return;
+        setDraftId(d.id);
+        setTitle(d.title ?? "");
+        setSport(d.sport ?? "");
+        setCategory(d.category ?? "");
+        setBeneficiaryType(d.beneficiary_type ?? "player");
+        setAgeGroup(d.age_group ?? "");
+        setProvince(d.province ?? "");
+        setStoryShort(d.story_short ?? "");
+        setStory(d.story ?? "");
+        setSupportMethod(d.suggested_payee ?? "");
+        setDeadline(d.deadline_at ? (d.deadline_at as string).substring(0, 10) : "");
+        setGuardianName(d.guardian_name ?? "");
+        setGuardianRelationship(d.guardian_relationship ?? "");
+        setGuardianWhatsapp(d.guardian_whatsapp ?? "");
+        setStep(Math.min(d.wizard_step ?? 1, TOTAL_STEPS));
+      })
+      .catch(() => {
+        // Offline fallback — restore from localStorage
+        try {
+          const saved = localStorage.getItem(`grs_draft_${resumeId}`);
+          if (saved) {
+            const d = JSON.parse(saved) as Record<string, string | number>;
+            if (d.title)             setTitle(String(d.title));
+            if (d.sport)             setSport(String(d.sport));
+            if (d.category)          setCategory(String(d.category));
+            if (d.beneficiaryType)   setBeneficiaryType(d.beneficiaryType as "player" | "team");
+            if (d.ageGroup)          setAgeGroup(String(d.ageGroup));
+            if (d.province)          setProvince(String(d.province));
+            if (d.storyShort)        setStoryShort(String(d.storyShort));
+            if (d.story)             setStory(String(d.story));
+            if (d.supportMethod)     setSupportMethod(String(d.supportMethod));
+            if (d.deadline)          setDeadline(String(d.deadline));
+            if (d.guardianName)      setGuardianName(String(d.guardianName));
+            if (d.guardianRelationship) setGuardianRelationship(String(d.guardianRelationship));
+            if (d.guardianWhatsapp)  setGuardianWhatsapp(String(d.guardianWhatsapp));
+            setDraftId(resumeId);
+            setStep(Math.min(Number(d.step) || 1, TOTAL_STEPS));
+          }
+        } catch { /* silent */ }
+      })
+      .finally(() => setResumeLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, token, user]);
+
+  // ── Latest-draft banner (fresh /sponsorships/new, no ?case param) ─────────
+  useEffect(() => {
+    if (!hydrated || !token || resumeId) return;
+    fetch(`${BASE}/sponsorships/latest-draft`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.data) setExistingDraft({ id: j.data.id, title: j.data.title }); })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, token]);
+
+  // ── localStorage sync — persist all fields once a draft exists ────────────
+  useEffect(() => {
+    if (!draftId) return;
+    try {
+      localStorage.setItem(`grs_draft_${draftId}`, JSON.stringify({
+        title, sport, category, beneficiaryType, ageGroup, province,
+        storyShort, story, supportMethod, deadline,
+        guardianName, guardianRelationship, guardianWhatsapp, step,
+      }));
+    } catch { /* quota exceeded — silent */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftId, title, sport, category, beneficiaryType, ageGroup, province,
+      storyShort, story, supportMethod, deadline,
+      guardianName, guardianRelationship, guardianWhatsapp, step]);
+
+  // ── Autosave — 2 s debounce on text fields, steps 1–3 ────────────────────
+  useEffect(() => {
+    if (!draftId || step > 3) return;
+    if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+    setSaveStatus("saving");
+    autoSaveRef.current = setTimeout(async () => {
+      const body: Record<string, unknown> = {
+        title:    title.trim(),
+        sport:    sport.toLowerCase(),
+        category,
+      };
+      if (step >= 2) Object.assign(body, {
+        age_group:   ageGroup  || null,
+        province:    province.trim()   || null,
+        story_short: storyShort.trim() || null,
+      });
+      if (step >= 3) Object.assign(body, {
+        story:           story.trim(),
+        suggested_payee: supportMethod || null,
+        deadline_at:     deadline      || null,
+      });
+      if (isMinor) Object.assign(body, {
+        guardian_name:         guardianName.trim()         || null,
+        guardian_relationship: guardianRelationship.trim() || null,
+        guardian_whatsapp:     guardianWhatsapp.trim()     || null,
+      });
+      try {
+        const res = await fetch(`${BASE}/sponsorships/${draftId}`, {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+          body:    JSON.stringify(body),
+        });
+        setSaveStatus(res.ok ? "saved" : "error");
+        if (res.ok) setTimeout(() => setSaveStatus("idle"), 2500);
+      } catch {
+        setSaveStatus("error");
+      }
+    }, 2000);
+    return () => { if (autoSaveRef.current) clearTimeout(autoSaveRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, storyShort, story, deadline, province, supportMethod,
+      guardianName, guardianRelationship, guardianWhatsapp]);
+
+  // ── Retry autosave when network comes back ────────────────────────────────
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const retry = () => {
+      if (saveStatus !== "error" || !draftId || step > 3) return;
+      const saved = localStorage.getItem(`grs_draft_${draftId}`);
+      if (!saved) return;
+      try {
+        const d = JSON.parse(saved) as Record<string, string | number>;
+        const body: Record<string, unknown> = {
+          title: d.title ?? "", sport: String(d.sport ?? "").toLowerCase(), category: d.category ?? "",
+          age_group: d.ageGroup ?? null, province: d.province ?? null, story_short: d.storyShort ?? null,
+          story: d.story ?? "", suggested_payee: d.supportMethod ?? null, deadline_at: d.deadline ?? null,
+        };
+        setSaveStatus("saving");
+        fetch(`${BASE}/sponsorships/${draftId}`, {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+          body:    JSON.stringify(body),
+        }).then((r) => {
+          setSaveStatus(r.ok ? "saved" : "error");
+          if (r.ok) setTimeout(() => setSaveStatus("idle"), 2500);
+        }).catch(() => setSaveStatus("error"));
+      } catch { /* silent */ }
+    };
+    window.addEventListener("online", retry);
+    return () => window.removeEventListener("online", retry);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveStatus, draftId, token, step]);
+
   useEffect(() => {
     if (!hydrated || !token) return;
     setGuardianChildrenLoading(true);
@@ -175,6 +341,22 @@ export default function NewSponsorshipWizard() {
   }, [hydrated, token]);
 
   if (!hydrated || !user) return null;
+
+  if (resumeLoading) {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
+        <PublicNavbar />
+        <div className="max-w-xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4 animate-pulse">
+            <div className="h-4 bg-gray-100 rounded w-1/3" />
+            <div className="h-4 bg-gray-100 rounded w-2/3" />
+            <div className="h-32 bg-gray-100 rounded-xl" />
+            <p className="text-xs text-center text-gray-400 !mt-6">Loading your draft…</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const authHeaders = {
     "Content-Type": "application/json",
@@ -408,6 +590,15 @@ export default function NewSponsorshipWizard() {
 
     const nextStep = step + 1;
 
+    // Persist furthest step reached
+    if (draftId) {
+      fetch(`${BASE}/sponsorships/${draftId}`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+        body:    JSON.stringify({ wizard_step: nextStep }),
+      }).catch(() => {});
+    }
+
     // Lazy-load packages & tiers when entering step 5
     if (nextStep === 5 && draftId) {
       loadPackages(draftId);
@@ -442,7 +633,41 @@ export default function NewSponsorshipWizard() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          {/* Existing-draft banner — shown only on fresh wizard (no ?case param, no active draft) */}
+          {existingDraft && !bannerDismissed && !resumeId && !draftId && step === 1 && (
+            <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <p className="text-sm font-semibold text-amber-900 mb-0.5">You have an unfinished case</p>
+              <p className="text-xs text-amber-700 mb-3 truncate">&ldquo;{existingDraft.title}&rdquo;</p>
+              <div className="flex gap-2">
+                <a
+                  href={`/sponsorships/new?case=${existingDraft.id}`}
+                  className="flex-1 text-center text-xs font-semibold text-white bg-[#1a5c2a] rounded-lg py-2 hover:bg-[#145222]"
+                >
+                  Continue editing
+                </a>
+                <button
+                  onClick={() => setBannerDismissed(true)}
+                  className="flex-1 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg py-2 hover:bg-gray-50"
+                >
+                  Start a new one
+                </button>
+              </div>
+            </div>
+          )}
+
           <StepBar step={step} total={TOTAL_STEPS} />
+
+          {/* Autosave indicator */}
+          {draftId && step <= 3 && saveStatus !== "idle" && (
+            <div className={`mb-3 text-xs font-medium flex items-center gap-1 ${
+              saveStatus === "saved" ? "text-green-600"
+              : saveStatus === "error" ? "text-red-500"
+              : "text-gray-400"
+            }`}>
+              {saveStatus === "saving" && <Loader2 size={11} className="animate-spin" />}
+              {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Saved ✓" : "⚠ Save failed — will retry when online"}
+            </div>
+          )}
 
           {topError && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-4">
