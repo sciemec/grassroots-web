@@ -58,6 +58,14 @@ interface DraftReport {
   flag_note?: string | null;
 }
 
+interface SponsorPackage {
+  id: string;
+  name: string;
+  suggested_value_cents: number | null;
+  description: string | null;
+  sort_order: number;
+}
+
 function StepIcon({ done, active }: { done: boolean; active: boolean }) {
   if (done) return <CheckCircle2 size={18} className="text-green-600" />;
   if (active) return <Clock size={18} className="text-amber-500" />;
@@ -224,6 +232,15 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
   const [flagSubmitting,  setFlagSubmitting]   = useState(false);
   const [flagSuccess,     setFlagSuccess]      = useState(false);
 
+  // Sponsor packages
+  const [packages,     setPackages]     = useState<SponsorPackage[]>([]);
+  const [pkgLoading,   setPkgLoading]   = useState(false);
+  const [pkgSaving,    setPkgSaving]    = useState(false);
+  const [pkgError,     setPkgError]     = useState<string | null>(null);
+  const [newPkgName,   setNewPkgName]   = useState("");
+  const [newPkgValue,  setNewPkgValue]  = useState("");
+  const [newPkgDesc,   setNewPkgDesc]   = useState("");
+
   useEffect(() => {
     if (!hasHydrated) return;
 
@@ -277,6 +294,53 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
 
     fetchCase();
   }, [hasHydrated, token, params.id, user, router]);
+
+  // Load sponsor packages once case data is available
+  useEffect(() => {
+    if (!caseData || !token) return;
+    setPkgLoading(true);
+    fetch(`${BASE}/sponsorships/${caseData.id}/packages`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.data) setPackages(j.data); })
+      .catch(() => {})
+      .finally(() => setPkgLoading(false));
+  }, [caseData?.id, token]);
+
+  const addPackage = async () => {
+    if (!caseData || !token || !newPkgName.trim()) return;
+    setPkgSaving(true);
+    setPkgError(null);
+    try {
+      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/packages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+        body: JSON.stringify({
+          name: newPkgName.trim(),
+          suggested_value_cents: newPkgValue ? Math.round(parseFloat(newPkgValue) * 100) : null,
+          description: newPkgDesc.trim() || null,
+          sort_order: packages.length,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setPkgError((json as { message?: string }).message ?? "Could not add package."); return; }
+      setPackages((prev) => [...prev, (json as { data?: SponsorPackage }).data ?? (json as SponsorPackage)]);
+      setNewPkgName(""); setNewPkgValue(""); setNewPkgDesc("");
+    } catch { setPkgError("Could not add package."); }
+    finally { setPkgSaving(false); }
+  };
+
+  const deletePackage = async (pkgId: string) => {
+    if (!caseData || !token) return;
+    try {
+      await fetch(`${BASE}/sponsorships/${caseData.id}/packages/${pkgId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      });
+      setPackages((prev) => prev.filter((p) => p.id !== pkgId));
+    } catch { /* silent */ }
+  };
 
   // Load draft report once case data is available
   useEffect(() => {
@@ -651,6 +715,93 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
 
         {/* Media gallery */}
         <MediaManager caseId={params.id} token={token} isTeam={caseData.beneficiary_type === "team"} />
+
+        {/* Sponsor packages */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="font-semibold text-gray-900 text-sm">Sponsor Packages</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Up to 3 packages sponsors can choose when connecting. Selecting one pre-fills their offer amount.</p>
+            </div>
+          </div>
+
+          {pkgLoading ? (
+            <p className="text-xs text-gray-400">Loading…</p>
+          ) : (
+            <div className="space-y-2 mb-4">
+              {packages.map((pkg) => (
+                <div key={pkg.id} className="flex items-start justify-between gap-3 border border-gray-100 rounded-xl px-3 py-2.5 bg-gray-50">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{pkg.name}</p>
+                    {pkg.suggested_value_cents != null && (
+                      <p className="text-xs text-[#1a5c2a] font-medium mt-0.5">
+                        Suggested: ${(pkg.suggested_value_cents / 100).toFixed(0)}
+                      </p>
+                    )}
+                    {pkg.description && (
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{pkg.description}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => deletePackage(pkg.id)}
+                    className="text-xs text-red-500 hover:text-red-700 shrink-0 mt-0.5"
+                    aria-label="Remove package"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              {packages.length === 0 && (
+                <p className="text-xs text-gray-400 italic">No packages yet. Add one below.</p>
+              )}
+            </div>
+          )}
+
+          {packages.length < 3 && (
+            <div className="border border-dashed border-gray-300 rounded-xl p-3 space-y-2">
+              <p className="text-xs font-medium text-gray-700">Add a package</p>
+              <input
+                type="text"
+                value={newPkgName}
+                onChange={(e) => setNewPkgName(e.target.value)}
+                placeholder="Name (e.g. Kit Sponsor)"
+                maxLength={100}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+              />
+              <input
+                type="number"
+                value={newPkgValue}
+                onChange={(e) => setNewPkgValue(e.target.value)}
+                placeholder="Suggested amount in USD (optional)"
+                min="1"
+                step="1"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+              />
+              <textarea
+                value={newPkgDesc}
+                onChange={(e) => setNewPkgDesc(e.target.value)}
+                placeholder="What the sponsor receives (optional)"
+                maxLength={300}
+                rows={2}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 resize-none"
+              />
+              {pkgError && <p className="text-xs text-red-600">{pkgError}</p>}
+              <button
+                onClick={addPackage}
+                disabled={pkgSaving || !newPkgName.trim()}
+                className="w-full bg-[#1a5c2a] text-white text-xs font-semibold py-2 rounded-xl hover:bg-[#145222] disabled:opacity-50 transition-colors"
+              >
+                {pkgSaving ? "Adding…" : "Add Package"}
+              </button>
+              <p className="text-xs text-gray-400">
+                Ideas: Community Supporter ($25–50), Team Partner ($100–250), Kit Sponsor ($500+)
+              </p>
+            </div>
+          )}
+          {packages.length >= 3 && (
+            <p className="text-xs text-gray-500 italic">Maximum 3 packages reached. Remove one to add another.</p>
+          )}
+        </div>
 
         {/* Update composer — only for live cases */}
         {caseData.status === "live" && (

@@ -4,6 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 
+const BLOCKED_INDUSTRIES = ["alcohol", "betting_gambling", "tobacco_vaping"];
+const INDUSTRY_LABELS: Record<string, string> = {
+  retail: "Retail / FMCG", food_beverage: "Food & Beverage", tech: "Technology",
+  finance: "Financial Services", health: "Health & Medical", education: "Education",
+  media: "Media & Entertainment", manufacturing: "Manufacturing",
+  services: "Services / Consulting", other: "Other",
+  alcohol: "Alcohol & Beverages", betting_gambling: "Betting & Gambling",
+  tobacco_vaping: "Tobacco & Vaping",
+};
+
 interface SponsorProfile {
   id: string;
   user_id: string;
@@ -18,6 +28,8 @@ interface SponsorProfile {
   preferred_region: string | null;
   budget_min_usd: number | null;
   budget_max_usd: number | null;
+  industry: string | null;
+  show_publicly: boolean;
   is_active: boolean;
   is_verified: boolean;
   created_at: string;
@@ -177,6 +189,30 @@ function ProfileDrawer({
               <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">About</div>
               <p className="text-sm text-gray-700 leading-relaxed">{profile.bio}</p>
             </div>
+          )}
+
+          {/* Industry */}
+          {profile.industry && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">Industry</span>
+              <span className={`font-medium ${BLOCKED_INDUSTRIES.includes(profile.industry) ? "text-amber-700" : "text-gray-900"}`}>
+                {INDUSTRY_LABELS[profile.industry] ?? profile.industry}
+              </span>
+            </div>
+          )}
+
+          {/* Blocked-industry warning */}
+          {profile.industry && BLOCKED_INDUSTRIES.includes(profile.industry) && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">
+              <span className="font-semibold">Restricted industry.</span> This sponsor cannot connect with minor or team/school/academy cases. Adult player cases are still permitted.
+            </div>
+          )}
+
+          {/* show_publicly status */}
+          {profile.show_publicly && profile.is_verified && (
+            <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+              Opted in to public display on confirmed cases.
+            </p>
           )}
 
           {/* Verify button */}

@@ -49,10 +49,27 @@ interface SponsorshipCase {
   media?: MediaItem[];
   report?: CaseReport | null;
   share_count?: number;
+  supporters?: Supporter[];
+  packages?: SponsorPackage[];
   // raw backend fields that need normalising
   vouched_by?: { org_name?: string | null; confirmed_at?: string | null } | null;
   financial_literacy?: { owner?: boolean; player?: boolean; guardian?: boolean } | null;
   is_minor?: boolean;
+}
+
+interface Supporter {
+  organisation_name: string | null;
+  logo_url: string | null;
+  website_url: string | null;
+  bio: string | null;
+}
+
+interface SponsorPackage {
+  id: string;
+  name: string;
+  suggested_value_cents: number | null;
+  description: string | null;
+  sort_order: number;
 }
 
 interface SkillRating {
@@ -199,12 +216,13 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
   const [copied, setCopied] = useState(false);
 
   // intro request modal
-  const [showIntroModal, setShowIntroModal] = useState(false);
-  const [introMessage,   setIntroMessage]   = useState("");
-  const [introOffer,     setIntroOffer]      = useState("");
-  const [submitting,     setSubmitting]      = useState(false);
-  const [introError,     setIntroError]      = useState<string | null>(null);
-  const [introSuccess,   setIntroSuccess]    = useState(false);
+  const [showIntroModal,    setShowIntroModal]    = useState(false);
+  const [introMessage,      setIntroMessage]      = useState("");
+  const [introOffer,        setIntroOffer]         = useState("");
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+  const [submitting,        setSubmitting]         = useState(false);
+  const [introError,        setIntroError]         = useState<string | null>(null);
+  const [introSuccess,      setIntroSuccess]       = useState(false);
 
   // vouch request (owner, draft / pending_vouch)
   const [showVouchForm,     setShowVouchForm]     = useState(false);
@@ -437,6 +455,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
     const body: Record<string, unknown> = {};
     if (introMessage.trim()) body.message = introMessage.trim();
     if (introOffer.trim()) body.offer_cents = Math.round(parseFloat(introOffer) * 100);
+    if (selectedPackageId) body.selected_package_id = selectedPackageId;
 
     try {
       const res = await fetch(`${base}/sponsorships/${caseData!.id}/introductions`, {
@@ -451,6 +470,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
       }
       setIntroSuccess(true);
       setShowIntroModal(false);
+      setSelectedPackageId(null);
       setCaseData((prev) => prev
         ? { ...prev, introduction_count: prev.introduction_count + 1, my_introduction: json.data }
         : prev);
@@ -1139,6 +1159,50 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
             </div>
           )}
 
+          {/* Supporters block */}
+          {(c.supporters ?? []).length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <h2 className="font-semibold text-gray-900 mb-4 text-sm">Supported by</h2>
+              <div className="space-y-3">
+                {c.supporters!.map((s, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    {s.logo_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={s.logo_url}
+                        alt={s.organisation_name ?? "Sponsor"}
+                        className="w-10 h-10 rounded-lg object-contain border border-gray-100 bg-gray-50 p-1 flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-[#1a5c2a]/10 flex-shrink-0 flex items-center justify-center text-xs font-bold text-[#1a5c2a]">
+                        {(s.organisation_name ?? "?")[0]?.toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      {s.website_url ? (
+                        <a
+                          href={s.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-semibold text-[#1a5c2a] hover:underline truncate block"
+                        >
+                          {s.organisation_name}
+                        </a>
+                      ) : (
+                        <span className="text-sm font-semibold text-gray-900 truncate block">
+                          {s.organisation_name}
+                        </span>
+                      )}
+                      {s.bio && (
+                        <p className="text-xs text-gray-500 truncate">{s.bio}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Proof of Use — owner only, live cases */}
           {isOwner && c.status === "live" && (
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
@@ -1643,7 +1707,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
       {/* Intro Request Modal */}
       {showIntroModal && (
         <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl max-h-[90vh] overflow-y-auto">
             <h2 className="font-bold text-gray-900 text-lg mb-1">Ask to Connect</h2>
             <p className="text-xs text-gray-500 mb-4">
               Your request will be reviewed by the athlete. GRS will facilitate the introduction if accepted.
@@ -1652,6 +1716,53 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-xs mb-3">{introError}</div>
             )}
             <div className="space-y-3 mb-4">
+              {/* Sponsor packages */}
+              {(caseData?.packages ?? []).length > 0 && (
+                <div>
+                  <label className="text-xs font-medium text-gray-700 block mb-2">
+                    Choose a support package <span className="text-gray-400">(optional)</span>
+                  </label>
+                  <div className="space-y-2">
+                    {caseData!.packages!.map((pkg) => {
+                      const isSelected = selectedPackageId === pkg.id;
+                      return (
+                        <button
+                          key={pkg.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedPackageId(null);
+                              setIntroOffer("");
+                            } else {
+                              setSelectedPackageId(pkg.id);
+                              if (pkg.suggested_value_cents) {
+                                setIntroOffer(String(pkg.suggested_value_cents / 100));
+                              }
+                            }
+                          }}
+                          className={`w-full text-left border rounded-xl px-3 py-2.5 text-sm transition-colors ${
+                            isSelected
+                              ? "border-[#1a5c2a] bg-[#1a5c2a]/5"
+                              : "border-gray-200 hover:border-[#1a5c2a]/40"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-gray-900">{pkg.name}</span>
+                            {pkg.suggested_value_cents && (
+                              <span className="text-xs text-[#1a5c2a] font-semibold">
+                                ~${(pkg.suggested_value_cents / 100).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                          {pkg.description && (
+                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{pkg.description}</p>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="text-xs font-medium text-gray-700 block mb-1">
                   Message <span className="text-gray-400">(optional)</span>
@@ -1683,7 +1794,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => { setShowIntroModal(false); setIntroError(null); }}
+                onClick={() => { setShowIntroModal(false); setIntroError(null); setSelectedPackageId(null); }}
                 className="flex-1 border border-gray-300 text-gray-700 text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
               >
                 Cancel

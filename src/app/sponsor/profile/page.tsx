@@ -7,6 +7,24 @@ import { useAuthStore } from "@/lib/auth-store";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
+const INDUSTRIES = [
+  { value: "retail",         label: "Retail / FMCG" },
+  { value: "food_beverage",  label: "Food & Beverage" },
+  { value: "tech",           label: "Technology" },
+  { value: "finance",        label: "Financial Services" },
+  { value: "health",         label: "Health & Medical" },
+  { value: "education",      label: "Education" },
+  { value: "media",          label: "Media & Entertainment" },
+  { value: "manufacturing",  label: "Manufacturing" },
+  { value: "services",       label: "Services / Consulting" },
+  { value: "other",          label: "Other" },
+  { value: "alcohol",        label: "Alcohol & Beverages" },
+  { value: "betting_gambling", label: "Betting & Gambling" },
+  { value: "tobacco_vaping", label: "Tobacco & Vaping" },
+];
+
+const BLOCKED = ["alcohol", "betting_gambling", "tobacco_vaping"];
+
 type SponsorProfileData = {
   organisation_name: string;
   contact_name: string;
@@ -19,6 +37,8 @@ type SponsorProfileData = {
   preferred_region: string;
   budget_min_usd: string;
   budget_max_usd: string;
+  industry: string;
+  show_publicly: boolean;
 };
 
 const EMPTY: SponsorProfileData = {
@@ -33,6 +53,8 @@ const EMPTY: SponsorProfileData = {
   preferred_region: "",
   budget_min_usd: "",
   budget_max_usd: "",
+  industry: "",
+  show_publicly: false,
 };
 
 const SPORTS = [
@@ -86,6 +108,8 @@ export default function SponsorProfilePage() {
             preferred_region:  p.preferred_region  ?? "",
             budget_min_usd:    p.budget_min_usd != null ? String(p.budget_min_usd) : "",
             budget_max_usd:    p.budget_max_usd != null ? String(p.budget_max_usd) : "",
+            industry:          p.industry          ?? "",
+            show_publicly:     p.show_publicly     ?? false,
           });
         }
       })
@@ -122,6 +146,8 @@ export default function SponsorProfilePage() {
         preferred_region:    form.preferred_region          || null,
         budget_min_usd:      form.budget_min_usd  ? parseInt(form.budget_min_usd,  10) : null,
         budget_max_usd:      form.budget_max_usd  ? parseInt(form.budget_max_usd,  10) : null,
+        industry:            form.industry        || null,
+        show_publicly:       form.show_publicly ? 1 : 0,
       };
 
       const r = await fetch(`${BASE}/sponsor/profile`, {
@@ -215,6 +241,47 @@ export default function SponsorProfilePage() {
                   className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1a5c2a] focus:outline-none"
                 />
               </div>
+            </div>
+
+            {/* Industry & Visibility */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-gray-700">Industry & Visibility</h2>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Industry</label>
+                <select
+                  value={form.industry}
+                  onChange={(e) => setForm((prev) => ({ ...prev, industry: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a5c2a] focus:outline-none bg-white"
+                >
+                  <option value="">Select industry…</option>
+                  {INDUSTRIES.map((ind) => (
+                    <option key={ind.value} value={ind.value}>{ind.label}</option>
+                  ))}
+                </select>
+                {BLOCKED.includes(form.industry) && (
+                  <p className="mt-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    Your industry cannot sponsor minor or team/school/academy cases. Adult player cases are still permitted.
+                  </p>
+                )}
+              </div>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <div className="flex-shrink-0 mt-0.5">
+                  <input
+                    type="checkbox"
+                    checked={form.show_publicly}
+                    onChange={(e) => setForm((prev) => ({ ...prev, show_publicly: e.target.checked }))}
+                    className="w-4 h-4 rounded border-gray-300 text-[#1a5c2a] focus:ring-[#1a5c2a]"
+                  />
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-900">Show my name publicly on cases I support</span>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    When enabled, your organisation name, logo, website, and bio appear on the public page for any confirmed sponsorship. Only verified sponsors are shown.
+                  </p>
+                </div>
+              </label>
             </div>
 
             {/* Contact */}
