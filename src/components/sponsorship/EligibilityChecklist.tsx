@@ -22,6 +22,12 @@ interface EligibilityResult {
   gates: Gate[];
 }
 
+interface AdvisoryItem {
+  item: string;
+  met: boolean;
+  tip: string;
+}
+
 interface Props {
   caseId: string;
   token: string;
@@ -98,9 +104,10 @@ export default function EligibilityChecklist({
   onOverrideReasonChange,
   onResult,
 }: Props) {
-  const [result, setResult]   = useState<EligibilityResult | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [result, setResult]     = useState<EligibilityResult | null>(null);
+  const [loading, setLoading]   = useState(true);
   const [fetchErr, setFetchErr] = useState<string | null>(null);
+  const [advisory, setAdvisory] = useState<AdvisoryItem[]>([]);
 
   useEffect(() => {
     if (!token) return;
@@ -117,6 +124,14 @@ export default function EligibilityChecklist({
       })
       .catch(() => setFetchErr("Could not load eligibility status."))
       .finally(() => setLoading(false));
+
+    // Load advisory tips (non-blocking — ignore errors)
+    fetch(`${BASE}/sponsorships/${caseId}/advisory`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.data) setAdvisory(j.data); })
+      .catch(() => {});
   }, [caseId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
@@ -243,6 +258,23 @@ export default function EligibilityChecklist({
           {l2Passed && (
             <p className="text-xs text-green-700 font-medium mt-1.5">Strong case — sponsors will see this badge.</p>
           )}
+        </div>
+      )}
+
+      {/* Advisory tips — shown as hints, never as blockers */}
+      {advisory.length > 0 && (
+        <div className="border-t border-gray-100 pt-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Tips to strengthen your case</p>
+          <ul className="space-y-1.5">
+            {advisory.map((a) => (
+              <li key={a.item} className="flex items-start gap-2">
+                <span className={`mt-0.5 text-xs font-bold ${a.met ? "text-green-500" : "text-amber-500"}`}>
+                  {a.met ? "✓" : "→"}
+                </span>
+                <p className="text-xs text-gray-600">{a.tip}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

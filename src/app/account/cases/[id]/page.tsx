@@ -66,6 +66,25 @@ interface SponsorPackage {
   sort_order: number;
 }
 
+interface RecognitionTier {
+  id: string;
+  title: string;
+  min_value_cents: number;
+  description: string | null;
+  photo_url: string | null;
+  quantity_limit: number | null;
+  claimed_count: number;
+}
+
+interface PromisedSupporter {
+  id: string;
+  name: string;
+  whatsapp: string | null;
+  note: string | null;
+  status: string;
+  wame_link: string | null;
+}
+
 function StepIcon({ done, active }: { done: boolean; active: boolean }) {
   if (done) return <CheckCircle2 size={18} className="text-green-600" />;
   if (active) return <Clock size={18} className="text-amber-500" />;
@@ -341,6 +360,148 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
       setPackages((prev) => prev.filter((p) => p.id !== pkgId));
     } catch { /* silent */ }
   };
+
+  // Recognition tiers
+  const [tiers,       setTiers]       = useState<RecognitionTier[]>([]);
+  const [tierLoading, setTierLoading] = useState(false);
+  const [tierSaving,  setTierSaving]  = useState(false);
+  const [tierError,   setTierError]   = useState<string | null>(null);
+  const [newTierTitle, setNewTierTitle] = useState("");
+  const [newTierMin,   setNewTierMin]   = useState("");
+  const [newTierDesc,  setNewTierDesc]  = useState("");
+  const [newTierQty,   setNewTierQty]   = useState("");
+
+  useEffect(() => {
+    if (!caseData || !token) return;
+    setTierLoading(true);
+    fetch(`${BASE}/sponsorships/${caseData.id}/tiers`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.data) setTiers(j.data); })
+      .catch(() => {})
+      .finally(() => setTierLoading(false));
+  }, [caseData?.id, token]);
+
+  const addTier = async () => {
+    if (!caseData || !token || !newTierTitle.trim() || !newTierMin) return;
+    setTierSaving(true); setTierError(null);
+    try {
+      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/tiers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+        body: JSON.stringify({
+          title: newTierTitle.trim(),
+          min_value_cents: Math.round(parseFloat(newTierMin) * 100),
+          description: newTierDesc.trim() || null,
+          quantity_limit: newTierQty ? parseInt(newTierQty) : null,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setTierError((json as { message?: string }).message ?? "Could not add tier."); return; }
+      setTiers((prev) => [...prev, (json as { data?: RecognitionTier }).data ?? (json as RecognitionTier)]);
+      setNewTierTitle(""); setNewTierMin(""); setNewTierDesc(""); setNewTierQty("");
+    } catch { setTierError("Could not add tier."); }
+    finally { setTierSaving(false); }
+  };
+
+  const deleteTier = async (tierId: string) => {
+    if (!caseData || !token) return;
+    try {
+      await fetch(`${BASE}/sponsorships/${caseData.id}/tiers/${tierId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      });
+      setTiers((prev) => prev.filter((t) => t.id !== tierId));
+    } catch { /* silent */ }
+  };
+
+  // Promised supporters
+  const [supporters,       setLocalSupporters]  = useState<PromisedSupporter[]>([]);
+  const [suppLoading,      setSuppLoading]       = useState(false);
+  const [suppSaving,       setSuppSaving]        = useState(false);
+  const [suppError,        setSuppError]         = useState<string | null>(null);
+  const [newSuppName,      setNewSuppName]       = useState("");
+  const [newSuppWhatsapp,  setNewSuppWhatsapp]   = useState("");
+  const [newSuppNote,      setNewSuppNote]       = useState("");
+
+  useEffect(() => {
+    if (!caseData || !token) return;
+    setSuppLoading(true);
+    fetch(`${BASE}/sponsorships/${caseData.id}/promised-supporters`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.data) setLocalSupporters(j.data); })
+      .catch(() => {})
+      .finally(() => setSuppLoading(false));
+  }, [caseData?.id, token]);
+
+  const addSupporter = async () => {
+    if (!caseData || !token || !newSuppName.trim()) return;
+    setSuppSaving(true); setSuppError(null);
+    try {
+      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/promised-supporters`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+        body: JSON.stringify({ name: newSuppName.trim(), whatsapp: newSuppWhatsapp.trim() || null, note: newSuppNote.trim() || null }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setSuppError((json as { message?: string }).message ?? "Could not add supporter."); return; }
+      setLocalSupporters((prev) => [...prev, (json as { data?: PromisedSupporter }).data ?? (json as PromisedSupporter)]);
+      setNewSuppName(""); setNewSuppWhatsapp(""); setNewSuppNote("");
+    } catch { setSuppError("Could not add."); }
+    finally { setSuppSaving(false); }
+  };
+
+  const deleteSupporter = async (suppId: string) => {
+    if (!caseData || !token) return;
+    try {
+      await fetch(`${BASE}/sponsorships/${caseData.id}/promised-supporters/${suppId}`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      });
+      setLocalSupporters((prev) => prev.filter((s) => s.id !== suppId));
+    } catch { /* silent */ }
+  };
+
+  // Media help request
+  const [mediaReqSent,    setMediaReqSent]    = useState(false);
+  const [mediaReqSending, setMediaReqSending] = useState(false);
+  const [mediaReqError,   setMediaReqError]   = useState<string | null>(null);
+  const [mediaReqAngle,   setMediaReqAngle]   = useState("");
+  const [mediaReqWhy,     setMediaReqWhy]     = useState("");
+  const [showMediaForm,   setShowMediaForm]   = useState(false);
+  const [mediaReqCopied,  setMediaReqCopied]  = useState(false);
+
+  const sendMediaRequest = async () => {
+    if (!caseData || !token || !mediaReqAngle.trim()) return;
+    setMediaReqSending(true); setMediaReqError(null);
+    try {
+      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/media-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+        body: JSON.stringify({ story_angle: mediaReqAngle.trim(), why_now: mediaReqWhy.trim() || null }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setMediaReqError((json as { message?: string }).message ?? "Could not send request."); return; }
+      setMediaReqSent(true); setShowMediaForm(false); setMediaReqAngle(""); setMediaReqWhy("");
+    } catch { setMediaReqError("Could not send request."); }
+    finally { setMediaReqSending(false); }
+  };
+
+  const pressPitchTemplate = caseData ? `PRESS PITCH — ${caseData.title}
+
+Sport: ${caseData.sport}
+Province: ${caseData.province ?? "Zimbabwe"}
+
+The story:
+${caseData.story_short ?? "[Short description of the case]"}
+
+Why now:
+${mediaReqWhy || "[Add why this story is timely]"}
+
+For more information or to arrange an interview, please contact:
+GrassRoots Sports — grassrootssports.live` : "";
 
   // Load draft report once case data is available
   useEffect(() => {
@@ -802,6 +963,146 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
             <p className="text-xs text-gray-500 italic">Maximum 3 packages reached. Remove one to add another.</p>
           )}
         </div>
+
+        {/* Recognition tiers */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="mb-3">
+            <h2 className="font-semibold text-gray-900 text-sm">Recognition Tiers</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Define what sponsors receive based on contribution level. Shown publicly on the case page.</p>
+          </div>
+
+          {tierLoading ? (
+            <p className="text-xs text-gray-400">Loading…</p>
+          ) : (
+            <div className="space-y-2 mb-4">
+              {tiers.map((tier) => (
+                <div key={tier.id} className="flex items-start justify-between gap-3 border border-gray-100 rounded-xl px-3 py-2.5 bg-gray-50">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-gray-900">{tier.title}</p>
+                      <span className="text-xs font-medium text-[#1a5c2a]">${(tier.min_value_cents / 100).toFixed(0)}+</span>
+                    </div>
+                    {tier.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{tier.description}</p>}
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {tier.quantity_limit != null ? `${tier.claimed_count}/${tier.quantity_limit} claimed` : "Unlimited"}
+                    </p>
+                  </div>
+                  <button onClick={() => deleteTier(tier.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0 mt-0.5">Remove</button>
+                </div>
+              ))}
+              {tiers.length === 0 && <p className="text-xs text-gray-400 italic">No tiers yet.</p>}
+            </div>
+          )}
+
+          <div className="border border-dashed border-gray-300 rounded-xl p-3 space-y-2">
+            <p className="text-xs font-medium text-gray-700">Add a tier</p>
+            <input type="text" value={newTierTitle} onChange={(e) => setNewTierTitle(e.target.value)} placeholder="Title (e.g. Community Supporter)" maxLength={100} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+            <input type="number" value={newTierMin} onChange={(e) => setNewTierMin(e.target.value)} placeholder="Minimum contribution in USD" min="1" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+            <textarea value={newTierDesc} onChange={(e) => setNewTierDesc(e.target.value)} placeholder="What the sponsor receives (optional)" maxLength={300} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 resize-none" />
+            <input type="number" value={newTierQty} onChange={(e) => setNewTierQty(e.target.value)} placeholder="Quantity limit (blank = unlimited)" min="1" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+            {tierError && <p className="text-xs text-red-600">{tierError}</p>}
+            <button onClick={addTier} disabled={tierSaving || !newTierTitle.trim() || !newTierMin} className="w-full bg-[#1a5c2a] text-white text-xs font-semibold py-2 rounded-xl hover:bg-[#145222] disabled:opacity-50 transition-colors">
+              {tierSaving ? "Adding…" : "Add Tier"}
+            </button>
+          </div>
+        </div>
+
+        {/* Promised supporters */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="mb-3">
+            <h2 className="font-semibold text-gray-900 text-sm">Promised Supporters</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Log people who have verbally committed. When the case goes live, one-tap WhatsApp links appear.</p>
+          </div>
+
+          {suppLoading ? (
+            <p className="text-xs text-gray-400">Loading…</p>
+          ) : (
+            <div className="space-y-2 mb-4">
+              {supporters.map((s) => (
+                <div key={s.id} className="flex items-start justify-between gap-3 border border-gray-100 rounded-xl px-3 py-2.5 bg-gray-50">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900">{s.name}</p>
+                    {s.whatsapp && <p className="text-xs text-gray-400">{s.whatsapp}</p>}
+                    {s.note && <p className="text-xs text-gray-500 truncate">{s.note}</p>}
+                    <span className={`inline-block mt-0.5 text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                      s.status === "connected" ? "bg-green-100 text-green-700" :
+                      s.status === "messaged"  ? "bg-blue-50 text-blue-700" :
+                      "bg-gray-100 text-gray-600"
+                    }`}>{s.status}</span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {s.wame_link && (
+                      <a href={s.wame_link} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-green-700 hover:underline">
+                        WhatsApp →
+                      </a>
+                    )}
+                    <button onClick={() => deleteSupporter(s.id)} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                  </div>
+                </div>
+              ))}
+              {supporters.length === 0 && <p className="text-xs text-gray-400 italic">No promised supporters yet.</p>}
+            </div>
+          )}
+
+          <div className="border border-dashed border-gray-300 rounded-xl p-3 space-y-2">
+            <p className="text-xs font-medium text-gray-700">Add a supporter</p>
+            <input type="text" value={newSuppName} onChange={(e) => setNewSuppName(e.target.value)} placeholder="Name" maxLength={100} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+            <input type="text" value={newSuppWhatsapp} onChange={(e) => setNewSuppWhatsapp(e.target.value)} placeholder="WhatsApp number (optional)" maxLength={30} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+            <input type="text" value={newSuppNote} onChange={(e) => setNewSuppNote(e.target.value)} placeholder="Note (optional)" maxLength={200} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+            {suppError && <p className="text-xs text-red-600">{suppError}</p>}
+            <button onClick={addSupporter} disabled={suppSaving || !newSuppName.trim()} className="w-full bg-[#1a5c2a] text-white text-xs font-semibold py-2 rounded-xl hover:bg-[#145222] disabled:opacity-50 transition-colors">
+              {suppSaving ? "Adding…" : "Add Supporter"}
+            </button>
+          </div>
+        </div>
+
+        {/* Ask GRS for media help — live cases only */}
+        {caseData.status === "live" && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div>
+                <h2 className="font-semibold text-gray-900 text-sm">Ask GRS for Media Help</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Request coverage — GRS will reach out to journalists and community media on your behalf.</p>
+              </div>
+              {!showMediaForm && !mediaReqSent && (
+                <button onClick={() => setShowMediaForm(true)} className="text-xs font-medium text-[#1a5c2a] hover:underline shrink-0">Request →</button>
+              )}
+            </div>
+            {mediaReqSent && (
+              <p className="text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                Request sent! GRS will review and follow up.
+              </p>
+            )}
+            {showMediaForm && !mediaReqSent && (
+              <div className="space-y-2 mt-2">
+                <textarea value={mediaReqAngle} onChange={(e) => setMediaReqAngle(e.target.value)} placeholder="Describe the story angle (what makes this case newsworthy?)" rows={3} maxLength={2000} className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 resize-none" />
+                <textarea value={mediaReqWhy} onChange={(e) => setMediaReqWhy(e.target.value)} placeholder="Why now? (optional — upcoming event, deadline, etc.)" rows={2} maxLength={1000} className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 resize-none" />
+
+                {/* Press pitch template */}
+                <div className="border border-gray-200 rounded-xl p-3 bg-gray-50">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-medium text-gray-700">Copyable press pitch</p>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(pressPitchTemplate); setMediaReqCopied(true); setTimeout(() => setMediaReqCopied(false), 2000); }}
+                      className="text-xs text-[#1a5c2a] hover:underline font-medium"
+                    >
+                      {mediaReqCopied ? "Copied!" : "Copy"}
+                    </button>
+                  </div>
+                  <pre className="text-xs text-gray-500 whitespace-pre-wrap leading-relaxed">{pressPitchTemplate}</pre>
+                </div>
+
+                {mediaReqError && <p className="text-xs text-red-600">{mediaReqError}</p>}
+                <div className="flex gap-2">
+                  <button onClick={() => { setShowMediaForm(false); setMediaReqAngle(""); setMediaReqWhy(""); }} className="flex-1 border border-gray-300 text-gray-600 text-xs font-medium py-1.5 rounded-lg hover:bg-gray-50">Cancel</button>
+                  <button onClick={sendMediaRequest} disabled={mediaReqSending || mediaReqAngle.trim().length < 10} className="flex-1 bg-[#1a5c2a] text-white text-xs font-semibold py-1.5 rounded-lg hover:bg-[#145222] disabled:opacity-50">
+                    {mediaReqSending ? "Sending…" : "Send Request"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Update composer — only for live cases */}
         {caseData.status === "live" && (

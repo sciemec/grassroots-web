@@ -51,6 +51,7 @@ interface SponsorshipCase {
   share_count?: number;
   supporters?: Supporter[];
   packages?: SponsorPackage[];
+  tiers?: RecognitionTier[];
   // raw backend fields that need normalising
   vouched_by?: { org_name?: string | null; confirmed_at?: string | null } | null;
   financial_literacy?: { owner?: boolean; player?: boolean; guardian?: boolean } | null;
@@ -70,6 +71,16 @@ interface SponsorPackage {
   suggested_value_cents: number | null;
   description: string | null;
   sort_order: number;
+}
+
+interface RecognitionTier {
+  id: string;
+  title: string;
+  min_value_cents: number;
+  description: string | null;
+  photo_url: string | null;
+  quantity_limit: number | null;
+  claimed_count: number;
 }
 
 interface SkillRating {
@@ -1195,6 +1206,40 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
                       )}
                       {s.bio && (
                         <p className="text-xs text-gray-500 truncate">{s.bio}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recognition tiers */}
+          {(c.tiers ?? []).length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <h2 className="font-semibold text-gray-900 mb-1 text-sm">Recognition Tiers</h2>
+              <p className="text-xs text-gray-500 mb-3">Sponsors who contribute at these levels will receive recognition from the case owner.</p>
+              <div className="space-y-2">
+                {c.tiers!.map((tier) => (
+                  <div key={tier.id} className="flex items-start gap-3 border border-gray-100 rounded-xl px-3 py-2.5 bg-gray-50">
+                    {tier.photo_url && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={tier.photo_url} alt={tier.title} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-gray-900">{tier.title}</p>
+                        <span className="text-xs font-medium text-[#1a5c2a] shrink-0">
+                          ${(tier.min_value_cents / 100).toFixed(0)}+
+                        </span>
+                      </div>
+                      {tier.description && (
+                        <p className="text-xs text-gray-500 mt-0.5">{tier.description}</p>
+                      )}
+                      {tier.quantity_limit != null && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {tier.claimed_count}/{tier.quantity_limit} claimed
+                        </p>
                       )}
                     </div>
                   </div>
