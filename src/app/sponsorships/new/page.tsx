@@ -2,10 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import StrongCaseTip from "@/components/sponsorship/StrongCaseTip";
+import MediaManager from "@/components/sponsorship/MediaManager";
+import EligibilityChecklist from "@/components/sponsorship/EligibilityChecklist";
+import { CheckCircle2, Loader2, Plus, Trash2 } from "lucide-react";
+
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+
+// ── Reference data ────────────────────────────────────────────────────────────
 
 const SPORTS = [
   "Football", "Rugby", "Athletics", "Netball",
@@ -31,19 +37,34 @@ const AGE_GROUPS = [
   { value: "18_plus",  label: "18+" },
 ];
 
-const MINOR_AGE_GROUPS = new Set(["under_13", "13_17"]);
+const SUPPORT_METHODS = [
+  { value: "items_direct",    label: "Items delivered directly to the athlete" },
+  { value: "pay_supplier",    label: "Pay a named shop or supplier on the athlete's behalf" },
+  { value: "pay_institution", label: "Pay the school or academy directly" },
+];
 
-type SquadPlayer = { id: string; name: string; sport: string | null };
+const MINOR_GROUPS = new Set(["under_13", "13_17"]);
 
-function StepIndicator({ step, total }: { step: number; total: number }) {
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface NeedRow { item: string; qty: number; unit_cost_cents: number }
+
+interface SponsorPackage {
+  id: string; name: string; suggested_value_cents: number | null; description: string | null;
+}
+
+interface RecognitionTier {
+  id: string; title: string; min_value_cents: number; description: string | null; quantity_limit: number | null;
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function StepBar({ step, total }: { step: number; total: number }) {
   return (
     <div className="flex items-center gap-1.5 mb-6">
       {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          className="h-1.5 rounded-full flex-1 transition-colors"
-          style={{ backgroundColor: i < step ? "#1a5c2a" : "#e5e7eb" }}
-        />
+        <div key={i} className="h-1.5 rounded-full flex-1 transition-colors"
+          style={{ backgroundColor: i < step ? "#1a5c2a" : "#e5e7eb" }} />
       ))}
     </div>
   );
@@ -54,175 +75,333 @@ function FieldError({ msg }: { msg?: string }) {
   return <p className="text-xs text-red-600 mt-0.5">{msg}</p>;
 }
 
-export default function NewSponsorshipPage() {
-  const user = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
-  const hasHydrated = useAuthStore((s) => s._hasHydrated);
-  const router = useRouter();
+function SectionNote({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-xs text-amber-800">
+      {children}
+    </div>
+  );
+}
 
-  const [step, setStep] = useState(1);
-  const [submitting, setSubmitting] = useState(false);
-  const [topError, setTopError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+function fmt(cents: number) {
+  return `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
-  // Form fields
-  const [title, setTitle] = useState("");
-  const [sport, setSport] = useState("");
+// ── Main component ────────────────────────────────────────────────────────────
+
+export default function NewSponsorshipWizard() {
+  const user       = useAuthStore((s) => s.user);
+  const token      = useAuthStore((s) => s.token);
+  const hydrated   = useAuthStore((s) => s._hasHydrated);
+  const router     = useRouter();
+
+  // ── Wizard state ──────────────────────────────────────────────────────────
+  const [step,    setStep]    = useState(1);
+  const TOTAL_STEPS = 6;
+
+  // Draft case created after step 1
+  const [draftId,       setDraftId]       = useState<string | null>(null);
+  const [creating,      setCreating]      = useState(false);
+  const [saving,        setSaving]        = useState(false);
+  const [topError,      setTopError]      = useState<string | null>(null);
+  const [fieldErrors,   setFieldErrors]   = useState<Record<string, string>>({});
+
+  // Step 1 — Basics
+  const [title,    setTitle]    = useState("");
+  const [sport,    setSport]    = useState("");
   const [category, setCategory] = useState("");
-  const [ageGroup, setAgeGroup] = useState("");
-  const [province, setProvince] = useState("");
-  const [storyShort, setStoryShort] = useState("");
-  const [story, setStory] = useState("");
-  const [suggestedPayee, setSuggestedPayee] = useState("");
-  const [targetUsd, setTargetUsd] = useState("");
-  const [deadline, setDeadline] = useState("");
+  const [beneficiaryType, setBeneficiaryType] = useState<"player" | "team">("player");
 
-  // Need items — collected in wizard, POSTed after case creation
-  const [needItems,     setNeedItems]     = useState<{ item: string; qty: number; unit_cost_cents: number }[]>([]);
+  // Step 2 — Athlete
+  const [ageGroup,    setAgeGroup]    = useState("");
+  const [province,    setProvince]    = useState("");
+  const [storyShort,  setStoryShort]  = useState("");
+  // Minor / guardian
+  const [guardianName,         setGuardianName]         = useState("");
+  const [guardianRelationship, setGuardianRelationship] = useState("");
+  const [guardianWhatsapp,     setGuardianWhatsapp]     = useState("");
+
+  // Step 3 — Story & needs
+  const [story,         setStory]         = useState("");
+  const [supportMethod, setSupportMethod] = useState("");
+  const [deadline,      setDeadline]      = useState("");
+  const [needItems,     setNeedItems]     = useState<NeedRow[]>([]);
   const [newNeedItem,   setNewNeedItem]   = useState("");
   const [newNeedQty,    setNewNeedQty]    = useState("1");
   const [newNeedUsd,    setNewNeedUsd]    = useState("");
 
-  // Guardian step (shown when age_group is under_13 or 13_17)
-  const [guardianName, setGuardianName] = useState("");
-  const [guardianRelationship, setGuardianRelationship] = useState("");
-  const [guardianWhatsapp, setGuardianWhatsapp] = useState("");
+  // Step 4 — Media
+  const [hasCover, setHasCover] = useState(false);
 
-  // Team case (coach only)
-  const [beneficiaryType, setBeneficiaryType] = useState<"player" | "team">("player");
-  const [squadPlayers, setSquadPlayers] = useState<SquadPlayer[]>([]);
-  const [squadLoading, setSquadLoading] = useState(false);
-  const [featuredPlayerIds, setFeaturedPlayerIds] = useState<Set<string>>(new Set());
+  // Step 5 — Packages & tiers
+  const [packages,     setPackages]     = useState<SponsorPackage[]>([]);
+  const [pkgLoading,   setPkgLoading]   = useState(false);
+  const [newPkgName,   setNewPkgName]   = useState("");
+  const [newPkgValue,  setNewPkgValue]  = useState("");
+  const [newPkgDesc,   setNewPkgDesc]   = useState("");
+  const [pkgSaving,    setPkgSaving]    = useState(false);
+  const [tiers,        setTiers]        = useState<RecognitionTier[]>([]);
+  const [tiersLoading, setTiersLoading] = useState(false);
+  const [newTierTitle, setNewTierTitle] = useState("");
+  const [newTierMin,   setNewTierMin]   = useState("");
+  const [newTierDesc,  setNewTierDesc]  = useState("");
+  const [tierSaving,   setTierSaving]   = useState(false);
 
   const isCoach = user?.role === "coach" || user?.role === "admin";
-  const isTeam  = isCoach && beneficiaryType === "team";
-  const isMinor = MINOR_AGE_GROUPS.has(ageGroup);
-
-  // Step layout: 1=basics, 2=athlete, 3=story, [4=squad if team], [4or5=guardian if minor], last=review
-  const totalSteps = isTeam ? (isMinor ? 6 : 5) : (isMinor ? 5 : 4);
-  // Squad step index (only exists for team cases)
-  const squadStep = isTeam ? 4 : null;
-  // Guardian step index
-  const guardianStep = isMinor ? (isTeam ? 5 : 4) : null;
-  // Review step index
-  const reviewStep = totalSteps;
+  const isMinor = MINOR_GROUPS.has(ageGroup);
 
   useEffect(() => {
-    if (!hasHydrated) return;
+    if (!hydrated) return;
     if (!user) router.replace("/login");
-  }, [hasHydrated, user, router]);
+  }, [hydrated, user, router]);
 
-  if (!hasHydrated || !user) return null;
+  if (!hydrated || !user) return null;
 
-  const fieldErr = (field: string) => fieldErrors[field];
-
-  const canNext = () => {
-    if (step === 1) return title.trim().length > 5 && sport && category;
-    if (step === 2) return ageGroup.trim() !== "";
-    if (step === 3) return story.trim().length > 20;
-    if (squadStep && step === squadStep) return featuredPlayerIds.size > 0;
-    if (guardianStep && step === guardianStep) return guardianName.trim().length > 1 && guardianWhatsapp.trim().length > 7;
-    return true;
+  const authHeaders = {
+    "Content-Type": "application/json",
+    Authorization:  `Bearer ${token}`,
+    Accept:         "application/json",
   };
 
-  // Map API field names → step numbers so we can jump to the failing step
-  const FIELD_TO_STEP: Record<string, number> = {
-    title: 1, sport: 1, category: 1,
-    age_group: 2, province: 2, story_short: 2,
-    story: 3, suggested_payee: 3, target_cents: 3, deadline_at: 3,
-    guardian_name:         guardianStep ?? 3,
-    guardian_relationship: guardianStep ?? 3,
-    guardian_whatsapp:     guardianStep ?? 3,
+  // ── Step validation ───────────────────────────────────────────────────────
+
+  const canContinue = () => {
+    setTopError(null);
+    if (step === 1) return title.trim().length > 5 && !!sport && !!category;
+    if (step === 2) {
+      if (!ageGroup) return false;
+      if (isMinor && (!guardianName.trim() || !guardianWhatsapp.trim())) return false;
+      return true;
+    }
+    if (step === 3) return story.trim().length > 20 && !!supportMethod;
+    if (step === 4) return hasCover;
+    return true; // steps 5 and 6 are optional / review
   };
 
-  const submit = async () => {
-    setSubmitting(true);
+  // ── Step 1: Create draft ──────────────────────────────────────────────────
+
+  const createDraft = async (): Promise<string | null> => {
+    setCreating(true);
     setTopError(null);
     setFieldErrors({});
-
-    const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
-
-    const body: Record<string, string | number | boolean | undefined> = {
-      title: title.trim(),
-      sport: sport.toLowerCase(),
-      category,
-      age_group: ageGroup || undefined,
-      province: province.trim() || undefined,
-      story_short: storyShort.trim() || undefined,
-      story: story.trim(),
-      suggested_payee: suggestedPayee.trim() || undefined,
-      beneficiary_type: beneficiaryType,
-      target_cents: targetUsd ? Math.round(parseFloat(targetUsd) * 100) : undefined,
-      deadline_at: deadline || undefined,
-    };
-
-    if (isMinor) {
-      body.guardian_name = guardianName.trim() || undefined;
-      body.guardian_relationship = guardianRelationship.trim() || undefined;
-      body.guardian_whatsapp = guardianWhatsapp.trim() || undefined;
-      body.is_minor_beneficiary = true;
-    }
-
-    if (isTeam && featuredPlayerIds.size > 0) {
-      (body as Record<string, unknown>).featured_player_ids = Array.from(featuredPlayerIds);
-    }
-
     try {
-      const res = await fetch(`${base}/sponsorships`, {
+      const res = await fetch(`${BASE}/sponsorships`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
+        headers: authHeaders,
+        body: JSON.stringify({
+          title:            title.trim(),
+          sport:            sport.toLowerCase(),
+          category,
+          beneficiary_type: beneficiaryType,
+        }),
       });
-
       const json = await res.json();
-
       if (!res.ok) {
         if (res.status === 422 && json.errors) {
-          // Per-field validation errors
           const errs: Record<string, string> = {};
-          for (const [field, messages] of Object.entries(json.errors as Record<string, string[]>)) {
-            errs[field] = messages[0];
-          }
+          for (const [f, msgs] of Object.entries(json.errors as Record<string, string[]>)) errs[f] = msgs[0];
           setFieldErrors(errs);
-
-          // Jump to the earliest step with an error
-          const failStep = Math.min(
-            ...Object.keys(errs)
-              .map((f) => FIELD_TO_STEP[f] ?? 99)
-              .filter((n) => n !== 99)
-          );
-          if (Number.isFinite(failStep)) setStep(failStep);
-          else setTopError(json.message ?? "Validation failed. Check your answers.");
         } else {
-          setTopError(json.message ?? "Could not submit case. Please try again.");
+          setTopError(json.message ?? "Could not create case. Please try again.");
         }
-        return;
+        return null;
       }
-
-      const caseId = (json.data ?? json).id;
-
-      // POST need items sequentially (non-blocking — wizard continues on failure)
-      if (needItems.length > 0) {
-        for (const ni of needItems) {
-          try {
-            await fetch(`${base}/sponsorships/${caseId}/needs`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-              body: JSON.stringify(ni),
-            });
-          } catch { /* silent — owner can add from case page */ }
-        }
-      }
-      router.push(`/account/cases/${caseId}?submitted=1`);
+      const id: string = (json.data ?? json).id;
+      setDraftId(id);
+      return id;
     } catch {
       setTopError("Network error. Please try again.");
+      return null;
     } finally {
-      setSubmitting(false);
+      setCreating(false);
     }
   };
+
+  // ── PATCH helper ─────────────────────────────────────────────────────────
+
+  const patchDraft = async (id: string, body: Record<string, unknown>): Promise<boolean> => {
+    setSaving(true);
+    setTopError(null);
+    try {
+      const res = await fetch(`${BASE}/sponsorships/${id}`, {
+        method: "PATCH",
+        headers: authHeaders,
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setTopError(json.message ?? "Could not save. Please try again.");
+        return false;
+      }
+      return true;
+    } catch {
+      setTopError("Network error. Please try again.");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── POST need items ───────────────────────────────────────────────────────
+
+  const postNeedItems = async (id: string) => {
+    for (const ni of needItems) {
+      try {
+        await fetch(`${BASE}/sponsorships/${id}/needs`, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify(ni),
+        });
+      } catch { /* non-blocking — owner can add from case page */ }
+    }
+  };
+
+  // ── Package helpers ───────────────────────────────────────────────────────
+
+  const loadPackages = (id: string) => {
+    setPkgLoading(true);
+    fetch(`${BASE}/sponsorships/${id}/packages`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.data) setPackages(j.data); })
+      .catch(() => {})
+      .finally(() => setPkgLoading(false));
+  };
+
+  const addPackage = async () => {
+    if (!draftId || !newPkgName.trim()) return;
+    setPkgSaving(true);
+    try {
+      const res = await fetch(`${BASE}/sponsorships/${draftId}/packages`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          name:                 newPkgName.trim(),
+          suggested_value_cents: newPkgValue ? Math.round(parseFloat(newPkgValue) * 100) : null,
+          description:          newPkgDesc.trim() || null,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.data) { setPackages((p) => [...p, json.data]); setNewPkgName(""); setNewPkgValue(""); setNewPkgDesc(""); }
+    } catch { /* silent */ } finally { setPkgSaving(false); }
+  };
+
+  const deletePackage = async (pkgId: string) => {
+    if (!draftId) return;
+    await fetch(`${BASE}/sponsorships/${draftId}/packages/${pkgId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+    setPackages((p) => p.filter((x) => x.id !== pkgId));
+  };
+
+  // ── Tier helpers ──────────────────────────────────────────────────────────
+
+  const loadTiers = (id: string) => {
+    setTiersLoading(true);
+    fetch(`${BASE}/sponsorships/${id}/tiers`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.data) setTiers(j.data); })
+      .catch(() => {})
+      .finally(() => setTiersLoading(false));
+  };
+
+  const addTier = async () => {
+    if (!draftId || !newTierTitle.trim() || !newTierMin) return;
+    setTierSaving(true);
+    try {
+      const res = await fetch(`${BASE}/sponsorships/${draftId}/tiers`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          title:            newTierTitle.trim(),
+          min_value_cents:  Math.round(parseFloat(newTierMin) * 100),
+          description:      newTierDesc.trim() || null,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.data) { setTiers((t) => [...t, json.data]); setNewTierTitle(""); setNewTierMin(""); setNewTierDesc(""); }
+    } catch { /* silent */ } finally { setTierSaving(false); }
+  };
+
+  const deleteTier = async (tierId: string) => {
+    if (!draftId) return;
+    await fetch(`${BASE}/sponsorships/${draftId}/tiers/${tierId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+    setTiers((t) => t.filter((x) => x.id !== tierId));
+  };
+
+  // ── "Continue" / "Back" ───────────────────────────────────────────────────
+
+  const handleContinue = async () => {
+    if (!canContinue()) {
+      if (step === 4 && !hasCover) setTopError("Please add and set a cover photo before continuing.");
+      return;
+    }
+
+    if (step === 1) {
+      // Create the draft
+      const id = await createDraft();
+      if (!id) return;
+      setStep(2);
+      return;
+    }
+
+    const id = draftId!;
+
+    if (step === 2) {
+      const body: Record<string, unknown> = { age_group: ageGroup, province: province.trim() || null, story_short: storyShort.trim() || null };
+      if (isMinor) {
+        body.is_minor_beneficiary  = true;
+        body.guardian_name         = guardianName.trim() || null;
+        body.guardian_relationship = guardianRelationship.trim() || null;
+        body.guardian_whatsapp     = guardianWhatsapp.trim() || null;
+      }
+      const ok = await patchDraft(id, body);
+      if (!ok) return;
+    }
+
+    if (step === 3) {
+      const body: Record<string, unknown> = {
+        story:           story.trim(),
+        suggested_payee: supportMethod,
+        deadline_at:     deadline || null,
+        // target_cents will be synced by backend when needs are POSTed
+      };
+      const ok = await patchDraft(id, body);
+      if (!ok) return;
+      await postNeedItems(id);
+    }
+
+    if (step === 4) {
+      // No PATCH needed — MediaManager saved directly; just advance
+    }
+
+    if (step === 5) {
+      // Packages and tiers saved incrementally via API; just advance
+    }
+
+    if (step === TOTAL_STEPS) {
+      // Final step — navigate to case detail
+      router.push(`/account/cases/${id}?submitted=1`);
+      return;
+    }
+
+    const nextStep = step + 1;
+
+    // Lazy-load packages & tiers when entering step 5
+    if (nextStep === 5 && draftId) {
+      loadPackages(draftId);
+      loadTiers(draftId);
+    }
+
+    setStep(nextStep);
+  };
+
+  const handleBack = () => setStep((s) => Math.max(1, s - 1));
+
+  // ── Computed ──────────────────────────────────────────────────────────────
+
+  const needsTotal = needItems.reduce((s, n) => s + n.qty * n.unit_cost_cents, 0);
+
+  const stepLabel = ["Basics", "Athlete", "Story & Needs", "Photos & Video", "Thank-yous & Sponsors", "Review & Submit"][step - 1];
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
@@ -230,18 +409,16 @@ export default function NewSponsorshipPage() {
 
       <div className="max-w-xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-6">
-          <Link href="/sponsorships" className="text-sm text-[#1a5c2a] hover:underline mb-3 block">
-            ← Back to Sponsorships
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Submit a Sponsorship Case</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Step {step} of {totalSteps} · Draft → Vouch → GRS review → Live
-          </p>
+        <div className="mb-5">
+          <button onClick={() => step === 1 ? router.back() : handleBack()} className="text-sm text-[#1a5c2a] hover:underline mb-2 block">
+            ← {step === 1 ? "Back to Sponsorships" : "Back"}
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900">Create a Sponsorship Case</h1>
+          <p className="text-sm text-gray-500 mt-1">Step {step} of {TOTAL_STEPS} — {stepLabel}</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <StepIndicator step={step} total={totalSteps} />
+          <StepBar step={step} total={TOTAL_STEPS} />
 
           {topError && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-4">
@@ -249,26 +426,23 @@ export default function NewSponsorshipPage() {
             </div>
           )}
 
-          {/* STEP 1 — Basics */}
+          {/* ── STEP 1 — Basics ────────────────────────────────────────────── */}
           {step === 1 && (
-            <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-800 mb-2">
-                <strong>How it works:</strong> Fill in the details below → after submitting, ask a coach, teacher, school head, or community leader to vouch for this case → GRS reviews it → it goes live for sponsors to find. If no one is available, GRS can verify the case directly.
+            <div className="space-y-5">
+              <div>
+                <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-800 mb-4">
+                  <strong>How it works:</strong> Fill in the details → after submitting, ask a coach, teacher, or community leader to vouch for the case → GRS reviews it → it goes live for sponsors.
+                </div>
+                <h2 className="font-semibold text-gray-900 mb-4">Case Basics</h2>
               </div>
-              <h2 className="font-semibold text-gray-900 mb-3">Case Basics</h2>
 
               <div>
-                <label className="text-xs font-medium text-gray-700 block mb-1">Case Title <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  maxLength={120}
+                <label className="text-xs font-medium text-gray-700 block mb-1">Title <span className="text-red-500">*</span></label>
+                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120}
                   placeholder="e.g. Help Tinotenda reach the COSAFA Cup"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
-                />
-                <div className="flex justify-between items-center mt-0.5">
-                  <FieldError msg={fieldErr("title")} />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                <div className="flex justify-between mt-0.5">
+                  <FieldError msg={fieldErrors.title} />
                   <span className="text-xs text-gray-400 ml-auto">{title.length}/120</span>
                 </div>
               </div>
@@ -277,217 +451,125 @@ export default function NewSponsorshipPage() {
                 <label className="text-xs font-medium text-gray-700 block mb-1">Sport <span className="text-red-500">*</span></label>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {SPORTS.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => setSport(s)}
-                      className={`py-2 px-2 rounded-lg border text-xs font-medium transition-colors ${
-                        sport === s
-                          ? "bg-[#1a5c2a] text-white border-[#1a5c2a]"
-                          : "bg-white text-gray-600 border-gray-300 hover:border-[#1a5c2a]"
-                      }`}
-                    >
+                    <button key={s} type="button" onClick={() => setSport(s)}
+                      className={`py-2 px-2 rounded-lg border text-xs font-medium transition-colors ${sport === s ? "bg-[#1a5c2a] text-white border-[#1a5c2a]" : "bg-white text-gray-600 border-gray-300 hover:border-[#1a5c2a]"}`}>
                       {s}
                     </button>
                   ))}
                 </div>
-                <FieldError msg={fieldErr("sport")} />
+                <FieldError msg={fieldErrors.sport} />
               </div>
 
               <div>
                 <label className="text-xs font-medium text-gray-700 block mb-1">Category <span className="text-red-500">*</span></label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 bg-white"
-                >
+                <select value={category} onChange={(e) => setCategory(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 bg-white">
                   <option value="">Select a category…</option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
+                  {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
-                <FieldError msg={fieldErr("category")} />
+                <FieldError msg={fieldErrors.category} />
               </div>
 
               {isCoach && (
                 <div>
                   <label className="text-xs font-medium text-gray-700 block mb-1">Case type</label>
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setBeneficiaryType("player")}
-                      className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-colors ${
-                        beneficiaryType === "player"
-                          ? "bg-[#1a5c2a] text-white border-[#1a5c2a]"
-                          : "bg-white text-gray-600 border-gray-300 hover:border-[#1a5c2a]"
-                      }`}
-                    >
-                      Individual athlete
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setBeneficiaryType("team")}
-                      className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-colors ${
-                        beneficiaryType === "team"
-                          ? "bg-[#1a5c2a] text-white border-[#1a5c2a]"
-                          : "bg-white text-gray-600 border-gray-300 hover:border-[#1a5c2a]"
-                      }`}
-                    >
-                      Team / Squad
-                    </button>
+                    {(["player", "team"] as const).map((bt) => (
+                      <button key={bt} type="button" onClick={() => setBeneficiaryType(bt)}
+                        className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-colors ${beneficiaryType === bt ? "bg-[#1a5c2a] text-white border-[#1a5c2a]" : "bg-white text-gray-600 border-gray-300 hover:border-[#1a5c2a]"}`}>
+                        {bt === "player" ? "Individual athlete" : "Team / Squad"}
+                      </button>
+                    ))}
                   </div>
-                  {beneficiaryType === "team" && (
-                    <p className="text-xs text-gray-500 mt-1">You will select which squad players are featured in the next steps.</p>
-                  )}
                 </div>
               )}
             </div>
           )}
 
-          {/* STEP 2 — Athlete details */}
+          {/* ── STEP 2 — Athlete ───────────────────────────────────────────── */}
           {step === 2 && (
-            <div className="space-y-4">
-              <h2 className="font-semibold text-gray-900 mb-3">Athlete Details</h2>
+            <div className="space-y-5">
+              <h2 className="font-semibold text-gray-900 mb-1">Athlete Details</h2>
 
               <div>
                 <label className="text-xs font-medium text-gray-700 block mb-1">Age Group <span className="text-red-500">*</span></label>
                 <div className="flex gap-2">
                   {AGE_GROUPS.map((ag) => (
-                    <button
-                      key={ag.value}
-                      type="button"
-                      onClick={() => setAgeGroup(ag.value)}
-                      className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-colors ${
-                        ageGroup === ag.value
-                          ? "bg-[#1a5c2a] text-white border-[#1a5c2a]"
-                          : "bg-white text-gray-600 border-gray-300 hover:border-[#1a5c2a]"
-                      }`}
-                    >
+                    <button key={ag.value} type="button" onClick={() => setAgeGroup(ag.value)}
+                      className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-colors ${ageGroup === ag.value ? "bg-[#1a5c2a] text-white border-[#1a5c2a]" : "bg-white text-gray-600 border-gray-300 hover:border-[#1a5c2a]"}`}>
                       {ag.label}
                     </button>
                   ))}
                 </div>
-                <FieldError msg={fieldErr("age_group")} />
-                {MINOR_AGE_GROUPS.has(ageGroup) && (
-                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
-                    You will need to provide a guardian's details on the next step — required for under-18 cases.
-                  </p>
-                )}
               </div>
 
               <div>
                 <label className="text-xs font-medium text-gray-700 block mb-1">Province <span className="text-gray-400">(optional)</span></label>
-                <input
-                  type="text"
-                  value={province}
-                  onChange={(e) => setProvince(e.target.value)}
+                <input type="text" value={province} onChange={(e) => setProvince(e.target.value)}
                   placeholder="e.g. Harare, Bulawayo, Manicaland"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
-                />
-                <FieldError msg={fieldErr("province")} />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-700 block mb-1">
-                  One-line summary <span className="text-gray-400">(optional — shown on browse cards)</span>
-                </label>
-                <input
-                  type="text"
-                  value={storyShort}
-                  onChange={(e) => setStoryShort(e.target.value)}
-                  maxLength={200}
+                <label className="text-xs font-medium text-gray-700 block mb-1">One-line summary <span className="text-gray-400">(optional)</span></label>
+                <input type="text" value={storyShort} onChange={(e) => setStoryShort(e.target.value)} maxLength={200}
                   placeholder="A short sentence to catch a sponsor's eye"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
-                />
-                <div className="flex justify-between items-center mt-0.5">
-                  <FieldError msg={fieldErr("story_short")} />
-                  <span className="text-xs text-gray-400 ml-auto">{storyShort.length}/200</span>
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                <div className="flex justify-between mt-0.5">
+                  <span />
+                  <span className="text-xs text-gray-400">{storyShort.length}/200</span>
                 </div>
               </div>
+
+              {isMinor && (
+                <div className="border border-amber-200 bg-amber-50 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-semibold text-amber-800">Guardian Details Required</p>
+                  <p className="text-xs text-amber-700">GRS requires a guardian&apos;s consent for athletes under 18. Their details are kept private.</p>
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">Guardian Full Name <span className="text-red-500">*</span></label>
+                    <input type="text" value={guardianName} onChange={(e) => setGuardianName(e.target.value)} placeholder="e.g. Tendai Moyo"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">Relationship <span className="text-gray-400">(optional)</span></label>
+                    <input type="text" value={guardianRelationship} onChange={(e) => setGuardianRelationship(e.target.value)} placeholder="e.g. Parent, Aunt, Guardian"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">Guardian WhatsApp <span className="text-red-500">*</span></label>
+                    <input type="tel" value={guardianWhatsapp} onChange={(e) => setGuardianWhatsapp(e.target.value)} placeholder="e.g. 0771 234 567"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                    <p className="text-xs text-gray-400 mt-0.5">GRS will contact the guardian to confirm consent before the case goes live.</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* STEP 3 — Full story */}
+          {/* ── STEP 3 — Story & Needs ─────────────────────────────────────── */}
           {step === 3 && (
-            <div className="space-y-4">
-              <h2 className="font-semibold text-gray-900 mb-1">The Full Story</h2>
-              <p className="text-xs text-gray-500 mb-3">
-                Explain who the athlete is, what they need, and why a sponsor should connect.
-                Be honest and specific — the best cases tell a real story.
-              </p>
+            <div className="space-y-5">
+              <h2 className="font-semibold text-gray-900 mb-1">Story &amp; Needs</h2>
 
+              {/* Story */}
               <div>
-                <label className="text-xs font-medium text-gray-700 block mb-1">Story <span className="text-red-500">*</span></label>
-                <textarea
-                  value={story}
-                  onChange={(e) => setStory(e.target.value)}
-                  maxLength={3000}
-                  rows={8}
-                  placeholder="Tell the athlete's story in detail…"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
-                />
-                <div className="flex justify-between items-center mt-0.5">
-                  <FieldError msg={fieldErr("story")} />
-                  <span className="text-xs text-gray-400 ml-auto">{story.length}/3000</span>
+                <label className="text-xs font-medium text-gray-700 block mb-1">The full story <span className="text-red-500">*</span></label>
+                <textarea value={story} onChange={(e) => setStory(e.target.value)} maxLength={3000} rows={7}
+                  placeholder="Tell the athlete's story in detail — who they are, what they need, and why a sponsor should connect."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                <div className="flex justify-between mt-0.5">
+                  <span />
+                  <span className="text-xs text-gray-400">{story.length}/3000</span>
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="text-xs font-medium text-gray-700 block mb-1">
-                    Amount needed (USD) <span className="text-gray-400">(optional)</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 select-none">$</span>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={targetUsd}
-                      onChange={(e) => setTargetUsd(e.target.value)}
-                      placeholder="e.g. 250"
-                      className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
-                    />
-                  </div>
-                  <FieldError msg={fieldErr("target_cents")} />
-                </div>
-
-                <div className="flex-1">
-                  <label className="text-xs font-medium text-gray-700 block mb-1">
-                    Deadline <span className="text-gray-400">(optional)</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={deadline}
-                    min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => setDeadline(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 bg-white"
-                  />
-                  <FieldError msg={fieldErr("deadline_at")} />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-gray-700 block mb-1">
-                  Suggested support / payee <span className="text-gray-400">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={suggestedPayee}
-                  onChange={(e) => setSuggestedPayee(e.target.value)}
-                  maxLength={300}
-                  placeholder="e.g. Equipment donated directly to Zimbabwe Athletics Association on athlete's behalf"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
-                />
-                <FieldError msg={fieldErr("suggested_payee")} />
-              </div>
-
-              {/* Optional: itemised needs list */}
-              <div className="border-t border-gray-100 pt-4 space-y-3">
+              {/* Itemised needs */}
+              <div className="space-y-3">
                 <div>
                   <p className="text-xs font-semibold text-gray-700">Itemised needs <span className="text-gray-400 font-normal">(optional)</span></p>
-                  <p className="text-xs text-gray-400 mt-0.5">Break your target into specific items — total auto-sets the amount. You can add more from your case page later.</p>
+                  <p className="text-xs text-gray-400 mt-0.5">List specific items — the total auto-sets the target amount. Add more from your case page later.</p>
                 </div>
+
                 {needItems.length > 0 && (
                   <div className="rounded-xl border border-gray-200 overflow-hidden">
                     <table className="w-full text-xs">
@@ -504,17 +586,10 @@ export default function NewSponsorshipPage() {
                           <tr key={idx}>
                             <td className="px-3 py-2 text-gray-800">{n.item}</td>
                             <td className="px-2 py-2 text-right text-gray-500">{n.qty}</td>
-                            <td className="px-2 py-2 text-right font-medium text-gray-900">
-                              ${((n.qty * n.unit_cost_cents) / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                            </td>
+                            <td className="px-2 py-2 text-right font-medium text-gray-900">{fmt(n.qty * n.unit_cost_cents)}</td>
                             <td className="px-2 py-2">
-                              <button
-                                type="button"
-                                onClick={() => setNeedItems((prev) => prev.filter((_, i) => i !== idx))}
-                                className="text-gray-300 hover:text-red-500"
-                                aria-label="Remove"
-                              >
-                                ×
+                              <button type="button" onClick={() => setNeedItems((p) => p.filter((_, i) => i !== idx))} className="text-gray-300 hover:text-red-500">
+                                <Trash2 size={12} />
                               </button>
                             </td>
                           </tr>
@@ -523,295 +598,254 @@ export default function NewSponsorshipPage() {
                       <tfoot className="bg-gray-50">
                         <tr>
                           <td colSpan={2} className="px-3 py-2 text-xs font-semibold text-gray-500">Total</td>
-                          <td className="px-2 py-2 text-right font-bold text-[#1a5c2a] text-xs">
-                            ${(needItems.reduce((s, n) => s + n.qty * n.unit_cost_cents, 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                          </td>
+                          <td className="px-2 py-2 text-right font-bold text-[#1a5c2a] text-xs">{fmt(needsTotal)}</td>
                           <td />
                         </tr>
                       </tfoot>
                     </table>
                   </div>
                 )}
+
+                {/* Add row */}
                 <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newNeedItem}
-                    onChange={(e) => setNewNeedItem(e.target.value)}
-                    placeholder="Item (e.g. Football boots)"
-                    maxLength={200}
-                    className="flex-1 border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
-                  />
-                  <input
-                    type="number"
-                    value={newNeedQty}
-                    onChange={(e) => setNewNeedQty(e.target.value)}
-                    min={1}
-                    max={9999}
-                    placeholder="Qty"
-                    className="w-14 border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 text-center"
-                  />
-                  <input
-                    type="number"
-                    value={newNeedUsd}
-                    onChange={(e) => setNewNeedUsd(e.target.value)}
-                    min={0.01}
-                    step={0.01}
-                    placeholder="Unit $"
-                    className="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
-                  />
-                  <button
-                    type="button"
+                  <input type="text" value={newNeedItem} onChange={(e) => setNewNeedItem(e.target.value)} placeholder="Item (e.g. Football boots)" maxLength={200}
+                    className="flex-1 border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                  <input type="number" value={newNeedQty} onChange={(e) => setNewNeedQty(e.target.value)} min={1} max={9999} placeholder="Qty"
+                    className="w-14 border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 text-center" />
+                  <input type="number" value={newNeedUsd} onChange={(e) => setNewNeedUsd(e.target.value)} min={0.01} step={0.01} placeholder="Unit $"
+                    className="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                  <button type="button"
                     onClick={() => {
-                      const unitCents = Math.round(parseFloat(newNeedUsd || "0") * 100);
-                      if (!newNeedItem.trim() || unitCents <= 0) return;
-                      setNeedItems((prev) => [
-                        ...prev,
-                        { item: newNeedItem.trim(), qty: parseInt(newNeedQty, 10) || 1, unit_cost_cents: unitCents },
-                      ]);
+                      const uc = Math.round(parseFloat(newNeedUsd || "0") * 100);
+                      if (!newNeedItem.trim() || uc <= 0) return;
+                      setNeedItems((p) => [...p, { item: newNeedItem.trim(), qty: parseInt(newNeedQty, 10) || 1, unit_cost_cents: uc }]);
                       setNewNeedItem(""); setNewNeedQty("1"); setNewNeedUsd("");
-                      // Auto-sync the target amount from items
-                      const newTotal = [...needItems, { qty: parseInt(newNeedQty, 10) || 1, unit_cost_cents: unitCents }]
-                        .reduce((s, n) => s + n.qty * n.unit_cost_cents, 0);
-                      setTargetUsd((newTotal / 100).toFixed(0));
                     }}
                     disabled={!newNeedItem.trim() || !newNeedUsd}
-                    className="shrink-0 text-xs font-semibold text-white bg-[#1a5c2a] hover:bg-[#154a22] disabled:opacity-50 rounded-lg px-3 py-1.5 transition-colors"
-                  >
-                    Add
+                    className="shrink-0 flex items-center gap-1 text-xs font-semibold text-white bg-[#1a5c2a] hover:bg-[#154a22] disabled:opacity-50 rounded-lg px-3 py-1.5 transition-colors">
+                    <Plus size={12} /> Add
                   </button>
                 </div>
               </div>
+
+              {/* Deadline */}
+              <div>
+                <label className="text-xs font-medium text-gray-700 block mb-1">Deadline <span className="text-gray-400">(optional)</span></label>
+                <input type="date" value={deadline} min={new Date().toISOString().split("T")[0]} onChange={(e) => setDeadline(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 bg-white" />
+              </div>
+
+              {/* How support is given */}
+              <div>
+                <label className="text-xs font-medium text-gray-700 block mb-2">How support is given <span className="text-red-500">*</span></label>
+                <div className="space-y-2">
+                  {SUPPORT_METHODS.map((m) => (
+                    <label key={m.value} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${supportMethod === m.value ? "border-[#1a5c2a] bg-[#f0fdf4]" : "border-gray-200 hover:border-gray-300"}`}>
+                      <input type="radio" name="support_method" value={m.value} checked={supportMethod === m.value}
+                        onChange={() => setSupportMethod(m.value)} className="accent-[#1a5c2a]" />
+                      <span className="text-sm text-gray-800">{m.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <SectionNote>
+                  <strong>GRS never handles money.</strong> Sponsors give items or pay suppliers and institutions directly. Personal bank accounts cannot be used.
+                </SectionNote>
+              </div>
             </div>
           )}
 
-          {/* SQUAD STEP — Team cases only (coach) */}
-          {squadStep && step === squadStep && (
+          {/* ── STEP 4 — Photos & Video ────────────────────────────────────── */}
+          {step === 4 && draftId && (
             <div className="space-y-4">
-              <h2 className="font-semibold text-gray-900 mb-1">Featured Squad Players</h2>
-              <p className="text-xs text-gray-500 mb-3">
-                Select which players from your squad are part of this team case. At least one is required.
-              </p>
+              <div>
+                <h2 className="font-semibold text-gray-900 mb-1">Photos &amp; Video</h2>
+                <p className="text-xs text-gray-500">Add a cover photo, more images, Arena videos, or YouTube links. A cover photo is required to continue.</p>
+              </div>
 
-              {squadLoading ? (
-                <p className="text-xs text-gray-400 py-2">Loading your squad…</p>
-              ) : squadPlayers.length === 0 ? (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">
-                  No squad players found. Register players under <strong>My Squad</strong> first, then come back to submit a team case.
+              {!hasCover && (
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-xs font-medium">
+                  Cover photo required — upload a photo and set it as cover using the ★ button.
                 </div>
-              ) : (
-                <div className="space-y-1.5 max-h-64 overflow-y-auto">
-                  {squadPlayers.map((p) => {
-                    const selected = featuredPlayerIds.has(p.id);
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          setFeaturedPlayerIds((prev) => {
-                            const next = new Set(prev);
-                            selected ? next.delete(p.id) : next.add(p.id);
-                            return next;
-                          });
-                        }}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-colors ${
-                          selected
-                            ? "border-[#1a5c2a] bg-[#f0fdf4]"
-                            : "border-gray-200 hover:border-gray-300 bg-white"
-                        }`}
-                      >
-                        <span className="w-7 h-7 rounded-full bg-[#1a5c2a] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
-                          {(p.name ?? "?")[0].toUpperCase()}
-                        </span>
-                        <span className="text-sm font-medium text-gray-800 truncate">{p.name}</span>
-                        {selected && <span className="ml-auto text-[#1a5c2a] text-xs font-semibold">Selected</span>}
+              )}
+              {hasCover && (
+                <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-xs font-medium flex items-center gap-2">
+                  <CheckCircle2 size={14} /> Cover photo set — you can continue.
+                </div>
+              )}
+
+              <MediaManager
+                caseId={draftId}
+                token={token}
+                onCoverChange={setHasCover}
+              />
+            </div>
+          )}
+
+          {/* ── STEP 5 — Thank-yous & Sponsors (optional) ─────────────────── */}
+          {step === 5 && draftId && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="font-semibold text-gray-900 mb-1">Thank-yous &amp; Sponsor Packages</h2>
+                <p className="text-xs text-gray-500">Optional — add recognition tiers to thank sponsors, and packages they can choose from. You can also do this from your case page later.</p>
+              </div>
+
+              {/* Sponsor Packages */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-gray-700">Sponsor Packages <span className="text-gray-400 font-normal">(up to 3)</span></p>
+                {pkgLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-gray-400"><Loader2 size={12} className="animate-spin" /> Loading…</div>
+                ) : (
+                  <>
+                    {packages.map((pkg) => (
+                      <div key={pkg.id} className="flex items-start justify-between gap-3 border border-gray-200 rounded-xl px-3 py-2.5">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900">{pkg.name}</p>
+                          {pkg.suggested_value_cents != null && <p className="text-xs text-[#1a5c2a] font-medium mt-0.5">Suggested: ${(pkg.suggested_value_cents / 100).toFixed(0)}</p>}
+                          {pkg.description && <p className="text-xs text-gray-500 mt-0.5">{pkg.description}</p>}
+                        </div>
+                        <button onClick={() => deletePackage(pkg.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0">Remove</button>
+                      </div>
+                    ))}
+                    {packages.length < 3 && (
+                      <div className="border border-dashed border-gray-300 rounded-xl p-3 space-y-2">
+                        <input type="text" value={newPkgName} onChange={(e) => setNewPkgName(e.target.value)} placeholder="Package name (e.g. Kit Sponsor)" maxLength={100}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                        <div className="flex gap-2">
+                          <input type="number" value={newPkgValue} onChange={(e) => setNewPkgValue(e.target.value)} placeholder="Suggested $ (optional)"
+                            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                        </div>
+                        <input type="text" value={newPkgDesc} onChange={(e) => setNewPkgDesc(e.target.value)} placeholder="Description (optional)" maxLength={500}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                        <button onClick={addPackage} disabled={pkgSaving || !newPkgName.trim()}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#1a5c2a] hover:bg-[#154a22] disabled:opacity-50 rounded-lg px-4 py-2 transition-colors">
+                          {pkgSaving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Add Package
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Recognition Tiers */}
+              <div className="space-y-3 border-t border-gray-100 pt-4">
+                <p className="text-xs font-semibold text-gray-700">Recognition Tiers <span className="text-gray-400 font-normal">(optional — thank-you levels for sponsors)</span></p>
+                {tiersLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-gray-400"><Loader2 size={12} className="animate-spin" /> Loading…</div>
+                ) : (
+                  <>
+                    {tiers.map((tier) => (
+                      <div key={tier.id} className="flex items-start justify-between gap-3 border border-gray-200 rounded-xl px-3 py-2.5">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900">{tier.title}</p>
+                          <p className="text-xs text-[#1a5c2a] font-medium mt-0.5">From ${(tier.min_value_cents / 100).toFixed(0)}</p>
+                          {tier.description && <p className="text-xs text-gray-500 mt-0.5">{tier.description}</p>}
+                          {tier.quantity_limit != null && <p className="text-xs text-gray-400">{tier.quantity_limit} available</p>}
+                        </div>
+                        <button onClick={() => deleteTier(tier.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0">Remove</button>
+                      </div>
+                    ))}
+                    <div className="border border-dashed border-gray-300 rounded-xl p-3 space-y-2">
+                      <input type="text" value={newTierTitle} onChange={(e) => setNewTierTitle(e.target.value)} placeholder="Tier name (e.g. Gold Supporter)" maxLength={100}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">$</span>
+                          <input type="number" value={newTierMin} onChange={(e) => setNewTierMin(e.target.value)} placeholder="Min value"
+                            className="w-full border border-gray-300 rounded-lg pl-6 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                        </div>
+                      </div>
+                      <input type="text" value={newTierDesc} onChange={(e) => setNewTierDesc(e.target.value)} placeholder="What the sponsor receives (optional)" maxLength={500}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                      <button onClick={addTier} disabled={tierSaving || !newTierTitle.trim() || !newTierMin}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#1a5c2a] hover:bg-[#154a22] disabled:opacity-50 rounded-lg px-4 py-2 transition-colors">
+                        {tierSaving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Add Tier
                       </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {featuredPlayerIds.size > 0 && (
-                <p className="text-xs text-[#1a5c2a] font-medium">{featuredPlayerIds.size} player{featuredPlayerIds.size !== 1 ? "s" : ""} selected</p>
-              )}
-            </div>
-          )}
-
-          {/* GUARDIAN STEP — Minors only */}
-          {guardianStep && step === guardianStep && (
-            <div className="space-y-4">
-              <h2 className="font-semibold text-gray-900 mb-1">Guardian Details</h2>
-              <p className="text-xs text-gray-500 mb-3">
-                GRS requires a guardian's consent for cases involving athletes under 18. Their name will not be shown publicly.
-              </p>
-
-              <div>
-                <label className="text-xs font-medium text-gray-700 block mb-1">Guardian Full Name <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  value={guardianName}
-                  onChange={(e) => setGuardianName(e.target.value)}
-                  placeholder="e.g. Tendai Moyo"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
-                />
-                <FieldError msg={fieldErr("guardian_name")} />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-gray-700 block mb-1">Relationship to Athlete <span className="text-gray-400">(optional)</span></label>
-                <input
-                  type="text"
-                  value={guardianRelationship}
-                  onChange={(e) => setGuardianRelationship(e.target.value)}
-                  placeholder="e.g. Parent, Aunt, Guardian"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
-                />
-                <FieldError msg={fieldErr("guardian_relationship")} />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-gray-700 block mb-1">Guardian WhatsApp Number <span className="text-red-500">*</span></label>
-                <input
-                  type="tel"
-                  value={guardianWhatsapp}
-                  onChange={(e) => setGuardianWhatsapp(e.target.value)}
-                  placeholder="e.g. 0771 234 567"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
-                />
-                <p className="text-xs text-gray-400 mt-0.5">GRS will contact the guardian to confirm consent before the case goes live.</p>
-                <FieldError msg={fieldErr("guardian_whatsapp")} />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
 
-          {/* Final step — Review & Submit */}
-          {step === reviewStep && (
-            <div className="space-y-4">
-              <h2 className="font-semibold text-gray-900 mb-3">Review & Submit</h2>
+          {/* ── STEP 6 — Review & Submit ───────────────────────────────────── */}
+          {step === 6 && draftId && (
+            <div className="space-y-5">
+              <h2 className="font-semibold text-gray-900 mb-1">Review &amp; Submit</h2>
+              <p className="text-xs text-gray-500">Your draft is saved. Check the eligibility list below, then go to your case page to request a vouch and submit for review.</p>
 
+              {/* Summary */}
               <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Title</span>
-                  <span className="font-medium text-gray-900 text-right max-w-[60%]">{title}</span>
+                  <span className="font-medium text-gray-900 text-right max-w-[60%] truncate">{title}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Sport</span>
                   <span className="font-medium text-gray-900 capitalize">{sport}</span>
                 </div>
-                {isCoach && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Case type</span>
-                    <span className="font-medium text-gray-900">{beneficiaryType === "team" ? "Team / Squad" : "Individual athlete"}</span>
-                  </div>
-                )}
-                {isTeam && featuredPlayerIds.size > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Featured players</span>
-                    <span className="font-medium text-gray-900">{featuredPlayerIds.size}</span>
-                  </div>
-                )}
                 <div className="flex justify-between">
                   <span className="text-gray-500">Category</span>
                   <span className="font-medium text-gray-900 capitalize">{category.replace(/_/g, " ")}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Age Group</span>
-                  <span className="font-medium text-gray-900">
-                    {AGE_GROUPS.find((ag) => ag.value === ageGroup)?.label ?? ageGroup}
-                  </span>
-                </div>
-                {province && (
+                {ageGroup && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Province</span>
-                    <span className="font-medium text-gray-900">{province}</span>
+                    <span className="text-gray-500">Age Group</span>
+                    <span className="font-medium text-gray-900">{AGE_GROUPS.find((a) => a.value === ageGroup)?.label}</span>
                   </div>
                 )}
-                {targetUsd && (
+                {needsTotal > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Amount needed</span>
-                    <span className="font-medium text-[#1a5c2a]">USD {parseFloat(targetUsd).toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                    <span className="text-gray-500">Target</span>
+                    <span className="font-medium text-[#1a5c2a]">{fmt(needsTotal)}</span>
                   </div>
                 )}
-                {deadline && (
+                {supportMethod && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Deadline</span>
-                    <span className="font-medium text-gray-900">{new Date(deadline + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                    <span className="text-gray-500">Support via</span>
+                    <span className="font-medium text-gray-900 text-right max-w-[55%]">{SUPPORT_METHODS.find((m) => m.value === supportMethod)?.label}</span>
                   </div>
                 )}
-                {isMinor && guardianName && (
+                {hasCover && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Guardian</span>
-                    <span className="font-medium text-gray-900">{guardianName}</span>
+                    <span className="text-gray-500">Cover photo</span>
+                    <span className="font-medium text-green-700 flex items-center gap-1"><CheckCircle2 size={12} /> Set</span>
                   </div>
                 )}
               </div>
 
-              {/* Eligibility requirements reminder */}
-              <div className="bg-[#1a5c2a]/5 border border-[#1a5c2a]/20 rounded-xl p-4 text-xs text-[#1a5c2a] space-y-2">
-                <p className="font-semibold text-sm">Eligibility requirements to go live</p>
-                <ul className="space-y-1 list-none">
-                  <li>✓ Profile photo on your player account</li>
-                  <li>✓ GRS Passport — at least 3 physical axes &amp; 2 technical axes</li>
-                  <li>✓ 5 Arena videos on 5 different days spanning 14+ days</li>
-                  {parseFloat(targetUsd || "0") > 300 && (
-                    <li className="text-amber-800 font-medium">⚠ Target &gt; $300 — Level 2 required (5 physical + 3 technical + 10 videos + Coach Position Test)</li>
-                  )}
-                </ul>
-                <p className="text-gray-600 mt-1">
-                  After submitting, your Eligibility Checklist will appear on your case page.
-                </p>
+              {/* Live eligibility checklist */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Eligibility — what&apos;s needed to go live</p>
+                <EligibilityChecklist caseId={draftId} token={token ?? ""} />
               </div>
 
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800">
-                <strong>What happens next:</strong> Your case will be saved as a draft. To go live, you need a vouch from a coach, teacher, school head, or community leader — or GRS can verify the case directly if no voucher is available. GRS then reviews it before it appears publicly for sponsors.
+                <strong>What happens next:</strong> Your case is saved as a draft. To go live, ask a coach, teacher, school head, or community leader to vouch for it — or GRS can verify directly. GRS reviews it before it appears for sponsors.
               </div>
             </div>
           )}
 
-          {/* Navigation */}
+          {/* ── Navigation ─────────────────────────────────────────────────── */}
           <div className="flex gap-3 mt-6">
             {step > 1 && (
-              <button
-                onClick={() => setStep((s) => s - 1)}
-                className="flex-1 border border-gray-300 text-gray-700 text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
-              >
+              <button onClick={handleBack}
+                className="flex-1 border border-gray-300 text-gray-700 text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
                 Back
               </button>
             )}
-            {step < totalSteps ? (
-              <button
-                onClick={() => {
-                  const next = step + 1;
-                  setStep(next);
-                  // Fetch squad when entering the squad selection step
-                  if (squadStep && next === squadStep && squadPlayers.length === 0 && !squadLoading) {
-                    const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
-                    setSquadLoading(true);
-                    fetch(`${base}/coach/squad`, {
-                      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-                    })
-                      .then((r) => r.ok ? r.json() : Promise.reject())
-                      .then((j) => setSquadPlayers(j.data ?? []))
-                      .catch(() => {/* keep empty list — warning shown in UI */})
-                      .finally(() => setSquadLoading(false));
-                  }
-                }}
-                disabled={!canNext()}
-                className="flex-1 bg-[#1a5c2a] text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-[#145222] transition-colors disabled:opacity-50"
-              >
-                Continue
-              </button>
-            ) : (
-              <button
-                onClick={submit}
-                disabled={submitting}
-                className="flex-1 bg-[#1a5c2a] text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-[#145222] transition-colors disabled:opacity-60"
-              >
-                {submitting ? "Submitting…" : "Submit Case"}
-              </button>
-            )}
+
+            <button
+              onClick={handleContinue}
+              disabled={!canContinue() || creating || saving}
+              className="flex-1 bg-[#1a5c2a] text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-[#145222] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {(creating || saving) && <Loader2 size={14} className="animate-spin" />}
+              {step === TOTAL_STEPS ? "Save & Go to My Case" : step === 1 ? "Create Draft & Continue" : "Save & Continue"}
+            </button>
           </div>
         </div>
 
+        {/* Strong case tip — always visible */}
         <div className="mt-4">
           <StrongCaseTip />
         </div>

@@ -42,9 +42,11 @@ interface Props {
   caseId: string;
   token: string | null;
   isTeam?: boolean;
+  /** Called whenever the cover status changes (true = at least one item is_cover). */
+  onCoverChange?: (hasCover: boolean) => void;
 }
 
-export default function MediaManager({ caseId, token, isTeam = false }: Props) {
+export default function MediaManager({ caseId, token, isTeam = false, onCoverChange }: Props) {
   const [items,         setItems]         = useState<MediaItem[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [addMode,       setAddMode]       = useState<"photo" | "arena" | "youtube" | null>(null);
@@ -91,6 +93,12 @@ export default function MediaManager({ caseId, token, isTeam = false }: Props) {
       .finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId, token]);
+
+  // Notify parent whenever cover status changes
+  useEffect(() => {
+    onCoverChange?.(items.some((i) => i.is_cover));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
 
   const notify = (msg: string, isError = false) => {
     if (isError) setError(msg); else setSuccess(msg);
