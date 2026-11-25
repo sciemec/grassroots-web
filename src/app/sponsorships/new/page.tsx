@@ -166,7 +166,6 @@ export default function NewSponsorshipWizard() {
   // ── Step validation ───────────────────────────────────────────────────────
 
   const canContinue = () => {
-    setTopError(null);
     if (step === 1) return title.trim().length > 5 && !!sport && !!category;
     if (step === 2) {
       if (!ageGroup) return false;
@@ -329,6 +328,7 @@ export default function NewSponsorshipWizard() {
   // ── "Continue" / "Back" ───────────────────────────────────────────────────
 
   const handleContinue = async () => {
+    setTopError(null);
     if (!canContinue()) {
       if (step === 4 && !hasCover) setTopError("Please add and set a cover photo before continuing.");
       return;
