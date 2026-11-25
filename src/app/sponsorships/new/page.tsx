@@ -262,8 +262,10 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
         } catch { /* silent */ }
       })
       .finally(() => setResumeLoading(false));
+  // resumeId MUST be in deps: the auto-redirect changes it from null → id on
+  // the same component instance, and the effect must re-fire to load the draft.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, token, user]);
+  }, [hydrated, token, user, resumeId]);
 
   // ── Auto-resume: redirect to ?case={id} if the user already has a draft ───
   // Skipped when ?case= is already present (resumeId) or ?new=1 is set (forceNew).
