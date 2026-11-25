@@ -150,10 +150,29 @@ export default function NewSponsorshipWizard() {
   const isCoach = user?.role === "coach" || user?.role === "admin";
   const isMinor = MINOR_GROUPS.has(ageGroup);
 
+  // Guardian child picker — shown when the logged-in user has active guardian_links
+  interface GuardianChild { id: string; name: string; age_group: string; avatar_url: string | null }
+  const [guardianChildren,        setGuardianChildren]        = useState<GuardianChild[]>([]);
+  const [guardianChildrenLoading, setGuardianChildrenLoading] = useState(false);
+  const [selectedChildId,         setSelectedChildId]         = useState<string | null>(null);
+
   useEffect(() => {
     if (!hydrated) return;
     if (!user) router.replace("/login");
   }, [hydrated, user, router]);
+
+  useEffect(() => {
+    if (!hydrated || !token) return;
+    setGuardianChildrenLoading(true);
+    fetch(`${BASE}/sponsorships/guardian-children`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.data) setGuardianChildren(j.data); })
+      .catch(() => {})
+      .finally(() => setGuardianChildrenLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, token]);
 
   if (!hydrated || !user) return null;
 
@@ -166,7 +185,11 @@ export default function NewSponsorshipWizard() {
   // ── Step validation ───────────────────────────────────────────────────────
 
   const canContinue = () => {
-    if (step === 1) return title.trim().length > 5 && !!sport && !!category;
+    if (step === 1) {
+      if (title.trim().length <= 5 || !sport || !category) return false;
+      if (guardianChildren.length > 0 && !selectedChildId) return false;
+      return true;
+    }
     if (step === 2) {
       if (!ageGroup) return false;
       if (isMinor && (!guardianName.trim() || !guardianWhatsapp.trim())) return false;
@@ -192,6 +215,7 @@ export default function NewSponsorshipWizard() {
           sport:            sport.toLowerCase(),
           category,
           beneficiary_type: beneficiaryType,
+          ...(selectedChildId ? { player_id: selectedChildId } : {}),
         }),
       });
       const json = await res.json();
@@ -481,6 +505,57 @@ export default function NewSponsorshipWizard() {
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Guardian child picker — only shown when user has active guardian_links */}
+              {guardianChildrenLoading && (
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <Loader2 size={12} className="animate-spin" /> Loading your linked athletes…
+                </div>
+              )}
+              {!guardianChildrenLoading && guardianChildren.length > 0 && (
+                <div>
+                  <label className="text-xs font-medium text-gray-700 block mb-1">
+                    Which athlete is this case for? <span className="text-red-500">*</span>
+                  </label>
+                  <div className="space-y-2">
+                    {guardianChildren.map((child) => (
+                      <button
+                        key={child.id}
+                        type="button"
+                        onClick={() => setSelectedChildId(child.id)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors ${
+                          selectedChildId === child.id
+                            ? "border-[#1a5c2a] bg-[#f0fdf4]"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+                          {child.avatar_url ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={child.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 font-bold">
+                              {child.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{child.name}</p>
+                          {child.age_group && (
+                            <p className="text-xs text-gray-400 capitalize">{child.age_group.replace(/_/g, " ")}</p>
+                          )}
+                        </div>
+                        {selectedChildId === child.id && (
+                          <CheckCircle2 size={16} className="text-[#1a5c2a] flex-shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  {!selectedChildId && (
+                    <p className="text-xs text-red-500 mt-1">Please select which athlete this case is for.</p>
+                  )}
                 </div>
               )}
             </div>

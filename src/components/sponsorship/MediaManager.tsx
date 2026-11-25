@@ -11,7 +11,7 @@ const MAX_ITEMS = 12;
 interface MediaItem {
   id: string;
   type: "photo" | "video";
-  source: "arena" | "upload" | "youtube";
+  source: "arena" | "upload" | "youtube" | "highlight_vault";
   arena_post_id: string | null;
   url: string;
   thumbnail_url: string | null;
@@ -58,9 +58,12 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
   const fileRef = useRef<HTMLInputElement>(null);
   const [photoCaption, setPhotoCaption] = useState("");
 
-  // Arena picker
-  const [arenaPosts,  setArenaPosts]  = useState<ArenaPost[]>([]);
+  // Arena / Vault picker — tabbed
+  const [arenaOwn,     setArenaOwn]     = useState<ArenaPost[]>([]);
+  const [arenaTagged,  setArenaTagged]  = useState<ArenaPost[]>([]);
+  const [vaultPosts,   setVaultPosts]   = useState<ArenaPost[]>([]);
   const [arenaLoading, setArenaLoading] = useState(false);
+  const [arenaTab,     setArenaTab]     = useState<"own" | "tagged" | "vault">("own");
   const [arenaCaption, setArenaCaption] = useState("");
 
   // YouTube
@@ -203,7 +206,11 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
     setArenaLoading(true);
     const r = await fetch(`${BASE}/sponsorships/${caseId}/media/arena-picker`, { headers });
     const j = await r.json().catch(() => ({}));
-    if (j.data) setArenaPosts(j.data);
+    if (j.data) {
+      setArenaOwn(j.data.own ?? []);
+      setArenaTagged(j.data.tagged ?? []);
+      setVaultPosts(j.data.vault ?? []);
+    }
     setArenaLoading(false);
   };
 
@@ -224,6 +231,27 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
       notify("Video added.");
     } else {
       notify((j as { message?: string }).message ?? "Could not add video.", true);
+    }
+    setSaving(false);
+  };
+
+  const addVault = async (highlightId: string) => {
+    setSaving(true);
+    const body: Record<string, string> = { highlight_id: highlightId };
+    if (arenaCaption.trim()) body.caption = arenaCaption.trim();
+    const r = await fetch(`${BASE}/sponsorships/${caseId}/media/highlight-vault`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.data) {
+      setItems((prev) => [...prev, j.data]);
+      setAddMode(null);
+      setArenaCaption("");
+      notify("Highlight added.");
+    } else {
+      notify((j as { message?: string }).message ?? "Could not add highlight.", true);
     }
     setSaving(false);
   };
@@ -385,7 +413,7 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                     <span className="text-xs font-medium text-gray-700 capitalize">
-                      {item.source === "youtube" ? "YouTube" : item.source === "arena" ? "Arena" : "Photo"}
+                      {item.source === "youtube" ? "YouTube" : item.source === "arena" ? "Arena" : item.source === "highlight_vault" ? "Vault" : "Photo"}
                     </span>
                     {item.is_cover && (
                       <span className="text-xs font-semibold text-[#1a5c2a] bg-[#1a5c2a]/10 px-1.5 py-0.5 rounded-full">
@@ -548,7 +576,13 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
         </div>
       ) : (
         <div className="text-center py-6 text-sm text-gray-400 mb-4">
-          No media yet. Add a photo, Arena video, or YouTube link.
+          <p>No media yet. Add a photo, Arena video, or YouTube link.</p>
+          <p className="mt-1 text-xs">
+            No videos yet?{" "}
+            <a href="/arena" className="text-[#1a5c2a] underline">Post a training clip in The Arena</a>
+            {" "}or{" "}
+            <a href="/vault" className="text-[#1a5c2a] underline">save a highlight to your Vault</a>.
+          </p>
         </div>
       )}
 
@@ -620,9 +654,27 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
       {addMode === "arena" && (
         <div className="mt-3 border border-gray-200 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-700">Pick Arena Video</span>
+            <span className="text-xs font-semibold text-gray-700">Pick a Video</span>
             <button onClick={() => { setAddMode(null); setArenaCaption(""); }} className="text-gray-400 hover:text-gray-700"><X size={15} /></button>
           </div>
+
+          {/* Tabs */}
+          <div className="flex border border-gray-200 rounded-lg overflow-hidden text-xs font-medium">
+            {(["own", "tagged", "vault"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setArenaTab(tab)}
+                className={`flex-1 py-1.5 transition-colors ${
+                  arenaTab === tab
+                    ? "bg-[#1a5c2a] text-white"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {tab === "own" ? "My Arena" : tab === "tagged" ? "Tagged" : "Vault"}
+              </button>
+            ))}
+          </div>
+
           <input
             type="text"
             placeholder="Caption (optional)"
@@ -631,45 +683,60 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
             maxLength={200}
             className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
           />
+
           {arenaLoading ? (
             <div className="text-xs text-gray-400 text-center py-4">Loading videos…</div>
-          ) : arenaPosts.length === 0 ? (
-            <div className="text-xs text-gray-400 text-center py-4">
-              No Arena videos found for this player. Post videos in The Arena first.
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
-              {arenaPosts.map((p) => {
-                const alreadyAdded = items.some((i) => i.arena_post_id === p.id);
-                return (
-                  <button
-                    key={p.id}
-                    disabled={saving || alreadyAdded}
-                    onClick={() => addArena(p.id)}
-                    className={`aspect-square rounded-lg overflow-hidden relative border-2 transition-colors ${
-                      alreadyAdded
-                        ? "border-green-400 opacity-60 cursor-not-allowed"
-                        : "border-transparent hover:border-[#1a5c2a]"
-                    }`}
-                  >
-                    {p.thumbnail_url ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={p.thumbnail_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
-                        <Film size={18} />
-                      </div>
-                    )}
-                    {alreadyAdded && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <span className="text-white text-xs font-bold">✓</span>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          ) : (() => {
+            const posts = arenaTab === "own" ? arenaOwn : arenaTab === "tagged" ? arenaTagged : vaultPosts;
+            const isVault = arenaTab === "vault";
+            const emptyMsg = arenaTab === "own"
+              ? <>No Arena videos yet. <a href="/arena" className="text-[#1a5c2a] underline">Post a training clip</a> first.</>
+              : arenaTab === "tagged"
+              ? "No videos tagged to this player yet."
+              : <>No Vault highlights yet. <a href="/vault" className="text-[#1a5c2a] underline">Save a highlight</a> first.</>;
+
+            if (posts.length === 0) {
+              return (
+                <div className="text-xs text-gray-400 text-center py-4">{emptyMsg}</div>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
+                {posts.map((p) => {
+                  const alreadyAdded = isVault
+                    ? items.some((i) => i.source === "highlight_vault" && i.url === p.video_url)
+                    : items.some((i) => i.arena_post_id === p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      disabled={saving || alreadyAdded}
+                      onClick={() => isVault ? addVault(p.id) : addArena(p.id)}
+                      className={`aspect-square rounded-lg overflow-hidden relative border-2 transition-colors ${
+                        alreadyAdded
+                          ? "border-green-400 opacity-60 cursor-not-allowed"
+                          : "border-transparent hover:border-[#1a5c2a]"
+                      }`}
+                    >
+                      {p.thumbnail_url ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={p.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+                          <Film size={18} />
+                        </div>
+                      )}
+                      {alreadyAdded && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                          <span className="text-white text-xs font-bold">✓</span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 
