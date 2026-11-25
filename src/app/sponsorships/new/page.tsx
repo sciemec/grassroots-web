@@ -366,12 +366,9 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
   useEffect(() => {
     if (!hydrated || !token) return;
     setGuardianChildrenLoading(true);
-    fetch(`${BASE}/sponsorships/guardian-children`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.data) setGuardianChildren(j.data); })
-      .catch(() => {})
+    api.get("/sponsorships/guardian-children")
+      .then((r) => { if (Array.isArray(r.data?.data)) setGuardianChildren(r.data.data); })
+      .catch(() => { /* 500 or network error — guardian picker simply stays hidden */ })
       .finally(() => setGuardianChildrenLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, token]);
