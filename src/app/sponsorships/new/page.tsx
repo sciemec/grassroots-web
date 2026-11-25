@@ -90,7 +90,7 @@ function fmt(cents: number) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function NewSponsorshipWizard({ searchParams }: { searchParams?: { case?: string } }) {
+export default function NewSponsorshipWizard({ searchParams }: { searchParams?: { case?: string; new?: string } }) {
   const user       = useAuthStore((s) => s.user);
   const token      = useAuthStore((s) => s.token);
   const hydrated   = useAuthStore((s) => s._hasHydrated);
@@ -148,14 +148,16 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
 
   // ── Resume & autosave ─────────────────────────────────────────────────────
   const resumeId = searchParams?.case ?? null;
+  const forceNew  = searchParams?.new === "1";
   const [resumeLoading, setResumeLoading] = useState(!!resumeId);
   type SaveStatus = "idle" | "saving" | "saved" | "error";
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Existing-draft banner (shown on fresh /sponsorships/new when no ?case param)
-  const [existingDraft, setExistingDraft] = useState<{ id: string; title: string } | null>(null);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
+  // Manual "Save draft" button state
+  type DraftSaveStatus = "idle" | "saving" | "saved" | "error";
+  const [draftSaveStatus, setDraftSaveStatus] = useState<DraftSaveStatus>("idle");
+  const [draftSaveError,  setDraftSaveError]  = useState<string | null>(null);
 
   // Step 5 — Packages & tiers
   const [packages,     setPackages]     = useState<SponsorPackage[]>([]);
@@ -263,14 +265,15 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, token, user]);
 
-  // ── Latest-draft banner (fresh /sponsorships/new, no ?case param) ─────────
+  // ── Auto-resume: redirect to ?case={id} if the user already has a draft ───
+  // Skipped when ?case= is already present (resumeId) or ?new=1 is set (forceNew).
   useEffect(() => {
-    if (!hydrated || !token || resumeId) return;
+    if (!hydrated || !token || resumeId || forceNew) return;
     fetch(`${BASE}/sponsorships/latest-draft`, {
       headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.data) setExistingDraft({ id: j.data.id, title: j.data.title }); })
+      .then((j) => { if (j?.data) router.replace(`/sponsorships/new?case=${j.data.id}`); })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, token]);
@@ -590,6 +593,7 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
       // Create the draft
       const id = await createDraft();
       if (!id) return;
+      router.replace(`/sponsorships/new?case=${id}`);
       setStep(2);
       return;
     }
@@ -673,6 +677,102 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
 
   const handleBack = () => setStep((s) => Math.max(1, s - 1));
 
+  // ── "Save draft" ──────────────────────────────────────────────────────────
+
+  const handleSaveDraft = async () => {
+    setDraftSaveStatus("saving");
+    setDraftSaveError(null);
+    setTopError(null);
+
+    let id = draftId;
+
+    // ── Step 1: no draft yet — create it first ───────────────────────────────
+    if (!id) {
+      if (!title.trim() || title.trim().length <= 2 || !sport || !category) {
+        setDraftSaveStatus("error");
+        setDraftSaveError("Please fill in Title, Sport and Category before saving.");
+        return;
+      }
+      id = await createDraft();
+      if (!id) {
+        setDraftSaveStatus("error");
+        setDraftSaveError("Could not save draft — check the fields above and try again.");
+        setTopError(null);
+        return;
+      }
+      router.replace(`/sponsorships/new?case=${id}`);
+      await fetch(`${BASE}/sponsorships/${id}`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+        body:    JSON.stringify({ wizard_step: 1 }),
+      }).catch(() => {});
+      setDraftSaveStatus("saved");
+      return;
+    }
+
+    // ── Steps 2–6: PATCH all fields gathered so far + wizard_step ────────────
+    const body: Record<string, unknown> = {
+      wizard_step:      step,
+      title:            title.trim(),
+      sport:            sport.toLowerCase(),
+      category,
+      beneficiary_type: beneficiaryType,
+    };
+    if (step >= 2) Object.assign(body, {
+      age_group:   ageGroup  || null,
+      province:    province.trim()   || null,
+      story_short: storyShort.trim() || null,
+    });
+    if (isMinor) Object.assign(body, {
+      is_minor_beneficiary:  true,
+      guardian_name:         guardianName.trim()         || null,
+      guardian_relationship: guardianRelationship.trim() || null,
+      guardian_whatsapp:     guardianWhatsapp.trim()     || null,
+    });
+    if (step >= 3) Object.assign(body, {
+      story:           story.trim(),
+      suggested_payee: supportMethod || null,
+      deadline_at:     deadline      || null,
+    });
+
+    try {
+      const res = await fetch(`${BASE}/sponsorships/${id}`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+        body:    JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({})) as { message?: string };
+        setDraftSaveStatus("error");
+        setDraftSaveError(j.message ?? "Save failed. Please try again.");
+        return;
+      }
+    } catch {
+      setDraftSaveStatus("error");
+      setDraftSaveError("Network error — check your connection and try again.");
+      return;
+    }
+
+    if (step >= 3) await postNeedItems(id);
+
+    if (step >= 3 && supportMethod) {
+      try {
+        await api.put(`/sponsorships/${id}/payee-details`, {
+          method:               supportMethod,
+          name:                 payeeName.trim()         || null,
+          town:                 payeeTown.trim()         || null,
+          contact_name:         payeeContact.trim()      || null,
+          contact_phone:        payeePhone.trim()        || null,
+          payment_method:       payeePaymentMethod       || null,
+          payment_instructions: payeeInstructions.trim() || null,
+          quote_file_url:       payeeQuoteUrl            || null,
+        });
+      } catch { /* non-blocking */ }
+    }
+
+    setDraftSaveStatus("saved");
+  };
+
   // ── Computed ──────────────────────────────────────────────────────────────
 
   const needsTotal = needItems.reduce((s, n) => s + n.qty * n.unit_cost_cents, 0);
@@ -696,25 +796,12 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          {/* Existing-draft banner — shown only on fresh wizard (no ?case param, no active draft) */}
-          {existingDraft && !bannerDismissed && !resumeId && !draftId && step === 1 && (
-            <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-              <p className="text-sm font-semibold text-amber-900 mb-0.5">You have an unfinished case</p>
-              <p className="text-xs text-amber-700 mb-3 truncate">&ldquo;{existingDraft.title}&rdquo;</p>
-              <div className="flex gap-2">
-                <a
-                  href={`/sponsorships/new?case=${existingDraft.id}`}
-                  className="flex-1 text-center text-xs font-semibold text-white bg-[#1a5c2a] rounded-lg py-2 hover:bg-[#145222]"
-                >
-                  Continue editing
-                </a>
-                <button
-                  onClick={() => setBannerDismissed(true)}
-                  className="flex-1 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg py-2 hover:bg-gray-50"
-                >
-                  Start a new one
-                </button>
-              </div>
+          {/* Escape hatch — shown only when resumed via ?case={id} */}
+          {resumeId && (
+            <div className="mb-4 text-right">
+              <a href="/sponsorships/new?new=1" className="text-xs text-gray-400 hover:text-gray-600 underline">
+                Start a new case instead
+              </a>
             </div>
           )}
 
@@ -1322,22 +1409,49 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
           )}
 
           {/* ── Navigation ─────────────────────────────────────────────────── */}
-          <div className="flex gap-3 mt-6">
-            {step > 1 && (
-              <button onClick={handleBack}
-                className="flex-1 border border-gray-300 text-gray-700 text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
-                Back
-              </button>
+          <div className="mt-6 space-y-3">
+            {/* Save-draft feedback */}
+            {draftSaveStatus === "saved" && (
+              <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm text-center">
+                Saved ✓ — you can close this page and continue later
+              </div>
+            )}
+            {draftSaveStatus === "error" && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm text-center">
+                {draftSaveError ?? "Save failed. Please try again."}
+              </div>
             )}
 
-            <button
-              onClick={handleContinue}
-              disabled={!canContinue() || creating || saving}
-              className="flex-1 bg-[#1a5c2a] text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-[#145222] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {(creating || saving) && <Loader2 size={14} className="animate-spin" />}
-              {step === TOTAL_STEPS ? "Save & Go to My Case" : step === 1 ? "Create Draft & Continue" : "Save & Continue"}
-            </button>
+            <div className="flex gap-3">
+              {step > 1 && (
+                <button onClick={handleBack}
+                  className="flex-1 border border-gray-300 text-gray-700 text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+                  Back
+                </button>
+              )}
+
+              {/* Save draft — available on every step except the final review */}
+              {step < TOTAL_STEPS && (
+                <button
+                  onClick={handleSaveDraft}
+                  disabled={draftSaveStatus === "saving" || creating || saving}
+                  className="border border-[#1a5c2a] text-[#1a5c2a] text-sm font-medium py-2.5 px-4 rounded-xl hover:bg-[#1a5c2a]/5 transition-colors disabled:opacity-50 flex items-center justify-center gap-1 whitespace-nowrap"
+                >
+                  {draftSaveStatus === "saving"
+                    ? <><Loader2 size={13} className="animate-spin" /> Saving…</>
+                    : "Save draft"}
+                </button>
+              )}
+
+              <button
+                onClick={handleContinue}
+                disabled={!canContinue() || creating || saving}
+                className="flex-1 bg-[#1a5c2a] text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-[#145222] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {(creating || saving) && <Loader2 size={14} className="animate-spin" />}
+                {step === TOTAL_STEPS ? "Save & Go to My Case" : step === 1 ? "Create Draft & Continue" : "Save & Continue"}
+              </button>
+            </div>
           </div>
         </div>
 
