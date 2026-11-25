@@ -77,6 +77,12 @@ export default function NewSponsorshipPage() {
   const [targetUsd, setTargetUsd] = useState("");
   const [deadline, setDeadline] = useState("");
 
+  // Need items — collected in wizard, POSTed after case creation
+  const [needItems,     setNeedItems]     = useState<{ item: string; qty: number; unit_cost_cents: number }[]>([]);
+  const [newNeedItem,   setNewNeedItem]   = useState("");
+  const [newNeedQty,    setNewNeedQty]    = useState("1");
+  const [newNeedUsd,    setNewNeedUsd]    = useState("");
+
   // Guardian step (shown when age_group is under_13 or 13_17)
   const [guardianName, setGuardianName] = useState("");
   const [guardianRelationship, setGuardianRelationship] = useState("");
@@ -197,6 +203,19 @@ export default function NewSponsorshipPage() {
       }
 
       const caseId = (json.data ?? json).id;
+
+      // POST need items sequentially (non-blocking — wizard continues on failure)
+      if (needItems.length > 0) {
+        for (const ni of needItems) {
+          try {
+            await fetch(`${base}/sponsorships/${caseId}/needs`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+              body: JSON.stringify(ni),
+            });
+          } catch { /* silent — owner can add from case page */ }
+        }
+      }
       router.push(`/account/cases/${caseId}?submitted=1`);
     } catch {
       setTopError("Network error. Please try again.");
@@ -461,6 +480,106 @@ export default function NewSponsorshipPage() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
                 />
                 <FieldError msg={fieldErr("suggested_payee")} />
+              </div>
+
+              {/* Optional: itemised needs list */}
+              <div className="border-t border-gray-100 pt-4 space-y-3">
+                <div>
+                  <p className="text-xs font-semibold text-gray-700">Itemised needs <span className="text-gray-400 font-normal">(optional)</span></p>
+                  <p className="text-xs text-gray-400 mt-0.5">Break your target into specific items — total auto-sets the amount. You can add more from your case page later.</p>
+                </div>
+                {needItems.length > 0 && (
+                  <div className="rounded-xl border border-gray-200 overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left px-3 py-2 font-medium text-gray-500">Item</th>
+                          <th className="text-right px-2 py-2 font-medium text-gray-500">Qty</th>
+                          <th className="text-right px-2 py-2 font-medium text-gray-500">Total</th>
+                          <th className="px-2 py-2" />
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {needItems.map((n, idx) => (
+                          <tr key={idx}>
+                            <td className="px-3 py-2 text-gray-800">{n.item}</td>
+                            <td className="px-2 py-2 text-right text-gray-500">{n.qty}</td>
+                            <td className="px-2 py-2 text-right font-medium text-gray-900">
+                              ${((n.qty * n.unit_cost_cents) / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-2 py-2">
+                              <button
+                                type="button"
+                                onClick={() => setNeedItems((prev) => prev.filter((_, i) => i !== idx))}
+                                className="text-gray-300 hover:text-red-500"
+                                aria-label="Remove"
+                              >
+                                ×
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-gray-50">
+                        <tr>
+                          <td colSpan={2} className="px-3 py-2 text-xs font-semibold text-gray-500">Total</td>
+                          <td className="px-2 py-2 text-right font-bold text-[#1a5c2a] text-xs">
+                            ${(needItems.reduce((s, n) => s + n.qty * n.unit_cost_cents, 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </td>
+                          <td />
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newNeedItem}
+                    onChange={(e) => setNewNeedItem(e.target.value)}
+                    placeholder="Item (e.g. Football boots)"
+                    maxLength={200}
+                    className="flex-1 border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                  />
+                  <input
+                    type="number"
+                    value={newNeedQty}
+                    onChange={(e) => setNewNeedQty(e.target.value)}
+                    min={1}
+                    max={9999}
+                    placeholder="Qty"
+                    className="w-14 border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 text-center"
+                  />
+                  <input
+                    type="number"
+                    value={newNeedUsd}
+                    onChange={(e) => setNewNeedUsd(e.target.value)}
+                    min={0.01}
+                    step={0.01}
+                    placeholder="Unit $"
+                    className="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const unitCents = Math.round(parseFloat(newNeedUsd || "0") * 100);
+                      if (!newNeedItem.trim() || unitCents <= 0) return;
+                      setNeedItems((prev) => [
+                        ...prev,
+                        { item: newNeedItem.trim(), qty: parseInt(newNeedQty, 10) || 1, unit_cost_cents: unitCents },
+                      ]);
+                      setNewNeedItem(""); setNewNeedQty("1"); setNewNeedUsd("");
+                      // Auto-sync the target amount from items
+                      const newTotal = [...needItems, { qty: parseInt(newNeedQty, 10) || 1, unit_cost_cents: unitCents }]
+                        .reduce((s, n) => s + n.qty * n.unit_cost_cents, 0);
+                      setTargetUsd((newTotal / 100).toFixed(0));
+                    }}
+                    disabled={!newNeedItem.trim() || !newNeedUsd}
+                    className="shrink-0 text-xs font-semibold text-white bg-[#1a5c2a] hover:bg-[#154a22] disabled:opacity-50 rounded-lg px-3 py-1.5 transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
             </div>
           )}

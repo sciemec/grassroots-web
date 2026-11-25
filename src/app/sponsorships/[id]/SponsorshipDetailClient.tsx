@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { PublicNavbar } from "@/components/layout/public-navbar";
+import ProgressDisplay from "@/components/sponsorship/ProgressDisplay";
 
 interface MediaItem {
   id: string;
@@ -56,6 +57,15 @@ interface SponsorshipCase {
   vouched_by?: { org_name?: string | null; confirmed_at?: string | null } | null;
   financial_literacy?: { owner?: boolean; player?: boolean; guardian?: boolean } | null;
   is_minor?: boolean;
+  progress?: {
+    target_cents: number;
+    verified_cents: number;
+    unverified_cents: number;
+    verified_pct: number;
+    unverified_pct: number;
+    disclaimer: string;
+    needs: { id: string; item: string; qty: number; unit_cost_cents: number; total_cents: number; covered: boolean }[];
+  } | null;
 }
 
 interface Supporter {
@@ -1168,6 +1178,11 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Phase 5: Progress bar + needs checklist */}
+          {c.progress && (
+            <ProgressDisplay progress={c.progress} />
           )}
 
           {/* Supporters block */}

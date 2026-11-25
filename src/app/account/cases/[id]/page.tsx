@@ -11,6 +11,9 @@ import VouchPanel from "@/components/sponsorship/VouchPanel";
 import StrongCaseTip from "@/components/sponsorship/StrongCaseTip";
 import EligibilityChecklist from "@/components/sponsorship/EligibilityChecklist";
 import MediaManager from "@/components/sponsorship/MediaManager";
+import NeedsManager from "@/components/sponsorship/NeedsManager";
+import ContributionReporter from "@/components/sponsorship/ContributionReporter";
+import ProofUpdateForm from "@/components/sponsorship/ProofUpdateForm";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -756,6 +759,9 @@ GrassRoots Sports — grassrootssports.live` : "";
           </div>
         </div>
 
+        {/* Needs list — build itemised budget; auto-syncs target */}
+        <NeedsManager caseId={caseData.id} token={token ?? ""} isLive={caseData.status === "live"} />
+
         {/* Progress checklist */}
         <ProgressChecklist caseData={caseData} />
 
@@ -1144,6 +1150,24 @@ GrassRoots Sports — grassrootssports.live` : "";
               </button>
             </div>
           </div>
+        )}
+
+        {/* Phase 5: Contribution reporter + proof updates — live cases only */}
+        {caseData.status === "live" && token && (
+          <>
+            <ContributionReporter
+              caseId={caseData.id}
+              token={token}
+              needItems={[]}
+              onContributionAdded={() => {}}
+            />
+            <ProofUpdateForm
+              caseId={caseData.id}
+              token={token}
+              needItems={[]}
+              onProofAdded={() => {}}
+            />
+          </>
         )}
 
         {/* Introduction settings */}
