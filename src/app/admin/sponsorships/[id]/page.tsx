@@ -86,6 +86,18 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
   const [showPrivateDetail,setShowPrivateDetail] = useState(false);
   const [resolveNote,      setResolveNote]       = useState("");
 
+  // Payee details
+  interface PayeeDetails {
+    method: string; name: string | null; town: string | null;
+    contact_name: string | null; contact_phone: string | null;
+    payment_method: string | null; payment_instructions: string | null;
+    quote_file_url: string | null; verified_by_admin: boolean; verified_at: string | null;
+  }
+  const [payee,          setPayee]          = useState<PayeeDetails | null>(null);
+  const [payeeLoaded,    setPayeeLoaded]    = useState(false);
+  const [payeeVerifying, setPayeeVerifying] = useState(false);
+  const [payeeMsg,       setPayeeMsg]       = useState<string | null>(null);
+
   useEffect(() => {
     if (!token) return;
     fetch(`${base}/sponsorships/${id}`, {
@@ -96,6 +108,42 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
       .catch(() => setError("Could not load case."))
       .finally(() => setLoading(false));
   }, [id, token, base]);
+
+  // Load payee details once token is ready
+  useEffect(() => {
+    if (!token || !id || payeeLoaded) return;
+    setPayeeLoaded(true);
+    fetch(`${base}/sponsorships/${id}/payee-details`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.data) setPayee(j.data); })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, id, payeeLoaded]);
+
+  const verifyPayee = async () => {
+    if (!token || payeeVerifying) return;
+    setPayeeVerifying(true);
+    setPayeeMsg(null);
+    try {
+      const r = await fetch(`${base}/admin/sponsorships/${id}/payee-details/verify`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.data) {
+        setPayee(j.data);
+        setPayeeMsg("Payee details verified.");
+      } else {
+        setPayeeMsg((j as { message?: string }).message ?? "Could not verify.");
+      }
+    } catch {
+      setPayeeMsg("Network error.");
+    } finally {
+      setPayeeVerifying(false);
+    }
+  };
 
   // Load report once token is ready
   useEffect(() => {
@@ -623,6 +671,56 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
           <span className="font-semibold text-gray-500 text-xs uppercase tracking-wide block mb-1">Suggested payee / support</span>
           {c.suggested_payee}
         </div>
+      )}
+
+      {/* Payee details — submitted by owner */}
+      {payee ? (
+        <div className="border border-gray-200 rounded-xl p-4 mb-5 space-y-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-semibold text-sm text-gray-800">Payee Details</span>
+            {payee.verified_by_admin ? (
+              <span className="text-xs font-semibold text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">✓ Verified</span>
+            ) : (
+              <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">Pending verification</span>
+            )}
+          </div>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            <dt className="text-gray-500">Method</dt><dd className="text-gray-900 font-medium">{payee.method}</dd>
+            {payee.name && <><dt className="text-gray-500">Name</dt><dd className="text-gray-900">{payee.name}</dd></>}
+            {payee.town && <><dt className="text-gray-500">Town</dt><dd className="text-gray-900">{payee.town}</dd></>}
+            {payee.contact_name && <><dt className="text-gray-500">Contact</dt><dd className="text-gray-900">{payee.contact_name}</dd></>}
+            {payee.contact_phone && <><dt className="text-gray-500">Phone</dt><dd className="text-gray-900">{payee.contact_phone}</dd></>}
+            {payee.payment_method && <><dt className="text-gray-500">Payment</dt><dd className="text-gray-900">{payee.payment_method}</dd></>}
+            {payee.payment_instructions && (
+              <>
+                <dt className="text-gray-500 col-span-2">Instructions</dt>
+                <dd className="text-gray-900 col-span-2 bg-gray-50 rounded px-2 py-1 font-mono text-xs">{payee.payment_instructions}</dd>
+              </>
+            )}
+          </dl>
+          {payee.quote_file_url && (
+            <a href={payee.quote_file_url} target="_blank" rel="noopener noreferrer"
+              className="inline-block text-xs text-[#1a5c2a] underline mt-1">View quote / invoice</a>
+          )}
+          {!payee.verified_by_admin && (
+            <div className="pt-2">
+              <button onClick={verifyPayee} disabled={payeeVerifying}
+                className="text-xs font-semibold text-white bg-[#1a5c2a] hover:bg-[#145222] disabled:opacity-50 rounded-lg px-4 py-1.5 transition-colors">
+                {payeeVerifying ? "Verifying…" : "Verify payee details"}
+              </button>
+              {payeeMsg && <p className="text-xs text-gray-500 mt-1">{payeeMsg}</p>}
+            </div>
+          )}
+          {payee.verified_by_admin && payeeMsg && (
+            <p className="text-xs text-green-600 mt-1">{payeeMsg}</p>
+          )}
+        </div>
+      ) : (
+        c.suggested_payee && (
+          <div className="border border-dashed border-gray-200 rounded-xl px-4 py-3 text-xs text-gray-400 mb-5">
+            Payee details not yet submitted by owner.
+          </div>
+        )
       )}
     </div>
   );

@@ -7,7 +7,8 @@ import { PublicNavbar } from "@/components/layout/public-navbar";
 import StrongCaseTip from "@/components/sponsorship/StrongCaseTip";
 import MediaManager from "@/components/sponsorship/MediaManager";
 import EligibilityChecklist from "@/components/sponsorship/EligibilityChecklist";
-import { CheckCircle2, Loader2, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Loader2, Plus, Trash2, Upload } from "lucide-react";
+import api from "@/lib/api";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -47,7 +48,7 @@ const MINOR_GROUPS = new Set(["under_13", "13_17"]);
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface NeedRow { item: string; qty: number; unit_cost_cents: number }
+interface NeedRow { id?: string; item: string; qty: number; unit_cost_cents: number; needs_pricing?: boolean }
 
 interface SponsorPackage {
   id: string; name: string; suggested_value_cents: number | null; description: string | null;
@@ -130,6 +131,18 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
   const [newNeedQty,    setNewNeedQty]    = useState("1");
   const [newNeedUsd,    setNewNeedUsd]    = useState("");
 
+  // Step 3 — Payee details
+  const [payeeMethod,       setPayeeMethod]       = useState("");
+  const [payeeName,         setPayeeName]         = useState("");
+  const [payeeTown,         setPayeeTown]         = useState("");
+  const [payeeContact,      setPayeeContact]      = useState("");
+  const [payeePhone,        setPayeePhone]        = useState("");
+  const [payeePaymentMethod,setPayeePaymentMethod]= useState("");
+  const [payeeInstructions, setPayeeInstructions] = useState("");
+  const [payeeQuoteUrl,     setPayeeQuoteUrl]     = useState("");
+  const [payeeUploading,    setPayeeUploading]    = useState(false);
+  const [payeeSaving,       setPayeeSaving]       = useState(false);
+
   // Step 4 — Media
   const [hasCover, setHasCover] = useState(false);
 
@@ -176,12 +189,9 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
   useEffect(() => {
     if (!hydrated || !token || !user || !resumeId) return;
     setResumeLoading(true);
-    fetch(`${BASE}/sponsorships/${resumeId}/detail`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        const d = j?.data;
+    api.get(`/sponsorships/${resumeId}/detail`)
+      .then((r) => {
+        const d = r.data?.data;
         if (!d || d.status !== "draft" || d.owner_user_id !== user.id) return;
         setDraftId(d.id);
         setTitle(d.title ?? "");
@@ -198,6 +208,32 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
         setGuardianRelationship(d.guardian_relationship ?? "");
         setGuardianWhatsapp(d.guardian_whatsapp ?? "");
         setStep(Math.min(d.wizard_step ?? 1, TOTAL_STEPS));
+
+        // Fetch need items (public endpoint)
+        api.get(`/sponsorships/${resumeId}/needs`)
+          .then((nr) => {
+            const rows = nr.data?.data ?? [];
+            if (rows.length > 0) setNeedItems(rows.map((row: { id: string; item: string; qty: number; unit_cost_cents: number }) => ({
+              id: row.id, item: row.item, qty: row.qty, unit_cost_cents: row.unit_cost_cents,
+            })));
+          })
+          .catch(() => {});
+
+        // Fetch payee details (owner only)
+        api.get(`/sponsorships/${resumeId}/payee-details`)
+          .then((pr) => {
+            const p = pr.data?.data;
+            if (!p) return;
+            setPayeeMethod(p.method ?? "");
+            setPayeeName(p.name ?? "");
+            setPayeeTown(p.town ?? "");
+            setPayeeContact(p.contact_name ?? "");
+            setPayeePhone(p.contact_phone ?? "");
+            setPayeePaymentMethod(p.payment_method ?? "");
+            setPayeeInstructions(p.payment_instructions ?? "");
+            setPayeeQuoteUrl(p.quote_file_url ?? "");
+          })
+          .catch(() => {});
       })
       .catch(() => {
         // Offline fallback — restore from localStorage
@@ -294,7 +330,7 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
     }, 2000);
     return () => { if (autoSaveRef.current) clearTimeout(autoSaveRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, storyShort, story, deadline, province, supportMethod,
+  }, [title, storyShort, story, deadline, province, ageGroup, supportMethod,
       guardianName, guardianRelationship, guardianWhatsapp]);
 
   // ── Retry autosave when network comes back ────────────────────────────────
@@ -377,7 +413,14 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
       if (isMinor && (!guardianName.trim() || !guardianWhatsapp.trim())) return false;
       return true;
     }
-    if (step === 3) return story.trim().length > 20 && !!supportMethod;
+    if (step === 3) {
+      if (story.trim().length <= 20 || !supportMethod) return false;
+      // No need rows with zero cost
+      if (needItems.some((n) => n.unit_cost_cents <= 0)) return false;
+      // pay_supplier requires a name
+      if (supportMethod === "pay_supplier" && !payeeName.trim()) return false;
+      return true;
+    }
     if (step === 4) return hasCover;
     return true; // steps 5 and 6 are optional / review
   };
@@ -450,13 +493,19 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
   // ── POST need items ───────────────────────────────────────────────────────
 
   const postNeedItems = async (id: string) => {
-    for (const ni of needItems) {
+    // Only POST rows that haven't been saved yet (no id from API)
+    const newRows = needItems.filter((ni) => !ni.id);
+    for (const ni of newRows) {
       try {
-        await fetch(`${BASE}/sponsorships/${id}/needs`, {
-          method: "POST",
-          headers: authHeaders,
-          body: JSON.stringify(ni),
+        const r = await api.post(`/sponsorships/${id}/needs`, {
+          item: ni.item, qty: ni.qty, unit_cost_cents: ni.unit_cost_cents,
         });
+        // Track the returned id so we don't re-post on the next save
+        if (r.data?.data?.id) {
+          setNeedItems((prev) => prev.map((row) =>
+            row.item === ni.item && !row.id ? { ...row, id: r.data.data.id } : row
+          ));
+        }
       } catch { /* non-blocking — owner can add from case page */ }
     }
   };
@@ -572,6 +621,23 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
       const ok = await patchDraft(id, body);
       if (!ok) return;
       await postNeedItems(id);
+      // Save payee details if any were filled in
+      if (supportMethod) {
+        setPayeeSaving(true);
+        try {
+          await api.put(`/sponsorships/${id}/payee-details`, {
+            method:               supportMethod,
+            name:                 payeeName.trim() || null,
+            town:                 payeeTown.trim() || null,
+            contact_name:         payeeContact.trim() || null,
+            contact_phone:        payeePhone.trim() || null,
+            payment_method:       payeePaymentMethod || null,
+            payment_instructions: payeeInstructions.trim() || null,
+            quote_file_url:       payeeQuoteUrl || null,
+          });
+        } catch { /* non-blocking — admin will request during review */ }
+        finally { setPayeeSaving(false); }
+      }
     }
 
     if (step === 4) {
@@ -883,12 +949,30 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {needItems.map((n, idx) => (
-                          <tr key={idx}>
+                          <tr key={idx} className={n.unit_cost_cents <= 0 ? "bg-amber-50" : ""}>
                             <td className="px-3 py-2 text-gray-800">{n.item}</td>
                             <td className="px-2 py-2 text-right text-gray-500">{n.qty}</td>
-                            <td className="px-2 py-2 text-right font-medium text-gray-900">{fmt(n.qty * n.unit_cost_cents)}</td>
+                            <td className="px-2 py-2 text-right font-medium">
+                              {n.unit_cost_cents > 0 ? (
+                                <span className="text-gray-900">{fmt(n.qty * n.unit_cost_cents)}</span>
+                              ) : (
+                                <input
+                                  type="number" min={0.01} step={0.01} placeholder="$ unit"
+                                  className="w-20 border border-amber-400 bg-amber-50 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                  onBlur={(e) => {
+                                    const uc = Math.round(parseFloat(e.target.value || "0") * 100);
+                                    if (uc > 0) setNeedItems((p) => p.map((r, i) => i === idx ? { ...r, unit_cost_cents: uc, needs_pricing: false } : r));
+                                  }}
+                                />
+                              )}
+                            </td>
                             <td className="px-2 py-2">
-                              <button type="button" onClick={() => setNeedItems((p) => p.filter((_, i) => i !== idx))} className="text-gray-300 hover:text-red-500">
+                              <button type="button" onClick={async () => {
+                                if (n.id && draftId) {
+                                  try { await api.delete(`/sponsorships/${draftId}/needs/${n.id}`); } catch { /* silent */ }
+                                }
+                                setNeedItems((p) => p.filter((_, i) => i !== idx));
+                              }} className="text-gray-300 hover:text-red-500">
                                 <Trash2 size={12} />
                               </button>
                             </td>
@@ -907,25 +991,43 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
                 )}
 
                 {/* Add row */}
+                <p className="text-xs text-gray-400">Add one item per row.</p>
                 <div className="flex gap-2">
-                  <input type="text" value={newNeedItem} onChange={(e) => setNewNeedItem(e.target.value)} placeholder="Item (e.g. Football boots)" maxLength={200}
+                  <input type="text" value={newNeedItem} onChange={(e) => setNewNeedItem(e.target.value)} placeholder="e.g. Football boots" maxLength={200}
                     className="flex-1 border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
                   <input type="number" value={newNeedQty} onChange={(e) => setNewNeedQty(e.target.value)} min={1} max={9999} placeholder="Qty"
                     className="w-14 border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 text-center" />
                   <input type="number" value={newNeedUsd} onChange={(e) => setNewNeedUsd(e.target.value)} min={0.01} step={0.01} placeholder="Unit $"
-                    className="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                    className={`w-20 border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 ${!newNeedUsd && newNeedItem.trim() ? "border-amber-400 bg-amber-50" : "border-gray-300"}`} />
                   <button type="button"
                     onClick={() => {
                       const uc = Math.round(parseFloat(newNeedUsd || "0") * 100);
                       if (!newNeedItem.trim() || uc <= 0) return;
-                      setNeedItems((p) => [...p, { item: newNeedItem.trim(), qty: parseInt(newNeedQty, 10) || 1, unit_cost_cents: uc }]);
+                      // Comma-split: if item contains a comma, offer to split
+                      const parts = newNeedItem.includes(",")
+                        ? newNeedItem.split(",").map((s) => s.trim()).filter(Boolean)
+                        : null;
+                      if (parts && parts.length > 1) {
+                        // Add each as a separate unpriced row (qty 1, cost 0) so user prices each
+                        setNeedItems((p) => [...p, ...parts.map((part) => ({ item: part, qty: 1, unit_cost_cents: 0, needs_pricing: true }))]);
+                      } else {
+                        setNeedItems((p) => [...p, { item: newNeedItem.trim(), qty: parseInt(newNeedQty, 10) || 1, unit_cost_cents: uc }]);
+                      }
                       setNewNeedItem(""); setNewNeedQty("1"); setNewNeedUsd("");
                     }}
-                    disabled={!newNeedItem.trim() || !newNeedUsd}
+                    disabled={!newNeedItem.trim() || (!newNeedUsd && !newNeedItem.includes(","))}
                     className="shrink-0 flex items-center gap-1 text-xs font-semibold text-white bg-[#1a5c2a] hover:bg-[#154a22] disabled:opacity-50 rounded-lg px-3 py-1.5 transition-colors">
-                    <Plus size={12} /> Add
+                    <Plus size={12} /> {newNeedItem.includes(",") ? "Split & add" : "Add"}
                   </button>
                 </div>
+                {newNeedItem.includes(",") && (
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                    Comma detected — clicking &ldquo;Split &amp; add&rdquo; will create one row per item. You&rsquo;ll need to price each row before continuing.
+                  </p>
+                )}
+                {needItems.some((n) => n.unit_cost_cents <= 0) && (
+                  <p className="text-xs text-amber-700">Some rows need a price before you can continue.</p>
+                )}
               </div>
 
               {/* Deadline */}
@@ -951,6 +1053,103 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
                   <strong>GRS never handles money.</strong> Sponsors give items or pay suppliers and institutions directly. Personal bank accounts cannot be used.
                 </SectionNote>
               </div>
+
+              {/* Payee details — contextual fields per method */}
+              {supportMethod === "items_direct" && (
+                <div className="space-y-3 border border-gray-100 rounded-xl p-4 bg-gray-50">
+                  <p className="text-xs font-semibold text-gray-700">Drop-off details <span className="text-gray-400 font-normal">(optional)</span></p>
+                  {MINOR_GROUPS.has(ageGroup) && (
+                    <SectionNote>For minor athletes, do not share a home address. Use a school or community centre.</SectionNote>
+                  )}
+                  <input type="text" value={payeeName} onChange={(e) => setPayeeName(e.target.value)} placeholder="Drop-off location name (e.g. Harare Academy)"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                  <input type="text" value={payeeTown} onChange={(e) => setPayeeTown(e.target.value)} placeholder="Town / suburb"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                  <input type="text" value={payeeContact} onChange={(e) => setPayeeContact(e.target.value)} placeholder="Contact person name"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                  <input type="text" value={payeePhone} onChange={(e) => setPayeePhone(e.target.value)} placeholder="Contact phone / WhatsApp"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                </div>
+              )}
+
+              {supportMethod === "pay_supplier" && (
+                <div className="space-y-3 border border-gray-100 rounded-xl p-4 bg-gray-50">
+                  <p className="text-xs font-semibold text-gray-700">Supplier details</p>
+                  <div>
+                    <input type="text" value={payeeName} onChange={(e) => setPayeeName(e.target.value)} placeholder="Shop / supplier name *"
+                      className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 ${!payeeName.trim() ? "border-amber-400" : "border-gray-300"}`} />
+                    {!payeeName.trim() && <p className="text-xs text-amber-700 mt-0.5">Required for pay_supplier</p>}
+                  </div>
+                  <input type="text" value={payeeTown} onChange={(e) => setPayeeTown(e.target.value)} placeholder="Town"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">Payment method</label>
+                    <select value={payeePaymentMethod} onChange={(e) => setPayeePaymentMethod(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30">
+                      <option value="">Select…</option>
+                      <option value="ecocash">EcoCash</option>
+                      <option value="bank">Bank transfer</option>
+                      <option value="counter">Pay at counter</option>
+                    </select>
+                  </div>
+                  <textarea value={payeeInstructions} onChange={(e) => setPayeeInstructions(e.target.value)} rows={3}
+                    placeholder="Payment instructions (account numbers, reference, etc.) — no personal accounts"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 resize-none" />
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">
+                      Quote / invoice <span className="text-gray-400 font-normal">(required — upload before submitting)</span>
+                    </label>
+                    {payeeQuoteUrl ? (
+                      <div className="flex items-center gap-2">
+                        <a href={payeeQuoteUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#1a5c2a] underline truncate max-w-xs">View uploaded quote</a>
+                        <button type="button" onClick={() => setPayeeQuoteUrl("")} className="text-xs text-red-500 hover:underline">Remove</button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="file" accept=".jpg,.jpeg,.png,.pdf" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file || !draftId) return;
+                          setPayeeUploading(true);
+                          try {
+                            const form = new FormData();
+                            form.append("file", file);
+                            const r = await api.post(`/sponsorships/${draftId}/payee-details/upload-quote`, form, {
+                              headers: { "Content-Type": "multipart/form-data" },
+                            });
+                            if (r.data?.url) setPayeeQuoteUrl(r.data.url);
+                          } catch { setTopError("Quote upload failed. Please try again."); }
+                          finally { setPayeeUploading(false); }
+                        }} />
+                        <span className={`flex items-center gap-1.5 text-xs font-medium border rounded-lg px-3 py-1.5 transition-colors ${payeeUploading ? "text-gray-400 border-gray-200" : "text-[#1a5c2a] border-[#1a5c2a] hover:bg-[#f0fdf4]"}`}>
+                          {payeeUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                          {payeeUploading ? "Uploading…" : "Upload quote / invoice"}
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {supportMethod === "pay_institution" && (
+                <div className="space-y-3 border border-gray-100 rounded-xl p-4 bg-gray-50">
+                  <p className="text-xs font-semibold text-gray-700">Institution details</p>
+                  <input type="text" value={payeeName} onChange={(e) => setPayeeName(e.target.value)} placeholder="Institution name (e.g. Harare Academy FC)"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                  <input type="text" value={payeeContact} onChange={(e) => setPayeeContact(e.target.value)} placeholder="Finance contact name"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                  <input type="text" value={payeePhone} onChange={(e) => setPayeePhone(e.target.value)} placeholder="Contact phone"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+                  <textarea value={payeeInstructions} onChange={(e) => setPayeeInstructions(e.target.value)} rows={3}
+                    placeholder="Payment details (bank name, account number, branch) — no personal accounts"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 resize-none" />
+                </div>
+              )}
+
+              {payeeSaving && (
+                <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                  <Loader2 size={11} className="animate-spin" /> Saving payment details…
+                </div>
+              )}
             </div>
           )}
 
