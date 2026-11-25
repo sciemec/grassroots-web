@@ -16,9 +16,10 @@ const BASE_EMAIL = process.env.TEST_EMAIL ?? "player@grassrootssports.live";
 async function login(page: Page) {
   if (!process.env.TEST_PASSWORD) throw new Error("TEST_PASSWORD env var required");
   await page.goto("/login");
-  await page.locator('input[type="email"]').fill(BASE_EMAIL);
-  await page.locator('input[type="password"]').fill(process.env.TEST_PASSWORD);
-  await page.locator('button[type="submit"]').click();
+  // Email field is type="text" with autocomplete="username"
+  await page.locator('input[autocomplete="username"]').fill(BASE_EMAIL);
+  await page.locator('input[autocomplete="current-password"]').fill(process.env.TEST_PASSWORD);
+  await page.locator('#login-submit-btn').click();
   await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 20_000 });
 }
 
