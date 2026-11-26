@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import StrongCaseTip from "@/components/sponsorship/StrongCaseTip";
@@ -90,11 +90,15 @@ function fmt(cents: number) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function NewSponsorshipWizard({ searchParams }: { searchParams?: { case?: string; new?: string } }) {
-  const user       = useAuthStore((s) => s.user);
-  const token      = useAuthStore((s) => s.token);
-  const hydrated   = useAuthStore((s) => s._hasHydrated);
-  const router     = useRouter();
+// useSearchParams() is the correct API for client components: it updates reactively
+// on client-side navigation (router.replace / router.push), unlike the searchParams
+// prop which is only reliable in server components.
+export default function NewSponsorshipWizard() {
+  const user           = useAuthStore((s) => s.user);
+  const token          = useAuthStore((s) => s.token);
+  const hydrated       = useAuthStore((s) => s._hasHydrated);
+  const router         = useRouter();
+  const searchParamsHook = useSearchParams();
 
   // ── Wizard state ──────────────────────────────────────────────────────────
   const [step,    setStep]    = useState(1);
@@ -147,8 +151,8 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
   const [hasCover, setHasCover] = useState(false);
 
   // ── Resume & autosave ─────────────────────────────────────────────────────
-  const resumeId = searchParams?.case ?? null;
-  const forceNew  = searchParams?.new === "1";
+  const resumeId = searchParamsHook?.get('case') ?? null;
+  const forceNew  = searchParamsHook?.get('new') === '1';
   const [resumeLoading, setResumeLoading] = useState(!!resumeId);
   type SaveStatus = "idle" | "saving" | "saved" | "error";
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");

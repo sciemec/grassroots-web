@@ -297,6 +297,12 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
 
   useEffect(() => {
     if (!hasHydrated) return;
+    // Guard: id should be a UUID or 8-char public code — never the string "undefined"/"null"
+    if (!id || id === "undefined" || id === "null") {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
 
     setNotFound(false);
     setLoading(true);

@@ -113,6 +113,41 @@ test.describe("Sponsorship wizard — draft persistence", () => {
       .toHaveValue("Bulawayo", { timeout: 10_000 });                               // ✓ field restored
   });
 
+  test("Opening /sponsorships/new?case={id} directly calls /detail and restores fields", async ({ page }) => {
+    test.setTimeout(60_000);
+    await login(page);
+
+    // Create a draft and advance to step 2
+    await page.goto("/sponsorships/new?new=1");
+    await expect(page.getByText("Step 1 of 6")).toBeVisible({ timeout: 15_000 });
+    const uniqueTitle = `E2E Direct ${Date.now()}`;
+    await page.locator('input[placeholder*="Tinotenda"]').fill(uniqueTitle);
+    await page.getByRole("button", { name: "Football" }).click();
+    await page.locator("select").first().selectOption("kit_and_equipment");
+    await page.getByRole("button", { name: "Create Draft & Continue" }).click();
+    await page.waitForURL(/[?&]case=/, { timeout: 15_000 });
+    const caseId = new URL(page.url()).searchParams.get("case");
+    expect(caseId).toBeTruthy();
+
+    await expect(page.getByText("Step 2 of 6")).toBeVisible({ timeout: 10_000 });
+    await page.getByRole("button", { name: "18+" }).click();
+    await page.getByRole("button", { name: "Save draft" }).click();
+    await expect(page.getByText(/Saved ✓/i)).toBeVisible({ timeout: 15_000 });
+
+    // Navigate away, then directly to ?case= — assert /detail is called
+    await page.goto("about:blank");
+
+    const detailCalled = page.waitForRequest(
+      (req) => req.url().includes(`/sponsorships/${caseId}/detail`),
+      { timeout: 20_000 }
+    );
+    await page.goto(`/sponsorships/new?case=${caseId}`);
+    await detailCalled; // ✓ /detail was requested
+
+    // Assert step 2 and title restored
+    await expect(page.getByText("Step 2 of 6")).toBeVisible({ timeout: 15_000 });
+  });
+
   test("Visiting /sponsorships/new when draft exists → redirects, no new draft", async ({ page }) => {
     test.setTimeout(30_000);
     await login(page);
