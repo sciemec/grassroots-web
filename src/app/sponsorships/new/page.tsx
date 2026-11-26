@@ -158,6 +158,8 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
   type DraftSaveStatus = "idle" | "saving" | "saved" | "error";
   const [draftSaveStatus, setDraftSaveStatus] = useState<DraftSaveStatus>("idle");
   const [draftSaveError,  setDraftSaveError]  = useState<string | null>(null);
+  const [resumeError,    setResumeError]    = useState<string | null>(null);
+  const [resumeRetryKey, setResumeRetryKey] = useState(0);
 
   // Step 5 — Packages & tiers
   const [packages,     setPackages]     = useState<SponsorPackage[]>([]);
@@ -188,12 +190,22 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
   }, [hydrated, user, router]);
 
   // ── Resume from ?case={id} ────────────────────────────────────────────────
+  // Req 8: fires FIRST as soon as ?case is known; not gated on guardian-children.
+  // Req 7: 15 s hard timeout — AbortController so cleanup cancels in-flight request.
   useEffect(() => {
     if (!hydrated || !token || !user || !resumeId) return;
     setResumeLoading(true);
-    api.get(`/sponsorships/${resumeId}/detail`)
-      .then((r) => {
-        const d = r.data?.data;
+    setResumeError(null);
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 15_000);
+
+    fetch(`${BASE}/sponsorships/${resumeId}/detail`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      signal:  ctrl.signal,
+    })
+      .then((r) => { clearTimeout(tid); if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
+      .then((json) => {
+        const d = json?.data;
         if (!d || d.status !== "draft" || d.owner_user_id !== user.id) return;
         setDraftId(d.id);
         setTitle(d.title ?? "");
@@ -211,20 +223,27 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
         setGuardianWhatsapp(d.guardian_whatsapp ?? "");
         setStep(Math.min(d.wizard_step ?? 1, TOTAL_STEPS));
 
-        // Fetch need items (public endpoint)
-        api.get(`/sponsorships/${resumeId}/needs`)
-          .then((nr) => {
-            const rows = nr.data?.data ?? [];
+        // Secondary fetches — non-blocking, own 15 s timeouts
+        fetch(`${BASE}/sponsorships/${resumeId}/needs`, {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+          signal:  AbortSignal.timeout(15_000),
+        })
+          .then((nr) => nr.ok ? nr.json() : null)
+          .then((nj) => {
+            const rows = nj?.data ?? [];
             if (rows.length > 0) setNeedItems(rows.map((row: { id: string; item: string; qty: number; unit_cost_cents: number }) => ({
               id: row.id, item: row.item, qty: row.qty, unit_cost_cents: row.unit_cost_cents,
             })));
           })
           .catch(() => {});
 
-        // Fetch payee details (owner only)
-        api.get(`/sponsorships/${resumeId}/payee-details`)
-          .then((pr) => {
-            const p = pr.data?.data;
+        fetch(`${BASE}/sponsorships/${resumeId}/payee-details`, {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+          signal:  AbortSignal.timeout(15_000),
+        })
+          .then((pr) => pr.ok ? pr.json() : null)
+          .then((pj) => {
+            const p = pj?.data;
             if (!p) return;
             setPayeeMethod(p.method ?? "");
             setPayeeName(p.name ?? "");
@@ -237,46 +256,63 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
           })
           .catch(() => {});
       })
-      .catch(() => {
-        // Offline fallback — restore from localStorage
+      .catch((err) => {
+        clearTimeout(tid);
+        // Offline fallback — try localStorage regardless of error type
         try {
           const saved = localStorage.getItem(`grs_draft_${resumeId}`);
           if (saved) {
             const d = JSON.parse(saved) as Record<string, string | number>;
-            if (d.title)             setTitle(String(d.title));
-            if (d.sport)             setSport(String(d.sport));
-            if (d.category)          setCategory(String(d.category));
-            if (d.beneficiaryType)   setBeneficiaryType(d.beneficiaryType as "player" | "team");
-            if (d.ageGroup)          setAgeGroup(String(d.ageGroup));
-            if (d.province)          setProvince(String(d.province));
-            if (d.storyShort)        setStoryShort(String(d.storyShort));
-            if (d.story)             setStory(String(d.story));
-            if (d.supportMethod)     setSupportMethod(String(d.supportMethod));
-            if (d.deadline)          setDeadline(String(d.deadline));
-            if (d.guardianName)      setGuardianName(String(d.guardianName));
+            if (d.title)                setTitle(String(d.title));
+            if (d.sport)                setSport(String(d.sport));
+            if (d.category)             setCategory(String(d.category));
+            if (d.beneficiaryType)      setBeneficiaryType(d.beneficiaryType as "player" | "team");
+            if (d.ageGroup)             setAgeGroup(String(d.ageGroup));
+            if (d.province)             setProvince(String(d.province));
+            if (d.storyShort)           setStoryShort(String(d.storyShort));
+            if (d.story)                setStory(String(d.story));
+            if (d.supportMethod)        setSupportMethod(String(d.supportMethod));
+            if (d.deadline)             setDeadline(String(d.deadline));
+            if (d.guardianName)         setGuardianName(String(d.guardianName));
             if (d.guardianRelationship) setGuardianRelationship(String(d.guardianRelationship));
-            if (d.guardianWhatsapp)  setGuardianWhatsapp(String(d.guardianWhatsapp));
+            if (d.guardianWhatsapp)     setGuardianWhatsapp(String(d.guardianWhatsapp));
             setDraftId(resumeId);
             setStep(Math.min(Number(d.step) || 1, TOTAL_STEPS));
+            return; // restored from cache — no error shown
           }
         } catch { /* silent */ }
+        // No localStorage fallback available
+        const isTimeout = (err as Error)?.name === "AbortError";
+        setResumeError(
+          isTimeout
+            ? "Loading your draft timed out (15 s). Please check your connection and try again."
+            : "Could not load your draft. Please check your connection and try again."
+        );
       })
       .finally(() => setResumeLoading(false));
+
+    return () => { clearTimeout(tid); ctrl.abort(); };
   // resumeId MUST be in deps: the auto-redirect changes it from null → id on
   // the same component instance, and the effect must re-fire to load the draft.
+  // resumeRetryKey bumps to retry after a timeout/error.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, token, user, resumeId]);
+  }, [hydrated, token, user, resumeId, resumeRetryKey]);
 
   // ── Auto-resume: redirect to ?case={id} if the user already has a draft ───
   // Skipped when ?case= is already present (resumeId) or ?new=1 is set (forceNew).
+  // Req 7: 15 s timeout — if Render is cold-starting, don't block the form forever.
   useEffect(() => {
     if (!hydrated || !token || resumeId || forceNew) return;
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 15_000);
     fetch(`${BASE}/sponsorships/latest-draft`, {
       headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      signal:  ctrl.signal,
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.data) router.replace(`/sponsorships/new?case=${j.data.id}`); })
-      .catch(() => {});
+      .then((j) => { clearTimeout(tid); if (j?.data) router.replace(`/sponsorships/new?case=${j.data.id}`); })
+      .catch(() => { clearTimeout(tid); /* silent — user stays on blank form */ });
+    return () => { clearTimeout(tid); ctrl.abort(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, token]);
 
@@ -325,6 +361,7 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
         const res = await fetch(`${BASE}/sponsorships/${draftId}`, {
           method:  "PATCH",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+          signal:  AbortSignal.timeout(15_000),
           body:    JSON.stringify(body),
         });
         setSaveStatus(res.ok ? "saved" : "error");
@@ -368,12 +405,19 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saveStatus, draftId, token, step]);
 
+  // Req 6: only fetch guardian-children for accounts that can have guardian links
+  // (admin and coach can never be guardians); separate from draft load; 15 s timeout.
   useEffect(() => {
     if (!hydrated || !token) return;
+    if (user?.role === "admin" || user?.role === "coach") return;
     setGuardianChildrenLoading(true);
-    api.get("/sponsorships/guardian-children")
-      .then((r) => { if (Array.isArray(r.data?.data)) setGuardianChildren(r.data.data); })
-      .catch(() => { /* 500 or network error — guardian picker simply stays hidden */ })
+    fetch(`${BASE}/sponsorships/guardian-children`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      signal:  AbortSignal.timeout(15_000),
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((j) => { if (Array.isArray(j?.data)) setGuardianChildren(j.data); })
+      .catch(() => { /* timeout or error — guardian picker simply stays hidden */ })
       .finally(() => setGuardianChildrenLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, token]);
@@ -390,6 +434,35 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
             <div className="h-4 bg-gray-100 rounded w-2/3" />
             <div className="h-32 bg-gray-100 rounded-xl" />
             <p className="text-xs text-center text-gray-400 !mt-6">Loading your draft…</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (resumeError) {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
+        <PublicNavbar />
+        <div className="max-w-xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+              {resumeError}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setResumeError(null); setResumeRetryKey((k) => k + 1); }}
+                className="flex-1 bg-[#1a5c2a] text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-[#145222] transition-colors"
+              >
+                Retry
+              </button>
+              <a
+                href="/sponsorships/new?new=1"
+                className="flex-1 border border-gray-300 text-gray-700 text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-center"
+              >
+                Start a new case
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -435,8 +508,9 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
     setFieldErrors({});
     try {
       const res = await fetch(`${BASE}/sponsorships`, {
-        method: "POST",
+        method:  "POST",
         headers: authHeaders,
+        signal:  AbortSignal.timeout(15_000),
         body: JSON.stringify({
           title:            title.trim(),
           sport:            sport.toLowerCase(),
@@ -459,8 +533,9 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
       const id: string = (json.data ?? json).id;
       setDraftId(id);
       return id;
-    } catch {
-      setTopError("Network error. Please try again.");
+    } catch (err) {
+      const isTimeout = (err as Error)?.name === "AbortError";
+      setTopError(isTimeout ? "Request timed out. Please check your connection and try again." : "Network error. Please try again.");
       return null;
     } finally {
       setCreating(false);
@@ -474,9 +549,10 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
     setTopError(null);
     try {
       const res = await fetch(`${BASE}/sponsorships/${id}`, {
-        method: "PATCH",
+        method:  "PATCH",
         headers: authHeaders,
-        body: JSON.stringify(body),
+        signal:  AbortSignal.timeout(15_000),
+        body:    JSON.stringify(body),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -484,8 +560,9 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
         return false;
       }
       return true;
-    } catch {
-      setTopError("Network error. Please try again.");
+    } catch (err) {
+      const isTimeout = (err as Error)?.name === "AbortError";
+      setTopError(isTimeout ? "Request timed out. Please check your connection and try again." : "Network error. Please try again.");
       return false;
     } finally {
       setSaving(false);
@@ -664,6 +741,7 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
       fetch(`${BASE}/sponsorships/${draftId}`, {
         method:  "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+        signal:  AbortSignal.timeout(15_000),
         body:    JSON.stringify({ wizard_step: nextStep }),
       }).catch(() => {});
     }
@@ -706,6 +784,7 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
       await fetch(`${BASE}/sponsorships/${id}`, {
         method:  "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+        signal:  AbortSignal.timeout(15_000),
         body:    JSON.stringify({ wizard_step: 1 }),
       }).catch(() => {});
       setDraftSaveStatus("saved");
@@ -741,6 +820,7 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
       const res = await fetch(`${BASE}/sponsorships/${id}`, {
         method:  "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
+        signal:  AbortSignal.timeout(15_000),
         body:    JSON.stringify(body),
       });
       if (!res.ok) {
@@ -749,9 +829,10 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
         setDraftSaveError(j.message ?? "Save failed. Please try again.");
         return;
       }
-    } catch {
+    } catch (err) {
       setDraftSaveStatus("error");
-      setDraftSaveError("Network error — check your connection and try again.");
+      const isTimeout = (err as Error)?.name === "AbortError";
+      setDraftSaveError(isTimeout ? "Request timed out — check your connection and try again." : "Network error — check your connection and try again.");
       return;
     }
 
@@ -1419,8 +1500,14 @@ export default function NewSponsorshipWizard({ searchParams }: { searchParams?: 
               </div>
             )}
             {draftSaveStatus === "error" && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm text-center">
-                {draftSaveError ?? "Save failed. Please try again."}
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm flex items-center justify-between gap-3">
+                <span>{draftSaveError ?? "Save failed. Please try again."}</span>
+                <button
+                  onClick={handleSaveDraft}
+                  className="shrink-0 text-xs font-semibold underline hover:no-underline"
+                >
+                  Retry
+                </button>
               </div>
             )}
 
