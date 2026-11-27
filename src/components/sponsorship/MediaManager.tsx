@@ -26,6 +26,8 @@ interface ArenaPost {
   id: string;
   video_url: string;
   thumbnail_url: string | null;
+  duration_sec: number | null;
+  visibility: string | null;
   caption: string | null;
   created_at: string;
 }
@@ -65,6 +67,7 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
   const [arenaLoading, setArenaLoading] = useState(false);
   const [arenaTab,     setArenaTab]     = useState<"own" | "tagged" | "vault">("own");
   const [arenaCaption, setArenaCaption] = useState("");
+  const [privateConfirmId, setPrivateConfirmId] = useState<string | null>(null);
 
   // YouTube
   const [ytUrl,     setYtUrl]     = useState("");
@@ -179,6 +182,7 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
   const uploadPhoto = async (file: File) => {
     setSaving(true);
     setError(null);
+    const isFirst = items.length === 0;
     const fd = new FormData();
     fd.append("photo", file);
     if (photoCaption.trim()) fd.append("caption", photoCaption.trim());
@@ -190,10 +194,19 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
     });
     const j = await r.json().catch(() => ({}));
     if (r.ok && j.data) {
-      setItems((prev) => [...prev, j.data]);
+      let newItem = j.data;
+      if (isFirst) {
+        // Auto-set cover for the first media item
+        const cr = await fetch(`${BASE}/sponsorships/${caseId}/media/${newItem.id}/cover`, {
+          method: "PATCH",
+          headers,
+        });
+        if (cr.ok) newItem = { ...newItem, is_cover: true };
+      }
+      setItems((prev) => [...prev.map((i) => ({ ...i, is_cover: false })), newItem]);
       setAddMode(null);
       setPhotoCaption("");
-      notify("Photo added.");
+      notify(isFirst ? "Photo added and set as cover." : "Photo added.");
     } else {
       notify((j as { message?: string }).message ?? "Upload failed.", true);
     }
@@ -579,9 +592,9 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
           <p>No media yet. Add a photo, Arena video, or YouTube link.</p>
           <p className="mt-1 text-xs">
             No videos yet?{" "}
-            <a href="/arena" className="text-[#1a5c2a] underline">Post a training clip in The Arena</a>
+            <a href="/arena" target="_blank" rel="noopener noreferrer" className="text-[#1a5c2a] underline">Post a training clip in The Arena</a>
             {" "}or{" "}
-            <a href="/vault" className="text-[#1a5c2a] underline">save a highlight to your Vault</a>.
+            <a href="/player/vault" target="_blank" rel="noopener noreferrer" className="text-[#1a5c2a] underline">save a highlight to your Vault</a>.
           </p>
         </div>
       )}
@@ -655,7 +668,17 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
         <div className="mt-3 border border-gray-200 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-700">Pick a Video</span>
-            <button onClick={() => { setAddMode(null); setArenaCaption(""); }} className="text-gray-400 hover:text-gray-700"><X size={15} /></button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { loadArenaPicker(); }}
+                disabled={arenaLoading}
+                title="Refresh"
+                className="text-xs text-[#1a5c2a] hover:underline disabled:opacity-50"
+              >
+                {arenaLoading ? "Loading…" : "↻ Refresh"}
+              </button>
+              <button onClick={() => { setAddMode(null); setArenaCaption(""); setPrivateConfirmId(null); }} className="text-gray-400 hover:text-gray-700"><X size={15} /></button>
+            </div>
           </div>
 
           {/* Tabs */}
@@ -690,10 +713,10 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
             const posts = arenaTab === "own" ? arenaOwn : arenaTab === "tagged" ? arenaTagged : vaultPosts;
             const isVault = arenaTab === "vault";
             const emptyMsg = arenaTab === "own"
-              ? <>No Arena videos yet. <a href="/arena" className="text-[#1a5c2a] underline">Post a training clip</a> first.</>
+              ? <>No Arena videos yet. <a href="/arena" target="_blank" rel="noopener noreferrer" className="text-[#1a5c2a] underline">Post a training clip</a> first, then click ↻ Refresh.</>
               : arenaTab === "tagged"
               ? "No videos tagged to this player yet."
-              : <>No Vault highlights yet. <a href="/vault" className="text-[#1a5c2a] underline">Save a highlight</a> first.</>;
+              : <>No Vault highlights yet. <a href="/player/vault" target="_blank" rel="noopener noreferrer" className="text-[#1a5c2a] underline">Save a highlight</a> first.</>;
 
             if (posts.length === 0) {
               return (
@@ -702,38 +725,80 @@ export default function MediaManager({ caseId, token, isTeam = false, onCoverCha
             }
 
             return (
-              <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
-                {posts.map((p) => {
-                  const alreadyAdded = isVault
-                    ? items.some((i) => i.source === "highlight_vault" && i.url === p.video_url)
-                    : items.some((i) => i.arena_post_id === p.id);
+              <div className="space-y-2">
+                {/* Private confirmation banner */}
+                {privateConfirmId && (() => {
+                  const post = posts.find((p) => p.id === privateConfirmId);
+                  if (!post) return null;
                   return (
-                    <button
-                      key={p.id}
-                      disabled={saving || alreadyAdded}
-                      onClick={() => isVault ? addVault(p.id) : addArena(p.id)}
-                      className={`aspect-square rounded-lg overflow-hidden relative border-2 transition-colors ${
-                        alreadyAdded
-                          ? "border-green-400 opacity-60 cursor-not-allowed"
-                          : "border-transparent hover:border-[#1a5c2a]"
-                      }`}
-                    >
-                      {p.thumbnail_url ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={p.thumbnail_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
-                          <Film size={18} />
-                        </div>
-                      )}
-                      {alreadyAdded && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                          <span className="text-white text-xs font-bold">✓</span>
-                        </div>
-                      )}
-                    </button>
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 space-y-2">
+                      <p><strong>Private video:</strong> Adding this will make it visible on the public case page. Confirm?</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { setPrivateConfirmId(null); isVault ? addVault(post.id) : addArena(post.id); }}
+                          className="bg-[#1a5c2a] text-white text-xs font-semibold px-3 py-1 rounded-lg"
+                        >
+                          Add anyway
+                        </button>
+                        <button onClick={() => setPrivateConfirmId(null)} className="text-gray-500 text-xs px-3 py-1 rounded-lg border border-gray-200">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
                   );
-                })}
+                })()}
+                <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
+                  {posts.map((p) => {
+                    const alreadyAdded = isVault
+                      ? items.some((i) => i.source === "highlight_vault" && i.url === p.video_url)
+                      : items.some((i) => i.arena_post_id === p.id);
+                    const isPrivate = !isVault && (p.visibility ?? "public") !== "public";
+                    return (
+                      <button
+                        key={p.id}
+                        disabled={saving || alreadyAdded}
+                        onClick={() => {
+                          if (isPrivate && !alreadyAdded) {
+                            setPrivateConfirmId(p.id);
+                          } else {
+                            isVault ? addVault(p.id) : addArena(p.id);
+                          }
+                        }}
+                        className={`aspect-square rounded-lg overflow-hidden relative border-2 transition-colors ${
+                          alreadyAdded
+                            ? "border-green-400 opacity-60 cursor-not-allowed"
+                            : privateConfirmId === p.id
+                            ? "border-amber-400"
+                            : "border-transparent hover:border-[#1a5c2a]"
+                        }`}
+                      >
+                        {p.thumbnail_url ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={p.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+                            <Film size={18} />
+                          </div>
+                        )}
+                        {alreadyAdded && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <span className="text-white text-xs font-bold">✓</span>
+                          </div>
+                        )}
+                        {isPrivate && !alreadyAdded && (
+                          <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] font-semibold text-center py-0.5">
+                            Private
+                          </div>
+                        )}
+                        {p.duration_sec != null && (
+                          <div className="absolute top-0.5 right-0.5 bg-black/60 text-white text-[9px] px-1 rounded">
+                            {Math.floor(p.duration_sec / 60)}:{String(p.duration_sec % 60).padStart(2, "0")}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             );
           })()}
