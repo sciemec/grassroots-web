@@ -9,6 +9,7 @@ import MediaManager from "@/components/sponsorship/MediaManager";
 import EligibilityChecklist from "@/components/sponsorship/EligibilityChecklist";
 import { CheckCircle2, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import api from "@/lib/api";
+import type { AxiosError } from "axios";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -165,6 +166,9 @@ function NewSponsorshipWizardInner() {
   const [draftSaveError,  setDraftSaveError]  = useState<string | null>(null);
   const [resumeError,    setResumeError]    = useState<string | null>(null);
   const [resumeRetryKey, setResumeRetryKey] = useState(0);
+  // Fallback: when useSearchParams() returns null on first render (Next.js 14 SSR pass),
+  // latest-draft sets this so the resume effect can fire even if router.replace is a no-op.
+  const [pendingResumeId, setPendingResumeId] = useState<string | null>(null);
 
   // Step 5 — Packages & tiers
   const [packages,     setPackages]     = useState<SponsorPackage[]>([]);
@@ -187,6 +191,10 @@ function NewSponsorshipWizardInner() {
   const isCoach = user?.role === "coach" || user?.role === "admin";
   const isMinor = MINOR_GROUPS.has(ageGroup);
 
+  // effectiveResumeId: URL ?case= param OR the ID returned by latest-draft when
+  // useSearchParams() was null on first render (Next.js 14 can return null before hydration).
+  const effectiveResumeId = resumeId ?? pendingResumeId;
+
   // Guardian child picker — shown when the logged-in user has active guardian_links
   interface GuardianChild { id: string; name: string; age_group: string; avatar_url: string | null }
   const [guardianChildren,        setGuardianChildren]        = useState<GuardianChild[]>([]);
@@ -198,27 +206,29 @@ function NewSponsorshipWizardInner() {
     if (!user) router.replace("/login");
   }, [hydrated, user, router]);
 
-  // ── Resume from ?case={id} ────────────────────────────────────────────────
-  // Req 8: fires FIRST as soon as ?case is known; not gated on guardian-children.
+  // ── Resume from ?case={id} or pendingResumeId ────────────────────────────
+  // Req 8: fires FIRST as soon as effectiveResumeId is known.
   // Req 7: 15 s hard timeout — AbortController so cleanup cancels in-flight request.
   useEffect(() => {
-    if (!hydrated || !token || !user || !resumeId) return;
+    if (!hydrated || !token || !user || !effectiveResumeId) return;
     // Skip re-hydration when we already hold this draft in state — happens right
     // after createDraft() fires router.replace on the same component instance.
-    if (resumeId === draftId) { setResumeLoading(false); return; }
+    if (effectiveResumeId === draftId) { setResumeLoading(false); return; }
     setResumeLoading(true);
     setResumeError(null);
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 15_000);
 
-    fetch(`${BASE}/sponsorships/${resumeId}/detail`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      signal:  ctrl.signal,
-    })
-      .then((r) => { clearTimeout(tid); if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
-      .then((json) => {
-        const d = json?.data;
-        if (!d || d.status !== "draft" || d.owner_user_id !== user.id) return;
+    api.get(`/sponsorships/${effectiveResumeId}/detail`, { signal: ctrl.signal })
+      .then((res) => {
+        clearTimeout(tid);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const d = (res.data as any)?.data;
+        if (!d || d.status !== "draft" || d.owner_user_id !== user.id) {
+          // Bug 9: show an error instead of silently falling through to a blank form
+          setResumeError("This draft is not available. It may not exist or may already have been submitted.");
+          return;
+        }
         setDraftId(d.id);
         setTitle(d.title ?? "");
         setSport(d.sport ?? "");
@@ -237,26 +247,20 @@ function NewSponsorshipWizardInner() {
         setStep((prev) => Math.max(prev, Math.min(d.wizard_step ?? 1, TOTAL_STEPS)));
 
         // Secondary fetches — non-blocking, own 15 s timeouts
-        fetch(`${BASE}/sponsorships/${resumeId}/needs`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-          signal:  AbortSignal.timeout(15_000),
-        })
-          .then((nr) => nr.ok ? nr.json() : null)
-          .then((nj) => {
-            const rows = nj?.data ?? [];
+        api.get(`/sponsorships/${effectiveResumeId}/needs`, { signal: AbortSignal.timeout(15_000) })
+          .then((r) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const rows = (r.data as any)?.data ?? [];
             if (rows.length > 0) setNeedItems(rows.map((row: { id: string; item: string; qty: number; unit_cost_cents: number }) => ({
               tempId: `srv_${row.id}`, id: row.id, item: row.item, qty: row.qty, unit_cost_cents: row.unit_cost_cents,
             })));
           })
           .catch(() => {});
 
-        fetch(`${BASE}/sponsorships/${resumeId}/payee-details`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-          signal:  AbortSignal.timeout(15_000),
-        })
-          .then((pr) => pr.ok ? pr.json() : null)
-          .then((pj) => {
-            const p = pj?.data;
+        api.get(`/sponsorships/${effectiveResumeId}/payee-details`, { signal: AbortSignal.timeout(15_000) })
+          .then((r) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const p = (r.data as any)?.data;
             if (!p) return;
             setPayeeMethod(p.method ?? "");
             setPayeeName(p.name ?? "");
@@ -270,14 +274,12 @@ function NewSponsorshipWizardInner() {
           .catch(() => {});
 
         // Seed cover-photo state so step 4 is not falsely blocked on resume
-        fetch(`${BASE}/sponsorships/${resumeId}/media`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-          signal:  AbortSignal.timeout(15_000),
-        })
-          .then((mr) => mr.ok ? mr.json() : null)
-          .then((mj) => {
-            if (Array.isArray(mj?.data)) {
-              setHasCover(mj.data.some((m: { is_cover: boolean }) => m.is_cover));
+        api.get(`/sponsorships/${effectiveResumeId}/media`, { signal: AbortSignal.timeout(15_000) })
+          .then((r) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if (Array.isArray((r.data as any)?.data)) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              setHasCover((r.data as any).data.some((m: { is_cover: boolean }) => m.is_cover));
             }
           })
           .catch(() => {});
@@ -286,7 +288,7 @@ function NewSponsorshipWizardInner() {
         clearTimeout(tid);
         // Offline fallback — try localStorage regardless of error type
         try {
-          const saved = localStorage.getItem(`grs_draft_${resumeId}`);
+          const saved = localStorage.getItem(`grs_draft_${effectiveResumeId}`);
           if (saved) {
             const d = JSON.parse(saved) as Record<string, string | number>;
             if (d.title)                setTitle(String(d.title));
@@ -302,13 +304,15 @@ function NewSponsorshipWizardInner() {
             if (d.guardianName)         setGuardianName(String(d.guardianName));
             if (d.guardianRelationship) setGuardianRelationship(String(d.guardianRelationship));
             if (d.guardianWhatsapp)     setGuardianWhatsapp(String(d.guardianWhatsapp));
-            setDraftId(resumeId);
-            setStep(Math.min(Number(d.step) || 1, TOTAL_STEPS));
+            setDraftId(effectiveResumeId);
+            // Bug 5: Never move the step backwards (match the API resume path at line ~233)
+            setStep((prev) => Math.max(prev, Math.min(Number(d.step) || 1, TOTAL_STEPS)));
             return; // restored from cache — no error shown
           }
         } catch { /* silent */ }
         // No localStorage fallback available
-        const isTimeout = (err as Error)?.name === "AbortError";
+        const ax = err as AxiosError;
+        const isTimeout = ax.code === "ERR_CANCELED" || (err as Error)?.name === "AbortError";
         setResumeError(
           isTimeout
             ? "Loading your draft timed out (15 s). Please check your connection and try again."
@@ -318,29 +322,38 @@ function NewSponsorshipWizardInner() {
       .finally(() => setResumeLoading(false));
 
     return () => { clearTimeout(tid); ctrl.abort(); };
-  // resumeId MUST be in deps: the auto-redirect changes it from null → id on
-  // the same component instance, and the effect must re-fire to load the draft.
-  // resumeRetryKey bumps to retry after a timeout/error.
+  // effectiveResumeId combines resumeId (URL) and pendingResumeId (from latest-draft when
+  // searchParams hadn't loaded yet on first render). resumeRetryKey bumps to retry.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, token, user, resumeId, resumeRetryKey]);
+  }, [hydrated, token, user, effectiveResumeId, resumeRetryKey]);
 
   // ── Auto-resume: redirect to ?case={id} if the user already has a draft ───
-  // Skipped when ?case= is already present (resumeId) or ?new=1 is set (forceNew).
+  // Skipped when a draft ID is already known (effectiveResumeId) or ?new=1 is set.
   // Req 7: 15 s timeout — if Render is cold-starting, don't block the form forever.
+  // FIX: effectiveResumeId and forceNew are in deps so the guard re-checks when
+  // resumeId becomes available — useSearchParams() can return null on first render
+  // in Next.js 14, causing auto-resume to fire even when ?case= is in the URL.
+  // FIX: sets pendingResumeId so the resume effect fires even if router.replace
+  // is a no-op (URL already contained ?case= but searchParams hadn't loaded yet).
   useEffect(() => {
-    if (!hydrated || !token || resumeId || forceNew) return;
+    if (!hydrated || !token || effectiveResumeId || forceNew) return;
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 15_000);
-    fetch(`${BASE}/sponsorships/latest-draft`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      signal:  ctrl.signal,
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { clearTimeout(tid); if (j?.data) router.replace(`/sponsorships/new?case=${j.data.id}`); })
+    api.get(`/sponsorships/latest-draft`, { signal: ctrl.signal })
+      .then((r) => {
+        clearTimeout(tid);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const draft = (r.data as any)?.data;
+        if (draft) {
+          setResumeLoading(true); // show loading before resume effect fires
+          router.replace(`/sponsorships/new?case=${draft.id}`);
+          setPendingResumeId(draft.id); // ensures resume fires even if replace is a no-op
+        }
+      })
       .catch(() => { clearTimeout(tid); /* silent — user stays on blank form */ });
     return () => { clearTimeout(tid); ctrl.abort(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, token]);
+  }, [hydrated, token, effectiveResumeId, forceNew]);
 
   // ── localStorage sync — persist all fields once a draft exists ────────────
   useEffect(() => {
@@ -384,14 +397,9 @@ function NewSponsorshipWizardInner() {
         guardian_whatsapp:     guardianWhatsapp.trim()     || null,
       });
       try {
-        const res = await fetch(`${BASE}/sponsorships/${draftId}`, {
-          method:  "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-          signal:  AbortSignal.timeout(15_000),
-          body:    JSON.stringify(body),
-        });
-        setSaveStatus(res.ok ? "saved" : "error");
-        if (res.ok) setTimeout(() => setSaveStatus("idle"), 2500);
+        await api.patch(`/sponsorships/${draftId}`, body);
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2500);
       } catch {
         setSaveStatus("error");
       }
@@ -416,14 +424,9 @@ function NewSponsorshipWizardInner() {
           story: d.story ?? "", suggested_payee: d.supportMethod ?? null, deadline_at: d.deadline ?? null,
         };
         setSaveStatus("saving");
-        fetch(`${BASE}/sponsorships/${draftId}`, {
-          method:  "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-          body:    JSON.stringify(body),
-        }).then((r) => {
-          setSaveStatus(r.ok ? "saved" : "error");
-          if (r.ok) setTimeout(() => setSaveStatus("idle"), 2500);
-        }).catch(() => setSaveStatus("error"));
+        api.patch(`/sponsorships/${draftId}`, body)
+          .then(() => { setSaveStatus("saved"); setTimeout(() => setSaveStatus("idle"), 2500); })
+          .catch(() => setSaveStatus("error"));
       } catch { /* silent */ }
     };
     window.addEventListener("online", retry);
@@ -535,36 +538,29 @@ function NewSponsorshipWizardInner() {
     setTopError(null);
     setFieldErrors({});
     try {
-      const res = await fetch(`${BASE}/sponsorships`, {
-        method:  "POST",
-        headers: authHeaders,
-        signal:  AbortSignal.timeout(15_000),
-        body: JSON.stringify({
-          title:            title.trim(),
-          sport:            sport.toLowerCase(),
-          category,
-          beneficiary_type: beneficiaryType,
-          wizard_step:      2,
-          ...(selectedChildId ? { player_id: selectedChildId } : {}),
-        }),
+      const res = await api.post(`/sponsorships`, {
+        title:            title.trim(),
+        sport:            sport.toLowerCase(),
+        category,
+        beneficiary_type: beneficiaryType,
+        wizard_step:      2,
+        ...(selectedChildId ? { player_id: selectedChildId } : {}),
       });
-      const json = await res.json();
-      if (!res.ok) {
-        if (res.status === 422 && json.errors) {
-          const errs: Record<string, string> = {};
-          for (const [f, msgs] of Object.entries(json.errors as Record<string, string[]>)) errs[f] = msgs[0];
-          setFieldErrors(errs);
-        } else {
-          setTopError(json.message ?? "Could not create case. Please try again.");
-        }
-        return null;
-      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const json = res.data as any;
       const id: string = (json.data ?? json).id;
       setDraftId(id);
       return id;
     } catch (err) {
-      const isTimeout = (err as Error)?.name === "AbortError";
-      setTopError(isTimeout ? "Request timed out. Please check your connection and try again." : "Network error. Please try again.");
+      const ax = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
+      if (ax.response?.status === 422 && ax.response.data?.errors) {
+        const errs: Record<string, string> = {};
+        for (const [f, msgs] of Object.entries(ax.response.data.errors)) errs[f] = msgs[0];
+        setFieldErrors(errs);
+      } else {
+        const isTimeout = ax.code === "ERR_CANCELED" || (err as Error)?.name === "AbortError";
+        setTopError(isTimeout ? "Request timed out. Please check your connection and try again." : ax.response?.data?.message ?? "Could not create case. Please try again.");
+      }
       return null;
     } finally {
       creatingRef.current = false;
@@ -578,21 +574,12 @@ function NewSponsorshipWizardInner() {
     setSaving(true);
     setTopError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${id}`, {
-        method:  "PATCH",
-        headers: authHeaders,
-        signal:  AbortSignal.timeout(15_000),
-        body:    JSON.stringify(body),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setTopError(json.message ?? "Could not save. Please try again.");
-        return false;
-      }
+      await api.patch(`/sponsorships/${id}`, body);
       return true;
     } catch (err) {
-      const isTimeout = (err as Error)?.name === "AbortError";
-      setTopError(isTimeout ? "Request timed out. Please check your connection and try again." : "Network error. Please try again.");
+      const ax = err as AxiosError<{ message?: string }>;
+      const isTimeout = ax.code === "ERR_CANCELED" || (err as Error)?.name === "AbortError";
+      setTopError(isTimeout ? "Request timed out. Please check your connection and try again." : ax.response?.data?.message ?? "Could not save. Please try again.");
       return false;
     } finally {
       setSaving(false);
@@ -812,14 +799,9 @@ function NewSponsorshipWizardInner() {
 
     const nextStep = step + 1;
 
-    // Persist furthest step reached
+    // Persist furthest step reached (non-blocking — step is also saved in autosave/handleSaveDraft)
     if (draftId) {
-      fetch(`${BASE}/sponsorships/${draftId}`, {
-        method:  "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-        signal:  AbortSignal.timeout(15_000),
-        body:    JSON.stringify({ wizard_step: nextStep }),
-      }).catch(() => {});
+      api.patch(`/sponsorships/${draftId}`, { wizard_step: nextStep }).catch(() => {});
     }
 
     // Lazy-load packages & tiers when entering step 5
@@ -857,12 +839,7 @@ function NewSponsorshipWizardInner() {
         return;
       }
       router.replace(`/sponsorships/new?case=${id}`);
-      await fetch(`${BASE}/sponsorships/${id}`, {
-        method:  "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-        signal:  AbortSignal.timeout(15_000),
-        body:    JSON.stringify({ wizard_step: 1 }),
-      }).catch(() => {});
+      await api.patch(`/sponsorships/${id}`, { wizard_step: 1 }).catch(() => {});
       setDraftSaveStatus("saved");
       return;
     }
@@ -893,22 +870,12 @@ function NewSponsorshipWizardInner() {
     });
 
     try {
-      const res = await fetch(`${BASE}/sponsorships/${id}`, {
-        method:  "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-        signal:  AbortSignal.timeout(15_000),
-        body:    JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({})) as { message?: string };
-        setDraftSaveStatus("error");
-        setDraftSaveError(j.message ?? "Save failed. Please try again.");
-        return;
-      }
+      await api.patch(`/sponsorships/${id}`, body);
     } catch (err) {
       setDraftSaveStatus("error");
-      const isTimeout = (err as Error)?.name === "AbortError";
-      setDraftSaveError(isTimeout ? "Request timed out — check your connection and try again." : "Network error — check your connection and try again.");
+      const ax = err as AxiosError<{ message?: string }>;
+      const isTimeout = ax.code === "ERR_CANCELED" || (err as Error)?.name === "AbortError";
+      setDraftSaveError(isTimeout ? "Request timed out — check your connection and try again." : ax.response?.data?.message ?? "Save failed. Please try again.");
       return;
     }
 
@@ -1565,7 +1532,7 @@ function NewSponsorshipWizardInner() {
               {/* Live eligibility checklist */}
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Eligibility — what&apos;s needed to go live</p>
-                <EligibilityChecklist caseId={draftId} token={token ?? ""} />
+                {token && <EligibilityChecklist caseId={draftId} token={token} />}
               </div>
 
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800">
