@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { PublicNavbar } from "@/components/layout/public-navbar";
@@ -48,7 +48,7 @@ const MINOR_GROUPS = new Set(["under_13", "13_17"]);
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface NeedRow { id?: string; item: string; qty: number; unit_cost_cents: number; needs_pricing?: boolean }
+interface NeedRow { tempId: string; id?: string; item: string; qty: number; unit_cost_cents: number; needs_pricing?: boolean }
 
 interface SponsorPackage {
   id: string; name: string; suggested_value_cents: number | null; description: string | null;
@@ -93,7 +93,7 @@ function fmt(cents: number) {
 // useSearchParams() is the correct API for client components: it updates reactively
 // on client-side navigation (router.replace / router.push), unlike the searchParams
 // prop which is only reliable in server components.
-export default function NewSponsorshipWizard() {
+function NewSponsorshipWizardInner() {
   const user           = useAuthStore((s) => s.user);
   const token          = useAuthStore((s) => s.token);
   const hydrated       = useAuthStore((s) => s._hasHydrated);
@@ -156,7 +156,8 @@ export default function NewSponsorshipWizard() {
   const [resumeLoading, setResumeLoading] = useState(!!resumeId);
   type SaveStatus = "idle" | "saving" | "saved" | "error";
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSaveRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const creatingRef   = useRef(false); // in-flight guard — prevents double-POST
 
   // Manual "Save draft" button state
   type DraftSaveStatus = "idle" | "saving" | "saved" | "error";
@@ -198,6 +199,9 @@ export default function NewSponsorshipWizard() {
   // Req 7: 15 s hard timeout — AbortController so cleanup cancels in-flight request.
   useEffect(() => {
     if (!hydrated || !token || !user || !resumeId) return;
+    // Skip re-hydration when we already hold this draft in state — happens right
+    // after createDraft() fires router.replace on the same component instance.
+    if (resumeId === draftId) { setResumeLoading(false); return; }
     setResumeLoading(true);
     setResumeError(null);
     const ctrl = new AbortController();
@@ -225,7 +229,8 @@ export default function NewSponsorshipWizard() {
         setGuardianName(d.guardian_name ?? "");
         setGuardianRelationship(d.guardian_relationship ?? "");
         setGuardianWhatsapp(d.guardian_whatsapp ?? "");
-        setStep(Math.min(d.wizard_step ?? 1, TOTAL_STEPS));
+        // Never move the step backwards — take the larger of current and resumed step.
+        setStep((prev) => Math.max(prev, Math.min(d.wizard_step ?? 1, TOTAL_STEPS)));
 
         // Secondary fetches — non-blocking, own 15 s timeouts
         fetch(`${BASE}/sponsorships/${resumeId}/needs`, {
@@ -236,7 +241,7 @@ export default function NewSponsorshipWizard() {
           .then((nj) => {
             const rows = nj?.data ?? [];
             if (rows.length > 0) setNeedItems(rows.map((row: { id: string; item: string; qty: number; unit_cost_cents: number }) => ({
-              id: row.id, item: row.item, qty: row.qty, unit_cost_cents: row.unit_cost_cents,
+              tempId: `srv_${row.id}`, id: row.id, item: row.item, qty: row.qty, unit_cost_cents: row.unit_cost_cents,
             })));
           })
           .catch(() => {});
@@ -257,6 +262,19 @@ export default function NewSponsorshipWizard() {
             setPayeePaymentMethod(p.payment_method ?? "");
             setPayeeInstructions(p.payment_instructions ?? "");
             setPayeeQuoteUrl(p.quote_file_url ?? "");
+          })
+          .catch(() => {});
+
+        // Seed cover-photo state so step 4 is not falsely blocked on resume
+        fetch(`${BASE}/sponsorships/${resumeId}/media`, {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+          signal:  AbortSignal.timeout(15_000),
+        })
+          .then((mr) => mr.ok ? mr.json() : null)
+          .then((mj) => {
+            if (Array.isArray(mj?.data)) {
+              setHasCover(mj.data.some((m: { is_cover: boolean }) => m.is_cover));
+            }
           })
           .catch(() => {});
       })
@@ -507,6 +525,8 @@ export default function NewSponsorshipWizard() {
   // ── Step 1: Create draft ──────────────────────────────────────────────────
 
   const createDraft = async (): Promise<string | null> => {
+    if (creatingRef.current) return null; // prevent double-POST
+    creatingRef.current = true;
     setCreating(true);
     setTopError(null);
     setFieldErrors({});
@@ -520,6 +540,7 @@ export default function NewSponsorshipWizard() {
           sport:            sport.toLowerCase(),
           category,
           beneficiary_type: beneficiaryType,
+          wizard_step:      2,
           ...(selectedChildId ? { player_id: selectedChildId } : {}),
         }),
       });
@@ -542,6 +563,7 @@ export default function NewSponsorshipWizard() {
       setTopError(isTimeout ? "Request timed out. Please check your connection and try again." : "Network error. Please try again.");
       return null;
     } finally {
+      creatingRef.current = false;
       setCreating(false);
     }
   };
@@ -586,7 +608,7 @@ export default function NewSponsorshipWizard() {
         // Track the returned id so we don't re-post on the next save
         if (r.data?.data?.id) {
           setNeedItems((prev) => prev.map((row) =>
-            row.item === ni.item && !row.id ? { ...row, id: r.data.data.id } : row
+            row.tempId === ni.tempId ? { ...row, id: r.data.data.id } : row
           ));
         }
       } catch { /* non-blocking — owner can add from case page */ }
@@ -673,7 +695,13 @@ export default function NewSponsorshipWizard() {
     }
 
     if (step === 1) {
-      // Create the draft
+      if (draftId) {
+        // Draft already exists (page was resumed) — PATCH step, never POST again.
+        const ok = await patchDraft(draftId, { wizard_step: 2 });
+        if (!ok) return;
+        setStep(2);
+        return;
+      }
       const id = await createDraft();
       if (!id) return;
       router.replace(`/sponsorships/new?case=${id}`);
@@ -772,7 +800,7 @@ export default function NewSponsorshipWizard() {
 
     // ── Step 1: no draft yet — create it first ───────────────────────────────
     if (!id) {
-      if (!title.trim() || title.trim().length <= 2 || !sport || !category) {
+      if (!title.trim() || title.trim().length <= 5 || !sport || !category) {
         setDraftSaveStatus("error");
         setDraftSaveError("Please fill in Title, Sport and Category before saving.");
         return;
@@ -931,6 +959,9 @@ export default function NewSponsorshipWizard() {
                   <FieldError msg={fieldErrors.title} />
                   <span className="text-xs text-gray-400 ml-auto">{title.length}/120</span>
                 </div>
+                {title.trim().length > 0 && title.trim().length <= 5 && (
+                  <p className="text-xs text-amber-700 mt-0.5">Title must be at least 6 characters.</p>
+                )}
               </div>
 
               <div>
@@ -1119,8 +1150,8 @@ export default function NewSponsorshipWizard() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {needItems.map((n, idx) => (
-                          <tr key={idx} className={n.unit_cost_cents <= 0 ? "bg-amber-50" : ""}>
+                        {needItems.map((n) => (
+                          <tr key={n.tempId} className={n.unit_cost_cents <= 0 ? "bg-amber-50" : ""}>
                             <td className="px-3 py-2 text-gray-800">{n.item}</td>
                             <td className="px-2 py-2 text-right text-gray-500">{n.qty}</td>
                             <td className="px-2 py-2 text-right font-medium">
@@ -1132,7 +1163,7 @@ export default function NewSponsorshipWizard() {
                                   className="w-20 border border-amber-400 bg-amber-50 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-400"
                                   onBlur={(e) => {
                                     const uc = Math.round(parseFloat(e.target.value || "0") * 100);
-                                    if (uc > 0) setNeedItems((p) => p.map((r, i) => i === idx ? { ...r, unit_cost_cents: uc, needs_pricing: false } : r));
+                                    if (uc > 0) setNeedItems((p) => p.map((r) => r.tempId === n.tempId ? { ...r, unit_cost_cents: uc, needs_pricing: false } : r));
                                   }}
                                 />
                               )}
@@ -1142,7 +1173,7 @@ export default function NewSponsorshipWizard() {
                                 if (n.id && draftId) {
                                   try { await api.delete(`/sponsorships/${draftId}/needs/${n.id}`); } catch { /* silent */ }
                                 }
-                                setNeedItems((p) => p.filter((_, i) => i !== idx));
+                                setNeedItems((p) => p.filter((r) => r.tempId !== n.tempId));
                               }} className="text-gray-300 hover:text-red-500">
                                 <Trash2 size={12} />
                               </button>
@@ -1180,9 +1211,9 @@ export default function NewSponsorshipWizard() {
                         : null;
                       if (parts && parts.length > 1) {
                         // Add each as a separate unpriced row (qty 1, cost 0) so user prices each
-                        setNeedItems((p) => [...p, ...parts.map((part) => ({ item: part, qty: 1, unit_cost_cents: 0, needs_pricing: true }))]);
+                        setNeedItems((p) => [...p, ...parts.map((part) => ({ tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2)}`, item: part, qty: 1, unit_cost_cents: 0, needs_pricing: true }))]);
                       } else {
-                        setNeedItems((p) => [...p, { item: newNeedItem.trim(), qty: parseInt(newNeedQty, 10) || 1, unit_cost_cents: uc }]);
+                        setNeedItems((p) => [...p, { tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2)}`, item: newNeedItem.trim(), qty: parseInt(newNeedQty, 10) || 1, unit_cost_cents: uc }]);
                       }
                       setNewNeedItem(""); setNewNeedQty("1"); setNewNeedUsd("");
                     }}
@@ -1554,5 +1585,23 @@ export default function NewSponsorshipWizard() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function NewSponsorshipWizard() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
+        <div className="max-w-xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4 animate-pulse">
+            <div className="h-4 bg-gray-100 rounded w-1/3" />
+            <div className="h-4 bg-gray-100 rounded w-2/3" />
+            <div className="h-32 bg-gray-100 rounded-xl" />
+          </div>
+        </div>
+      </div>
+    }>
+      <NewSponsorshipWizardInner />
+    </Suspense>
   );
 }
