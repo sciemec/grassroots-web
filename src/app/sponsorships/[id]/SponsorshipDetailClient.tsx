@@ -1235,11 +1235,54 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
             </div>
           )}
 
+          {/* Sponsor packages — public, live cases only */}
+          {c.status === "live" && (c.packages ?? []).length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <h2 className="font-semibold text-gray-900 mb-1 text-sm">Sponsor Packages</h2>
+              <p className="text-xs text-gray-500 mb-3">Choose a package that fits your goals. Each gives you and the athlete something to build a relationship on.</p>
+              <div className="space-y-3 mb-3">
+                {c.packages!.map((pkg) => (
+                  <div key={pkg.id} className="border border-gray-100 rounded-xl px-3 py-2.5 bg-gray-50">
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-gray-900">{pkg.name}</p>
+                        {pkg.suggested_value_cents != null && (
+                          <span className="text-xs font-medium text-[#1a5c2a]">Suggested level: about ${(pkg.suggested_value_cents / 100).toFixed(0)}</span>
+                        )}
+                        {pkg.description && (
+                          <p className="text-xs text-gray-500 mt-1">{pkg.description}</p>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 ml-1">
+                        {!user ? (
+                          <a
+                            href={`/login?redirect=/sponsorships/${c.id}`}
+                            className="inline-block text-xs font-semibold bg-[#1a5c2a] text-white px-3 py-1.5 rounded-lg hover:bg-[#145222] transition-colors"
+                          >
+                            Ask to Connect
+                          </a>
+                        ) : canRequestIntro ? (
+                          <button
+                            onClick={() => { setSelectedPackageId(pkg.id); setShowIntroModal(true); }}
+                            className="text-xs font-semibold bg-[#1a5c2a] text-white px-3 py-1.5 rounded-lg hover:bg-[#145222] transition-colors"
+                          >
+                            Ask to Connect
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400">GRS does not collect or hold any money. Sponsors and the case owner agree support directly, paid to the supplier or provider.</p>
+            </div>
+          )}
+
           {/* Recognition tiers */}
           {(c.tiers ?? []).length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
               <h2 className="font-semibold text-gray-900 mb-1 text-sm">Recognition Tiers</h2>
-              <p className="text-xs text-gray-500 mb-3">Sponsors who contribute at these levels will receive recognition from the case owner.</p>
+              <p className="text-xs text-gray-500 mb-3">Sponsors who support this athlete at these levels receive recognition from the case owner.</p>
               <div className="space-y-2">
                 {c.tiers!.map((tier) => (
                   <div key={tier.id} className="flex items-start gap-3 border border-gray-100 rounded-xl px-3 py-2.5 bg-gray-50">
@@ -1251,7 +1294,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-sm font-semibold text-gray-900">{tier.title}</p>
                         <span className="text-xs font-medium text-[#1a5c2a] shrink-0">
-                          ${(tier.min_value_cents / 100).toFixed(0)}+
+                          Suggested level: about ${(tier.min_value_cents / 100).toFixed(0)}
                         </span>
                       </div>
                       {tier.description && (
@@ -1266,6 +1309,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-gray-400 mt-3">GRS does not collect or hold any money. Sponsors and the case owner agree support directly, paid to the supplier or provider.</p>
             </div>
           )}
 
@@ -1333,6 +1377,7 @@ export default function SponsorshipDetailClient({ id, submitted = false }: { id:
               <li>The athlete reviews your request and accepts or declines.</li>
               <li>If accepted, GRS facilitates the formal introduction so you can discuss terms directly.</li>
             </ol>
+            <p className="text-xs text-gray-500 mt-3">GRS does not collect or hold any money. Sponsors and the case owner agree support directly, paid to the supplier or provider.</p>
           </div>
 
           <Link href="/sponsorships" className="inline-block text-sm text-[#1a5c2a] hover:underline pb-6">
