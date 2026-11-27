@@ -203,6 +203,7 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
   const [updatePosted,  setUpdatePosted]  = useState(false);
   const [updateCopied,  setUpdateCopied]  = useState(false);
   const [updateError,   setUpdateError]   = useState<string | null>(null); // Bug 5
+  const [shareCopied,   setShareCopied]   = useState(false);
 
   const UPDATE_TEMPLATES = [
     { label: "Weekly update",  text: "Week X update: Training hard and making good progress. [Add your detail here.]" },
@@ -667,6 +668,44 @@ GrassRoots Sports — grassrootssports.live` : "";
           </div>
         </div>
 
+        {/* Share your case */}
+        {caseData.public_code && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="font-semibold text-gray-900 text-sm mb-3">Share your case</h2>
+            <p className="text-xs text-gray-500 mb-3 font-mono break-all select-all">
+              https://www.grassrootssports.live/sponsorships/{caseData.public_code}
+            </p>
+            {caseData.status !== "live" && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+                Only you can open this link until GRS publishes your case. Others will see an error.
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`https://www.grassrootssports.live/sponsorships/${caseData.public_code}`).then(() => {
+                    setShareCopied(true);
+                    setTimeout(() => setShareCopied(false), 2000);
+                  });
+                }}
+                className="flex-1 border border-[#1a5c2a] text-[#1a5c2a] text-xs font-semibold py-2 rounded-xl hover:bg-[#1a5c2a]/5 transition-colors"
+              >
+                {shareCopied ? "Copied!" : "Copy case link"}
+              </button>
+              {caseData.status === "live" && (
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`Support ${caseData.owner_name ?? "this athlete"} — ${caseData.title}\n\nhttps://www.grassrootssports.live/sponsorships/${caseData.public_code}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-[#25D366] text-white text-xs font-semibold py-2 rounded-xl hover:bg-[#1ebe5d] transition-colors text-center"
+                >
+                  Share on WhatsApp
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
         <NeedsManager caseId={caseData.id} token={token ?? ""} isLive={caseData.status === "live"} />
 
         <ProgressChecklist caseData={caseData} />
@@ -805,7 +844,7 @@ GrassRoots Sports — grassrootssports.live` : "";
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <div className="mb-3">
               <h2 className="font-semibold text-gray-900 text-sm">Recognition Tiers</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Define what sponsors receive based on contribution level. Shown publicly on the case page.</p>
+              <p className="text-xs text-gray-500 mt-0.5">Define what sponsors receive based on support level. Shown publicly on the case page.</p>
             </div>
             {tierLoading ? (
               <p className="text-xs text-gray-400">Loading…</p>
@@ -833,7 +872,7 @@ GrassRoots Sports — grassrootssports.live` : "";
             <div className="border border-dashed border-gray-300 rounded-xl p-3 space-y-2">
               <p className="text-xs font-medium text-gray-700">Add a tier</p>
               <input type="text" value={newTierTitle} onChange={(e) => setNewTierTitle(e.target.value)} placeholder="Title (e.g. Community Supporter)" maxLength={100} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
-              <input type="number" value={newTierMin} onChange={(e) => setNewTierMin(e.target.value)} placeholder="Minimum contribution in USD" min="1" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
+              <input type="number" value={newTierMin} onChange={(e) => setNewTierMin(e.target.value)} placeholder="Minimum support level in USD" min="1" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
               <textarea value={newTierDesc} onChange={(e) => setNewTierDesc(e.target.value)} placeholder="What the sponsor receives (optional)" maxLength={300} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 resize-none" />
               <input type="number" value={newTierQty} onChange={(e) => setNewTierQty(e.target.value)} placeholder="Quantity limit (blank = unlimited)" min="1" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
               {tierError && <p className="text-xs text-red-600">{tierError}</p>}
