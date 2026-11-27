@@ -77,7 +77,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     body: `A target that looks achievable gets more support than one that looks impossible.\n\n` +
       `How to set it:\n\n` +
       `• List every cost: kit, balls, boots, transport, entry fees, and thank-you items.\n` +
-      `• Aim to raise about 30% in the first week from your closest circle. If you can't see that happening, lower the target.\n` +
+      `• Aim to secure about 30% in the first week from your closest circle. If you can't see that happening, lower the target.\n` +
       `• List items, not just a money total — supporters trust "18 jerseys, 2 match balls, bus fare" more than "$480".\n\n` +
       `GRS never holds or handles money. Sponsors provide items directly or pay the supplier named in your agreement.\n\n` +
       `If the total feels too big, split it into stages: Stage 1: Kit, then Stage 2: Tournament travel.`,
@@ -85,7 +85,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
   {
     id: "thank-yous",
     title: "6. Thank your supporters",
-    body: `Campaigns that offer thank-you rewards usually raise more. A good thank-you makes supporters feel valued and gives them something to share.\n\n` +
+    body: `Cases that offer thank-you rewards usually attract more support. A good thank-you makes supporters feel valued and gives them something to share.\n\n` +
       `Ideas that work for a grassroots team:\n\n` +
       `• Shout-out on the team's WhatsApp status or GRS page.\n` +
       `• Voice note or video — the squad saying thank you by name.\n` +
@@ -112,7 +112,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
   {
     id: "first-week",
     title: "8. Plan your first week before you launch",
-    body: `Campaigns that succeed usually raise about a third of their target in the first few days.\n\n` +
+    body: `Cases that succeed usually secure about a third of their target in the first few days.\n\n` +
       `Before you go live:\n\n` +
       `• Put in your own contribution first — it shows you're invested too.\n` +
       `• List your top 5 to 10 supporters and talk to them before launch day.\n` +
