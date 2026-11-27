@@ -21,17 +21,21 @@ interface CaseDetail {
   suggested_payee: string | null;
   target_cents: number | null;
   deadline_at: string | null;
+  // adminShow returns 'vouched_by' (org name), not 'vouched_by_name'
   vouched_by: string | null;
-  vouched_by_name: string | null;
-  is_minor_beneficiary: boolean;
+  // adminShow / fullData returns 'is_minor', not 'is_minor_beneficiary'
+  is_minor: boolean;
   guardian_name: string | null;
   introduction_count: number;
   created_at: string;
-  owner: { id: string; name: string; email: string } | null;
+  // adminShow returns flat owner_name / owner_email, not a nested object
+  owner_name: string | null;
+  owner_email: string | null;
   trust_level?: string | null;
   grs_verified?: boolean;
   grs_verified_note?: string | null;
   grs_verified_via_call?: boolean;
+  rejection_reason?: string | null;
 }
 
 interface AdminReport {
@@ -77,6 +81,8 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
   const [grsViaCall, setGrsViaCall] = useState(false);
   const [grsSaving, setGrsSaving] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [rejectReason,   setRejectReason]   = useState("");
 
   // Report panel
   const [report,           setReport]           = useState<AdminReport | null>(null);
@@ -100,7 +106,7 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
 
   useEffect(() => {
     if (!token) return;
-    fetch(`${base}/sponsorships/${id}`, {
+    fetch(`${base}/admin/sponsorships/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
@@ -386,9 +392,9 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
             {updating ? "Checking…" : "Approve → Live"}
           </button>
         )}
-        {canReject && (
+        {canReject && !showRejectForm && (
           <button
-            onClick={() => updateStatus("rejected")}
+            onClick={() => setShowRejectForm(true)}
             disabled={updating}
             className="bg-red-50 text-red-700 border border-red-200 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-red-100 transition-colors disabled:opacity-60"
           >
@@ -422,7 +428,9 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
           </button>
         )}
         {c.grs_verified && (
-          <span className="text-xs text-blue-700 font-semibold self-center">✓ GRS Verified</span>
+          <span className="text-xs text-blue-700 font-semibold self-center">
+            ✓ GRS Verified{c.grs_verified_via_call ? " (call)" : ""}
+          </span>
         )}
         <Link
           href={`/admin/introductions?case=${c.id}`}
@@ -431,6 +439,61 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
           {c.introduction_count} intro{c.introduction_count !== 1 ? "s" : ""} →
         </Link>
       </div>
+
+      {/* Reject form */}
+      {showRejectForm && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-5">
+          <h3 className="text-sm font-semibold text-red-900 mb-1">Reject this case</h3>
+          <p className="text-xs text-red-700 mb-3">
+            This will notify the owner. Provide a clear reason so they can understand what needs to change.
+          </p>
+          <textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={3}
+            placeholder="Reason for rejection (required)…"
+            className="w-full border border-red-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 mb-3 bg-white"
+          />
+          <div className="flex gap-2">
+            <button
+              disabled={updating || rejectReason.trim().length < 5}
+              onClick={async () => {
+                if (!caseData || updating) return;
+                setUpdating(true);
+                setActionMsg(null);
+                try {
+                  const res = await fetch(`${base}/admin/sponsorships/${caseData.id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ status: "rejected", rejection_reason: rejectReason.trim() }),
+                  });
+                  if (!res.ok) {
+                    const j = await res.json();
+                    throw new Error(j.message ?? "Failed");
+                  }
+                  setCaseData((prev) => prev ? { ...prev, status: "rejected", rejection_reason: rejectReason.trim() } : prev);
+                  setShowRejectForm(false);
+                  setRejectReason("");
+                  setActionMsg("Case rejected — owner notified.");
+                } catch (err: unknown) {
+                  setActionMsg((err as Error).message ?? "Could not reject.");
+                } finally {
+                  setUpdating(false);
+                }
+              }}
+              className="bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-red-800 disabled:opacity-50 transition-colors"
+            >
+              {updating ? "Rejecting…" : "Confirm Rejection"}
+            </button>
+            <button
+              onClick={() => { setShowRejectForm(false); setRejectReason(""); }}
+              className="bg-white text-gray-700 border border-gray-200 text-sm px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* GRS verify form */}
       {showGrsForm && !c.grs_verified && (
@@ -474,7 +537,7 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
                   if (!res.ok) throw new Error(j.message ?? "Failed");
                   setCaseData((prev) =>
                     prev
-                      ? { ...prev, grs_verified: true, grs_verified_note: grsNote.trim(), status: "in_review" }
+                      ? { ...prev, grs_verified: true, grs_verified_note: grsNote.trim(), grs_verified_via_call: grsViaCall, status: "in_review" }
                       : prev
                   );
                   setShowGrsForm(false);
@@ -496,6 +559,24 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
               Cancel
             </button>
           </div>
+        </div>
+      )}
+
+      {/* GRS verification detail — read mode */}
+      {c.grs_verified && c.grs_verified_note && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-xs text-blue-800 mb-5">
+          <span className="font-semibold block mb-0.5">
+            GRS Verification note{c.grs_verified_via_call ? " · verified by call" : ""}
+          </span>
+          {c.grs_verified_note}
+        </div>
+      )}
+
+      {/* Rejection reason — read mode */}
+      {c.rejection_reason && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-xs text-red-800 mb-5">
+          <span className="font-semibold block mb-0.5">Rejection reason</span>
+          {c.rejection_reason}
         </div>
       )}
 
@@ -622,23 +703,23 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
             <div className="text-sm font-bold text-gray-800">{dateShort(c.deadline_at)}</div>
           </div>
         )}
-        {c.vouched_by_name && (
+        {c.vouched_by && (
           <div className="bg-purple-50 border border-purple-100 rounded-xl px-3 py-2.5">
             <div className="text-xs text-purple-600 font-semibold uppercase tracking-wide mb-0.5">Vouched by</div>
-            <div className="text-sm font-bold text-purple-800">{c.vouched_by_name}</div>
+            <div className="text-sm font-bold text-purple-800">{c.vouched_by}</div>
           </div>
         )}
         <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">
           <div className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-0.5">Submitted by</div>
-          <div className="text-sm font-bold text-gray-800 truncate">{c.owner?.name ?? "—"}</div>
-          {c.owner?.email && (
-            <div className="text-xs text-gray-400 truncate">{c.owner.email}</div>
+          <div className="text-sm font-bold text-gray-800 truncate">{c.owner_name ?? "—"}</div>
+          {c.owner_email && (
+            <div className="text-xs text-gray-400 truncate">{c.owner_email}</div>
           )}
         </div>
       </div>
 
       {/* Minor safeguarding notice */}
-      {c.is_minor_beneficiary && (
+      {c.is_minor && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 mb-5 flex gap-2">
           <span className="text-base">⚠️</span>
           <div>
