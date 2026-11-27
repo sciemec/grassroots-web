@@ -185,6 +185,7 @@ function NewSponsorshipWizardInner() {
   const [tierSaving,   setTierSaving]   = useState(false);
   const [tierAddError,    setTierAddError]    = useState<string | null>(null);
   const [tierDeleteError, setTierDeleteError] = useState<string | null>(null);
+  const [needDeleteError, setNeedDeleteError] = useState<string | null>(null);
 
   const isCoach = user?.role === "coach" || user?.role === "admin";
   const isMinor = MINOR_GROUPS.has(ageGroup);
@@ -372,8 +373,8 @@ function NewSponsorshipWizardInner() {
   useEffect(() => {
     if (!draftId || step > 3) return;
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
-    setSaveStatus("saving");
     autoSaveRef.current = setTimeout(async () => {
+      setSaveStatus("saving");
       const body: Record<string, unknown> = {
         title:    title.trim(),
         sport:    sport.toLowerCase(),
@@ -709,9 +710,8 @@ function NewSponsorshipWizardInner() {
     const id = draftId!;
 
     if (step === 2) {
-      const body: Record<string, unknown> = { age_group: ageGroup, province: province.trim() || null, story_short: storyShort.trim() || null };
+      const body: Record<string, unknown> = { age_group: ageGroup, province: province.trim() || null, story_short: storyShort.trim() || null, is_minor_beneficiary: isMinor };
       if (isMinor) {
-        body.is_minor_beneficiary  = true;
         body.guardian_name         = guardianName.trim() || null;
         body.guardian_relationship = guardianRelationship.trim() || null;
         body.guardian_whatsapp     = guardianWhatsapp.trim() || null;
@@ -889,7 +889,7 @@ function NewSponsorshipWizardInner() {
 
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
           {/* Escape hatch — shown only when resumed via ?case={id} */}
-          {resumeId && (
+          {effectiveResumeId && (
             <div className="mb-4 text-right">
               <a href="/sponsorships/new?new=1" className="text-xs text-gray-400 hover:text-gray-600 underline">
                 Start a new case instead
@@ -1148,7 +1148,13 @@ function NewSponsorshipWizardInner() {
                             <td className="px-2 py-2">
                               <button type="button" onClick={async () => {
                                 if (n.id && draftId) {
-                                  try { await api.delete(`/sponsorships/${draftId}/needs/${n.id}`); } catch { /* silent */ }
+                                  try {
+                                    await api.delete(`/sponsorships/${draftId}/needs/${n.id}`);
+                                  } catch (err) {
+                                    const ax = err as AxiosError<{ message?: string }>;
+                                    setNeedDeleteError(ax.response?.data?.message ?? "Could not remove item. Please try again.");
+                                    return;
+                                  }
                                 }
                                 setNeedItems((p) => p.filter((r) => r.tempId !== n.tempId));
                               }} className="text-gray-300 hover:text-red-500">
@@ -1169,6 +1175,8 @@ function NewSponsorshipWizardInner() {
                   </div>
                 )}
 
+                {needDeleteError && <p className="text-xs text-red-600">{needDeleteError}</p>}
+
                 {/* Add row */}
                 <p className="text-xs text-gray-400">Add one item per row.</p>
                 <div className="flex gap-2">
@@ -1180,18 +1188,19 @@ function NewSponsorshipWizardInner() {
                     className={`w-20 border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 ${!newNeedUsd && newNeedItem.trim() ? "border-amber-400 bg-amber-50" : "border-gray-300"}`} />
                   <button type="button"
                     onClick={() => {
-                      const uc = Math.round(parseFloat(newNeedUsd || "0") * 100);
-                      if (!newNeedItem.trim() || uc <= 0) return;
-                      // Comma-split: if item contains a comma, offer to split
+                      if (!newNeedItem.trim()) return;
+                      // Comma-split path — no price needed; each row gets priced inline
                       const parts = newNeedItem.includes(",")
                         ? newNeedItem.split(",").map((s) => s.trim()).filter(Boolean)
                         : null;
                       if (parts && parts.length > 1) {
-                        // Add each as a separate unpriced row (qty 1, cost 0) so user prices each
                         setNeedItems((p) => [...p, ...parts.map((part) => ({ tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2)}`, item: part, qty: 1, unit_cost_cents: 0, needs_pricing: true }))]);
-                      } else {
-                        setNeedItems((p) => [...p, { tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2)}`, item: newNeedItem.trim(), qty: parseInt(newNeedQty, 10) || 1, unit_cost_cents: uc }]);
+                        setNewNeedItem(""); setNewNeedQty("1"); setNewNeedUsd("");
+                        return;
                       }
+                      const uc = Math.round(parseFloat(newNeedUsd || "0") * 100);
+                      if (uc <= 0) return;
+                      setNeedItems((p) => [...p, { tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2)}`, item: newNeedItem.trim(), qty: parseInt(newNeedQty, 10) || 1, unit_cost_cents: uc }]);
                       setNewNeedItem(""); setNewNeedQty("1"); setNewNeedUsd("");
                     }}
                     disabled={!newNeedItem.trim() || (!newNeedUsd && !newNeedItem.includes(","))}
@@ -1292,9 +1301,7 @@ function NewSponsorshipWizardInner() {
                           try {
                             const form = new FormData();
                             form.append("file", file);
-                            const r = await api.post(`/sponsorships/${draftId}/payee-details/upload-quote`, form, {
-                              headers: { "Content-Type": "multipart/form-data" },
-                            });
+                            const r = await api.post(`/sponsorships/${draftId}/payee-details/upload-quote`, form);
                             if (r.data?.url) setPayeeQuoteUrl(r.data.url);
                           } catch { setTopError("Quote upload failed. Please try again."); }
                           finally { setPayeeUploading(false); }
