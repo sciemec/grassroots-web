@@ -173,12 +173,16 @@ function NewSponsorshipWizardInner() {
   const [newPkgValue,  setNewPkgValue]  = useState("");
   const [newPkgDesc,   setNewPkgDesc]   = useState("");
   const [pkgSaving,    setPkgSaving]    = useState(false);
+  const [pkgAddError,  setPkgAddError]  = useState<string | null>(null);
+  const [pkgDeleteError, setPkgDeleteError] = useState<string | null>(null);
   const [tiers,        setTiers]        = useState<RecognitionTier[]>([]);
   const [tiersLoading, setTiersLoading] = useState(false);
   const [newTierTitle, setNewTierTitle] = useState("");
   const [newTierMin,   setNewTierMin]   = useState("");
   const [newTierDesc,  setNewTierDesc]  = useState("");
   const [tierSaving,   setTierSaving]   = useState(false);
+  const [tierAddError,    setTierAddError]    = useState<string | null>(null);
+  const [tierDeleteError, setTierDeleteError] = useState<string | null>(null);
 
   const isCoach = user?.role === "coach" || user?.role === "admin";
   const isMinor = MINOR_GROUPS.has(ageGroup);
@@ -629,25 +633,45 @@ function NewSponsorshipWizardInner() {
   const addPackage = async () => {
     if (!draftId || !newPkgName.trim()) return;
     setPkgSaving(true);
+    setPkgAddError(null);
     try {
       const res = await fetch(`${BASE}/sponsorships/${draftId}/packages`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({
-          name:                 newPkgName.trim(),
+          name:                  newPkgName.trim(),
           suggested_value_cents: newPkgValue ? Math.round(parseFloat(newPkgValue) * 100) : null,
-          description:          newPkgDesc.trim() || null,
+          description:           newPkgDesc.trim() || null,
         }),
       });
       const json = await res.json();
-      if (res.ok && json.data) { setPackages((p) => [...p, json.data]); setNewPkgName(""); setNewPkgValue(""); setNewPkgDesc(""); }
-    } catch { /* silent */ } finally { setPkgSaving(false); }
+      if (res.ok && json.data) {
+        setPackages((p) => [...p, json.data]);
+        setNewPkgName(""); setNewPkgValue(""); setNewPkgDesc("");
+      } else {
+        setPkgAddError((json as { message?: string }).message ?? "Could not add package. Please try again.");
+      }
+    } catch {
+      setPkgAddError("Network error. Please try again.");
+    } finally {
+      setPkgSaving(false);
+    }
   };
 
   const deletePackage = async (pkgId: string) => {
     if (!draftId) return;
-    await fetch(`${BASE}/sponsorships/${draftId}/packages/${pkgId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
-    setPackages((p) => p.filter((x) => x.id !== pkgId));
+    setPkgDeleteError(null);
+    try {
+      const res = await fetch(`${BASE}/sponsorships/${draftId}/packages/${pkgId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+      if (res.ok) {
+        setPackages((p) => p.filter((x) => x.id !== pkgId));
+      } else {
+        const j = await res.json().catch(() => ({})) as { message?: string };
+        setPkgDeleteError(j.message ?? "Could not remove package. Please try again.");
+      }
+    } catch {
+      setPkgDeleteError("Network error. Please try again.");
+    }
   };
 
   // ── Tier helpers ──────────────────────────────────────────────────────────
@@ -664,25 +688,45 @@ function NewSponsorshipWizardInner() {
   const addTier = async () => {
     if (!draftId || !newTierTitle.trim() || !newTierMin) return;
     setTierSaving(true);
+    setTierAddError(null);
     try {
       const res = await fetch(`${BASE}/sponsorships/${draftId}/tiers`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({
-          title:            newTierTitle.trim(),
-          min_value_cents:  Math.round(parseFloat(newTierMin) * 100),
-          description:      newTierDesc.trim() || null,
+          title:           newTierTitle.trim(),
+          min_value_cents: Math.round(parseFloat(newTierMin) * 100),
+          description:     newTierDesc.trim() || null,
         }),
       });
       const json = await res.json();
-      if (res.ok && json.data) { setTiers((t) => [...t, json.data]); setNewTierTitle(""); setNewTierMin(""); setNewTierDesc(""); }
-    } catch { /* silent */ } finally { setTierSaving(false); }
+      if (res.ok && json.data) {
+        setTiers((t) => [...t, json.data]);
+        setNewTierTitle(""); setNewTierMin(""); setNewTierDesc("");
+      } else {
+        setTierAddError((json as { message?: string }).message ?? "Could not add tier. Please try again.");
+      }
+    } catch {
+      setTierAddError("Network error. Please try again.");
+    } finally {
+      setTierSaving(false);
+    }
   };
 
   const deleteTier = async (tierId: string) => {
     if (!draftId) return;
-    await fetch(`${BASE}/sponsorships/${draftId}/tiers/${tierId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
-    setTiers((t) => t.filter((x) => x.id !== tierId));
+    setTierDeleteError(null);
+    try {
+      const res = await fetch(`${BASE}/sponsorships/${draftId}/tiers/${tierId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+      if (res.ok) {
+        setTiers((t) => t.filter((x) => x.id !== tierId));
+      } else {
+        const j = await res.json().catch(() => ({})) as { message?: string };
+        setTierDeleteError(j.message ?? "Could not remove tier. Please try again.");
+      }
+    } catch {
+      setTierDeleteError("Network error. Please try again.");
+    }
   };
 
   // ── "Continue" / "Back" ───────────────────────────────────────────────────
@@ -1407,6 +1451,7 @@ function NewSponsorshipWizardInner() {
                         <button onClick={() => deletePackage(pkg.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0">Remove</button>
                       </div>
                     ))}
+                    {pkgDeleteError && <p className="text-xs text-red-600">{pkgDeleteError}</p>}
                     {packages.length < 3 && (
                       <div className="border border-dashed border-gray-300 rounded-xl p-3 space-y-2">
                         <input type="text" value={newPkgName} onChange={(e) => setNewPkgName(e.target.value)} placeholder="Package name (e.g. Kit Sponsor)" maxLength={100}
@@ -1421,6 +1466,7 @@ function NewSponsorshipWizardInner() {
                           className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#1a5c2a] hover:bg-[#154a22] disabled:opacity-50 rounded-lg px-4 py-2 transition-colors">
                           {pkgSaving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Add Package
                         </button>
+                        {pkgAddError && <p className="text-xs text-red-600 mt-1">{pkgAddError}</p>}
                       </div>
                     )}
                   </>
@@ -1445,6 +1491,7 @@ function NewSponsorshipWizardInner() {
                         <button onClick={() => deleteTier(tier.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0">Remove</button>
                       </div>
                     ))}
+                    {tierDeleteError && <p className="text-xs text-red-600">{tierDeleteError}</p>}
                     <div className="border border-dashed border-gray-300 rounded-xl p-3 space-y-2">
                       <input type="text" value={newTierTitle} onChange={(e) => setNewTierTitle(e.target.value)} placeholder="Tier name (e.g. Gold Supporter)" maxLength={100}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30" />
@@ -1461,6 +1508,7 @@ function NewSponsorshipWizardInner() {
                         className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#1a5c2a] hover:bg-[#154a22] disabled:opacity-50 rounded-lg px-4 py-2 transition-colors">
                         {tierSaving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Add Tier
                       </button>
+                      {tierAddError && <p className="text-xs text-red-600 mt-1">{tierAddError}</p>}
                     </div>
                   </>
                 )}
