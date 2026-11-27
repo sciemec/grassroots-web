@@ -22,7 +22,8 @@ type Case = {
   deadline_at: string | null;
   published_at: string | null;
   created_at: string;
-  wizard_step?: number;
+  updated_at: string;
+  wizard_step: number;
 };
 
 const STATUS_CONFIG: Record<
@@ -57,17 +58,25 @@ export default function MyCasesPage() {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string | null>(null);
 
+  const loadCases = () => {
+    if (!token) return;
+    setLoading(true);
+    setError(null);
+    fetch(`${BASE}/sponsorships/mine`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      signal: AbortSignal.timeout(15_000),
+    })
+      .then((r) => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
+      .then((json) => setCases(Array.isArray(json.data) ? json.data : []))
+      .catch(() => setError("Could not load your cases. Please check your connection."))
+      .finally(() => setLoading(false));
+  };
+
   useEffect(() => {
     if (!hasHydrated) return;
     if (!user) { router.replace("/login"); return; }
-
-    fetch(`${BASE}/sponsorships/mine`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((json) => setCases(Array.isArray(json.data) ? json.data : []))
-      .catch(() => setError("Could not load your cases."))
-      .finally(() => setLoading(false));
+    loadCases();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasHydrated, user, token, router]);
 
   if (!hasHydrated || !user) return null;
@@ -134,8 +143,11 @@ export default function MyCasesPage() {
 
         {/* Error */}
         {error && (
-          <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
+          <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 flex items-center justify-between gap-4 text-sm text-red-700">
+            <span>{error}</span>
+            <button onClick={loadCases} className="text-sm font-semibold underline hover:no-underline shrink-0">
+              Retry
+            </button>
           </div>
         )}
 
@@ -234,7 +246,10 @@ function CaseCard({ c, token, onDeleteDraft }: { c: Case; token: string | null; 
             {c.target_cents != null && (
               <span>· Target: {formatCents(c.target_cents)}</span>
             )}
-            <span>· Posted {formatDate(c.created_at)}</span>
+            <span>· Updated {formatDate(c.updated_at ?? c.created_at)}</span>
+            {c.status === "draft" && (
+              <span>· Step {c.wizard_step ?? 1} of 6</span>
+            )}
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
