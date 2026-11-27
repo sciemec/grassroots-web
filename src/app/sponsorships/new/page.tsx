@@ -11,8 +11,6 @@ import { CheckCircle2, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import api from "@/lib/api";
 import type { AxiosError } from "axios";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
-
 // ── Reference data ────────────────────────────────────────────────────────────
 
 const SPORTS = [
@@ -440,12 +438,8 @@ function NewSponsorshipWizardInner() {
     if (!hydrated || !token) return;
     if (user?.role === "admin" || user?.role === "coach") return;
     setGuardianChildrenLoading(true);
-    fetch(`${BASE}/sponsorships/guardian-children`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      signal:  AbortSignal.timeout(15_000),
-    })
-      .then((r) => r.ok ? r.json() : null)
-      .then((j) => { if (Array.isArray(j?.data)) setGuardianChildren(j.data); })
+    api.get<{ data: GuardianChild[] }>(`/sponsorships/guardian-children`, { signal: AbortSignal.timeout(15_000) })
+      .then((r) => { if (Array.isArray(r.data?.data)) setGuardianChildren(r.data.data); })
       .catch(() => { /* timeout or error — guardian picker simply stays hidden */ })
       .finally(() => setGuardianChildrenLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -497,12 +491,6 @@ function NewSponsorshipWizardInner() {
       </div>
     );
   }
-
-  const authHeaders = {
-    "Content-Type": "application/json",
-    Authorization:  `Bearer ${token}`,
-    Accept:         "application/json",
-  };
 
   // ── Step validation ───────────────────────────────────────────────────────
 
@@ -610,9 +598,8 @@ function NewSponsorshipWizardInner() {
 
   const loadPackages = (id: string) => {
     setPkgLoading(true);
-    fetch(`${BASE}/sponsorships/${id}/packages`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.data) setPackages(j.data); })
+    api.get<{ data: SponsorPackage[] }>(`/sponsorships/${id}/packages`)
+      .then((r) => { if (r.data?.data) setPackages(r.data.data); })
       .catch(() => {})
       .finally(() => setPkgLoading(false));
   };
@@ -622,24 +609,18 @@ function NewSponsorshipWizardInner() {
     setPkgSaving(true);
     setPkgAddError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${draftId}/packages`, {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({
-          name:                  newPkgName.trim(),
-          suggested_value_cents: newPkgValue ? Math.round(parseFloat(newPkgValue) * 100) : null,
-          description:           newPkgDesc.trim() || null,
-        }),
+      const res = await api.post<{ data: SponsorPackage }>(`/sponsorships/${draftId}/packages`, {
+        name:                  newPkgName.trim(),
+        suggested_value_cents: newPkgValue ? Math.round(parseFloat(newPkgValue) * 100) : null,
+        description:           newPkgDesc.trim() || null,
       });
-      const json = await res.json();
-      if (res.ok && json.data) {
-        setPackages((p) => [...p, json.data]);
+      if (res.data?.data) {
+        setPackages((p) => [...p, res.data.data]);
         setNewPkgName(""); setNewPkgValue(""); setNewPkgDesc("");
-      } else {
-        setPkgAddError((json as { message?: string }).message ?? "Could not add package. Please try again.");
       }
-    } catch {
-      setPkgAddError("Network error. Please try again.");
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setPkgAddError(ax.response?.data?.message ?? "Could not add package. Please try again.");
     } finally {
       setPkgSaving(false);
     }
@@ -649,15 +630,11 @@ function NewSponsorshipWizardInner() {
     if (!draftId) return;
     setPkgDeleteError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${draftId}/packages/${pkgId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
-      if (res.ok) {
-        setPackages((p) => p.filter((x) => x.id !== pkgId));
-      } else {
-        const j = await res.json().catch(() => ({})) as { message?: string };
-        setPkgDeleteError(j.message ?? "Could not remove package. Please try again.");
-      }
-    } catch {
-      setPkgDeleteError("Network error. Please try again.");
+      await api.delete(`/sponsorships/${draftId}/packages/${pkgId}`);
+      setPackages((p) => p.filter((x) => x.id !== pkgId));
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setPkgDeleteError(ax.response?.data?.message ?? "Could not remove package. Please try again.");
     }
   };
 
@@ -665,9 +642,8 @@ function NewSponsorshipWizardInner() {
 
   const loadTiers = (id: string) => {
     setTiersLoading(true);
-    fetch(`${BASE}/sponsorships/${id}/tiers`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.data) setTiers(j.data); })
+    api.get<{ data: RecognitionTier[] }>(`/sponsorships/${id}/tiers`)
+      .then((r) => { if (r.data?.data) setTiers(r.data.data); })
       .catch(() => {})
       .finally(() => setTiersLoading(false));
   };
@@ -677,24 +653,18 @@ function NewSponsorshipWizardInner() {
     setTierSaving(true);
     setTierAddError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${draftId}/tiers`, {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({
-          title:           newTierTitle.trim(),
-          min_value_cents: Math.round(parseFloat(newTierMin) * 100),
-          description:     newTierDesc.trim() || null,
-        }),
+      const res = await api.post<{ data: RecognitionTier }>(`/sponsorships/${draftId}/tiers`, {
+        title:           newTierTitle.trim(),
+        min_value_cents: Math.round(parseFloat(newTierMin) * 100),
+        description:     newTierDesc.trim() || null,
       });
-      const json = await res.json();
-      if (res.ok && json.data) {
-        setTiers((t) => [...t, json.data]);
+      if (res.data?.data) {
+        setTiers((t) => [...t, res.data.data]);
         setNewTierTitle(""); setNewTierMin(""); setNewTierDesc("");
-      } else {
-        setTierAddError((json as { message?: string }).message ?? "Could not add tier. Please try again.");
       }
-    } catch {
-      setTierAddError("Network error. Please try again.");
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setTierAddError(ax.response?.data?.message ?? "Could not add tier. Please try again.");
     } finally {
       setTierSaving(false);
     }
@@ -704,15 +674,11 @@ function NewSponsorshipWizardInner() {
     if (!draftId) return;
     setTierDeleteError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${draftId}/tiers/${tierId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
-      if (res.ok) {
-        setTiers((t) => t.filter((x) => x.id !== tierId));
-      } else {
-        const j = await res.json().catch(() => ({})) as { message?: string };
-        setTierDeleteError(j.message ?? "Could not remove tier. Please try again.");
-      }
-    } catch {
-      setTierDeleteError("Network error. Please try again.");
+      await api.delete(`/sponsorships/${draftId}/tiers/${tierId}`);
+      setTiers((t) => t.filter((x) => x.id !== tierId));
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setTierDeleteError(ax.response?.data?.message ?? "Could not remove tier. Please try again.");
     }
   };
 
