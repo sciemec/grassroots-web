@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
+import api from "@/lib/api";
+import type { AxiosError } from "axios";
 import {
   ArrowLeft, CheckCircle2, Circle, Clock, Eye, AlertCircle,
 } from "lucide-react";
@@ -15,6 +17,7 @@ import NeedsManager from "@/components/sponsorship/NeedsManager";
 import ContributionReporter from "@/components/sponsorship/ContributionReporter";
 import ProofUpdateForm from "@/components/sponsorship/ProofUpdateForm";
 
+// BASE is kept only for the VouchPanel `base` prop — all direct API calls use the `api` client
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
 interface VouchRecord {
@@ -210,25 +213,17 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
   ];
 
   const postUpdate = async () => {
-    if (!caseData || !token || !updateText.trim()) return;
+    if (!caseData || !updateText.trim()) return;
     setUpdatePosting(true);
     setUpdateError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/updates`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-        body: JSON.stringify({ body: updateText.trim() }),
-      });
-      if (res.ok) {
-        setUpdatePosted(true);
-        setUpdateText("");
-        setTimeout(() => setUpdatePosted(false), 3000);
-      } else {
-        const json = await res.json().catch(() => ({}));
-        setUpdateError((json as { message?: string }).message ?? "Could not post update.");
-      }
-    } catch {
-      setUpdateError("Network error. Please try again.");
+      await api.post(`/sponsorships/${caseData.id}/updates`, { body: updateText.trim() });
+      setUpdatePosted(true);
+      setUpdateText("");
+      setTimeout(() => setUpdatePosted(false), 3000);
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setUpdateError(ax.response?.data?.message ?? "Could not post update.");
     } finally {
       setUpdatePosting(false);
     }
@@ -269,24 +264,9 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
       setAccessDenied(false);
 
       try {
-        const headers: Record<string, string> = { Accept: "application/json" };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-
-        const res = await fetch(`${BASE}/sponsorships/${params.id}/detail`, { headers });
-
-        if (res.status === 401 || res.status === 403) {
-          setAccessDenied(true);
-          return;
-        }
-
-        if (!res.ok) {
-          const json = await res.json().catch(() => ({}));
-          setError((json as { message?: string }).message ?? "Could not load this case.");
-          return;
-        }
-
-        const json = await res.json();
-        const data: CaseData = json.data ?? json;
+        const res = await api.get<{ data: CaseData }>(`/sponsorships/${params.id}/detail`);
+        const rawJson = res.data as { data?: CaseData } & CaseData;
+        const data: CaseData = rawJson.data ?? rawJson;
 
         // Draft: only the owner can view
         if (data.status === "draft" && (!user || user.id !== data.owner_user_id)) {
@@ -302,8 +282,13 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
         }
 
         setCaseData(data);
-      } catch {
-        setError("Could not load this case.");
+      } catch (err) {
+        const ax = err as AxiosError<{ message?: string }>;
+        if (ax.response?.status === 401 || ax.response?.status === 403) {
+          setAccessDenied(true);
+          return;
+        }
+        setError(ax.response?.data?.message ?? "Could not load this case.");
       } finally {
         setLoading(false);
       }
@@ -314,56 +299,42 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
 
   // Load sponsor packages
   useEffect(() => {
-    if (!caseData || !token) return;
+    if (!caseData) return;
     setPkgLoading(true);
-    fetch(`${BASE}/sponsorships/${caseData.id}/packages`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.data) setPackages(j.data); })
+    api.get<{ data: SponsorPackage[] }>(`/sponsorships/${caseData.id}/packages`)
+      .then((r) => { if (r.data?.data) setPackages(r.data.data); })
       .catch(() => {})
       .finally(() => setPkgLoading(false));
-  }, [caseData?.id, token]);
+  }, [caseData?.id]);
 
   const addPackage = async () => {
-    if (!caseData || !token || !newPkgName.trim()) return;
+    if (!caseData || !newPkgName.trim()) return;
     setPkgSaving(true);
     setPkgError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/packages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-        body: JSON.stringify({
-          name: newPkgName.trim(),
-          suggested_value_cents: newPkgValue ? Math.round(parseFloat(newPkgValue) * 100) : null,
-          description: newPkgDesc.trim() || null,
-          sort_order: packages.length,
-        }),
+      const res = await api.post<{ data: SponsorPackage }>(`/sponsorships/${caseData.id}/packages`, {
+        name: newPkgName.trim(),
+        suggested_value_cents: newPkgValue ? Math.round(parseFloat(newPkgValue) * 100) : null,
+        description: newPkgDesc.trim() || null,
+        sort_order: packages.length,
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) { setPkgError((json as { message?: string }).message ?? "Could not add package."); return; }
-      setPackages((prev) => [...prev, (json as { data?: SponsorPackage }).data ?? (json as SponsorPackage)]);
+      setPackages((prev) => [...prev, res.data.data ?? (res.data as unknown as SponsorPackage)]);
       setNewPkgName(""); setNewPkgValue(""); setNewPkgDesc("");
-    } catch { setPkgError("Could not add package."); }
-    finally { setPkgSaving(false); }
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setPkgError(ax.response?.data?.message ?? "Could not add package.");
+    } finally { setPkgSaving(false); }
   };
 
   const deletePackage = async (pkgId: string) => {
-    if (!caseData || !token) return;
+    if (!caseData) return;
     setPkgDeleteError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/packages/${pkgId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      });
-      if (res.ok) {
-        setPackages((prev) => prev.filter((p) => p.id !== pkgId));
-      } else {
-        const json = await res.json().catch(() => ({}));
-        setPkgDeleteError((json as { message?: string }).message ?? "Could not remove package.");
-      }
-    } catch {
-      setPkgDeleteError("Network error. Please try again.");
+      await api.delete(`/sponsorships/${caseData.id}/packages/${pkgId}`);
+      setPackages((prev) => prev.filter((p) => p.id !== pkgId));
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setPkgDeleteError(ax.response?.data?.message ?? "Could not remove package.");
     }
   };
 
@@ -379,55 +350,41 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
   const [newTierQty,      setNewTierQty]      = useState("");
 
   useEffect(() => {
-    if (!caseData || !token) return;
+    if (!caseData) return;
     setTierLoading(true);
-    fetch(`${BASE}/sponsorships/${caseData.id}/tiers`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.data) setTiers(j.data); })
+    api.get<{ data: RecognitionTier[] }>(`/sponsorships/${caseData.id}/tiers`)
+      .then((r) => { if (r.data?.data) setTiers(r.data.data); })
       .catch(() => {})
       .finally(() => setTierLoading(false));
-  }, [caseData?.id, token]);
+  }, [caseData?.id]);
 
   const addTier = async () => {
-    if (!caseData || !token || !newTierTitle.trim() || !newTierMin) return;
+    if (!caseData || !newTierTitle.trim() || !newTierMin) return;
     setTierSaving(true); setTierError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/tiers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-        body: JSON.stringify({
-          title: newTierTitle.trim(),
-          min_value_cents: Math.round(parseFloat(newTierMin) * 100),
-          description: newTierDesc.trim() || null,
-          quantity_limit: newTierQty ? parseInt(newTierQty) : null,
-        }),
+      const res = await api.post<{ data: RecognitionTier }>(`/sponsorships/${caseData.id}/tiers`, {
+        title: newTierTitle.trim(),
+        min_value_cents: Math.round(parseFloat(newTierMin) * 100),
+        description: newTierDesc.trim() || null,
+        quantity_limit: newTierQty ? parseInt(newTierQty) : null,
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) { setTierError((json as { message?: string }).message ?? "Could not add tier."); return; }
-      setTiers((prev) => [...prev, (json as { data?: RecognitionTier }).data ?? (json as RecognitionTier)]);
+      setTiers((prev) => [...prev, res.data.data ?? (res.data as unknown as RecognitionTier)]);
       setNewTierTitle(""); setNewTierMin(""); setNewTierDesc(""); setNewTierQty("");
-    } catch { setTierError("Could not add tier."); }
-    finally { setTierSaving(false); }
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setTierError(ax.response?.data?.message ?? "Could not add tier.");
+    } finally { setTierSaving(false); }
   };
 
   const deleteTier = async (tierId: string) => {
-    if (!caseData || !token) return;
+    if (!caseData) return;
     setTierDeleteError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/tiers/${tierId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      });
-      if (res.ok) {
-        setTiers((prev) => prev.filter((t) => t.id !== tierId));
-      } else {
-        const json = await res.json().catch(() => ({}));
-        setTierDeleteError((json as { message?: string }).message ?? "Could not remove tier.");
-      }
-    } catch {
-      setTierDeleteError("Network error. Please try again.");
+      await api.delete(`/sponsorships/${caseData.id}/tiers/${tierId}`);
+      setTiers((prev) => prev.filter((t) => t.id !== tierId));
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setTierDeleteError(ax.response?.data?.message ?? "Could not remove tier.");
     }
   };
 
@@ -442,49 +399,38 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
   const [newSuppNote,     setNewSuppNote]     = useState("");
 
   useEffect(() => {
-    if (!caseData || !token) return;
+    if (!caseData) return;
     setSuppLoading(true);
-    fetch(`${BASE}/sponsorships/${caseData.id}/promised-supporters`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.data) setLocalSupporters(j.data); })
+    api.get<{ data: PromisedSupporter[] }>(`/sponsorships/${caseData.id}/promised-supporters`)
+      .then((r) => { if (r.data?.data) setLocalSupporters(r.data.data); })
       .catch(() => {})
       .finally(() => setSuppLoading(false));
-  }, [caseData?.id, token]);
+  }, [caseData?.id]);
 
   const addSupporter = async () => {
-    if (!caseData || !token || !newSuppName.trim()) return;
+    if (!caseData || !newSuppName.trim()) return;
     setSuppSaving(true); setSuppError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/promised-supporters`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-        body: JSON.stringify({ name: newSuppName.trim(), whatsapp: newSuppWhatsapp.trim() || null, note: newSuppNote.trim() || null }),
+      const res = await api.post<{ data: PromisedSupporter }>(`/sponsorships/${caseData.id}/promised-supporters`, {
+        name: newSuppName.trim(), whatsapp: newSuppWhatsapp.trim() || null, note: newSuppNote.trim() || null,
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) { setSuppError((json as { message?: string }).message ?? "Could not add supporter."); return; }
-      setLocalSupporters((prev) => [...prev, (json as { data?: PromisedSupporter }).data ?? (json as PromisedSupporter)]);
+      setLocalSupporters((prev) => [...prev, res.data.data ?? (res.data as unknown as PromisedSupporter)]);
       setNewSuppName(""); setNewSuppWhatsapp(""); setNewSuppNote("");
-    } catch { setSuppError("Could not add."); }
-    finally { setSuppSaving(false); }
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setSuppError(ax.response?.data?.message ?? "Could not add supporter.");
+    } finally { setSuppSaving(false); }
   };
 
   const deleteSupporter = async (suppId: string) => {
-    if (!caseData || !token) return;
+    if (!caseData) return;
     setSuppDeleteError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/promised-supporters/${suppId}`, {
-        method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      });
-      if (res.ok) {
-        setLocalSupporters((prev) => prev.filter((s) => s.id !== suppId));
-      } else {
-        const json = await res.json().catch(() => ({}));
-        setSuppDeleteError((json as { message?: string }).message ?? "Could not remove supporter.");
-      }
-    } catch {
-      setSuppDeleteError("Network error. Please try again.");
+      await api.delete(`/sponsorships/${caseData.id}/promised-supporters/${suppId}`);
+      setLocalSupporters((prev) => prev.filter((s) => s.id !== suppId));
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setSuppDeleteError(ax.response?.data?.message ?? "Could not remove supporter.");
     }
   };
 
@@ -498,19 +444,17 @@ export default function OwnerCaseDetailPage({ params }: { params: { id: string }
   const [mediaReqCopied,  setMediaReqCopied]  = useState(false);
 
   const sendMediaRequest = async () => {
-    if (!caseData || !token || !mediaReqAngle.trim()) return;
+    if (!caseData || !mediaReqAngle.trim()) return;
     setMediaReqSending(true); setMediaReqError(null);
     try {
-      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/media-requests`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-        body: JSON.stringify({ story_angle: mediaReqAngle.trim(), why_now: mediaReqWhy.trim() || null }),
+      await api.post(`/sponsorships/${caseData.id}/media-requests`, {
+        story_angle: mediaReqAngle.trim(), why_now: mediaReqWhy.trim() || null,
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) { setMediaReqError((json as { message?: string }).message ?? "Could not send request."); return; }
       setMediaReqSent(true); setShowMediaForm(false); setMediaReqAngle(""); setMediaReqWhy("");
-    } catch { setMediaReqError("Could not send request."); }
-    finally { setMediaReqSending(false); }
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setMediaReqError(ax.response?.data?.message ?? "Could not send request.");
+    } finally { setMediaReqSending(false); }
   };
 
   const pressPitchTemplate = caseData ? `PRESS PITCH — ${caseData.title}
@@ -529,31 +473,22 @@ GrassRoots Sports — grassrootssports.live` : "";
 
   // Load draft report
   useEffect(() => {
-    if (!caseData || !token || reportLoaded) return;
+    if (!caseData || reportLoaded) return;
     setReportLoaded(true);
-    fetch(`${BASE}/sponsorships/${caseData.id}/report/draft`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.data) setReport(j.data); })
+    api.get<{ data: DraftReport }>(`/sponsorships/${caseData.id}/report/draft`)
+      .then((r) => { if (r.data?.data) setReport(r.data.data); })
       .catch(() => {});
-  }, [caseData, token, reportLoaded]);
+  }, [caseData, reportLoaded]);
 
   const flagReport = async () => {
-    if (!caseData || !token) return;
+    if (!caseData) return;
     setFlagSubmitting(true);
     try {
-      const r = await fetch(`${BASE}/sponsorships/${caseData.id}/report/flag`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ flag_note: flagNote.trim() }),
-      });
-      if (r.ok) {
-        setFlagSuccess(true);
-        setShowFlagForm(false);
-        setFlagNote("");
-        setReport((prev) => prev ? { ...prev, status: "flagged" } : prev);
-      }
+      await api.post(`/sponsorships/${caseData.id}/report/flag`, { flag_note: flagNote.trim() });
+      setFlagSuccess(true);
+      setShowFlagForm(false);
+      setFlagNote("");
+      setReport((prev) => prev ? { ...prev, status: "flagged" } : prev);
     } catch { /* silent */ } finally {
       setFlagSubmitting(false);
     }
@@ -568,25 +503,17 @@ GrassRoots Sports — grassrootssports.live` : "";
         ? { voucher_user_id: vouchUserId, voucher_role: vouchRole }
         : { invite_whatsapp: vouchWhatsapp, voucher_role: vouchRole };
 
-      const res = await fetch(`${BASE}/sponsorships/${caseData.id}/vouches`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setVouchError((json as { message?: string }).message ?? "Could not send vouch request.");
-        return;
-      }
-      const newVouch: VouchRecord = (json as { data?: VouchRecord }).data ?? (json as VouchRecord);
+      const res = await api.post<{ data: VouchRecord }>(`/sponsorships/${caseData.id}/vouches`, body);
+      const newVouch: VouchRecord = res.data.data ?? (res.data as unknown as VouchRecord);
       setCaseData((prev) =>
         prev ? { ...prev, vouches: [...prev.vouches, newVouch], status: prev.status === "draft" ? "pending_vouch" : prev.status } : prev
       );
       setVouchSuccess(true);
       setShowVouchForm(false);
       setVouchUserId(""); setVouchWhatsapp(""); setVouchRole("");
-    } catch {
-      setVouchError("Network error. Please try again.");
+    } catch (err) {
+      const ax = err as AxiosError<{ message?: string }>;
+      setVouchError(ax.response?.data?.message ?? "Could not send vouch request.");
     } finally {
       setVouchSubmitting(false);
     }
@@ -1054,15 +981,10 @@ GrassRoots Sports — grassrootssports.live` : "";
                   const next = !caseData.auto_accept_introductions;
                   setAutoAcceptSaving(true);
                   try {
-                    const res = await fetch(`${BASE}/sponsorships/${caseData.id}/settings`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, Accept: "application/json" },
-                      body: JSON.stringify({ auto_accept_introductions: next }),
-                    });
-                    if (res.ok) {
-                      setCaseData((prev) => prev ? { ...prev, auto_accept_introductions: next } : prev);
-                    }
-                  } finally {
+                    await api.patch(`/sponsorships/${caseData.id}/settings`, { auto_accept_introductions: next });
+                    setCaseData((prev) => prev ? { ...prev, auto_accept_introductions: next } : prev);
+                  } catch { /* silent — toggle reverts visually on next reload */ }
+                  finally {
                     setAutoAcceptSaving(false);
                   }
                 }}
