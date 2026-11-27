@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_GIT_COMMIT: (process.env.RENDER_GIT_COMMIT || "").slice(0, 7),
+  },
+
   // Force unique build ID on every deploy so browsers always fetch fresh JS chunks
   generateBuildId: async () => `build-${Date.now()}`,
 

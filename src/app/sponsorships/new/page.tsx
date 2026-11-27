@@ -1585,11 +1585,9 @@ function NewSponsorshipWizardInner() {
         </div>
 
         {/* Build stamp */}
-        {process.env.NEXT_PUBLIC_GIT_COMMIT && (
-          <p className="mt-4 text-center text-[10px] text-gray-300 select-none">
-            build {process.env.NEXT_PUBLIC_GIT_COMMIT.slice(0, 7)}
-          </p>
-        )}
+        <p className="mt-4 text-center text-[10px] text-gray-300 select-none">
+          build {process.env.NEXT_PUBLIC_GIT_COMMIT || "local"}
+        </p>
       </div>
     </div>
   );
