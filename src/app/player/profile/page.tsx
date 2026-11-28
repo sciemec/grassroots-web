@@ -32,7 +32,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import { SportSelector } from "@/components/sports/sport-selector";
 import { SPORT_MAP, SportKey } from "@/config/sports";
 import api from "@/lib/api";
@@ -249,6 +248,7 @@ function PlayerProfilePage() {
       if (res.data?.age_group) {
         setValue("age_group", res.data.age_group);
       }
+      setProfile((p) => p ? { ...p, ...data } : p);
       reset(data);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -492,89 +492,73 @@ If no AI analysis data is provided, write a strong profile from position and spo
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-[#f4f2ee]" style={lightTheme}>
-        <Sidebar />
-        <main className="flex-1 overflow-auto p-6">
-          <div className="mx-auto max-w-2xl space-y-6">
-            <div className="h-8 w-40 animate-pulse rounded-lg bg-muted" />
-            <div className="flex items-center gap-5">
-              <div className="h-20 w-20 animate-pulse rounded-full bg-muted" />
-              <div className="space-y-2">
-                <div className="h-5 w-32 animate-pulse rounded-lg bg-muted" />
-                <div className="h-4 w-48 animate-pulse rounded-lg bg-muted" />
-              </div>
-            </div>
-            <div className="h-4 animate-pulse rounded-full bg-muted" />
-            <div className="h-16 animate-pulse rounded-xl bg-muted" />
-            <div className="grid grid-cols-2 gap-4">
-              <div className="h-12 animate-pulse rounded-lg bg-muted" />
-              <div className="h-12 animate-pulse rounded-lg bg-muted" />
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              {[1,2,3,4].map(i => <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />)}
-            </div>
-            <div className="h-28 animate-pulse rounded-xl bg-muted" />
-            <div className="h-11 animate-pulse rounded-xl bg-muted" />
+      <div className="mx-auto max-w-2xl space-y-6 p-6" style={lightTheme}>
+        <div className="h-8 w-40 animate-pulse rounded-lg bg-muted" />
+        <div className="flex items-center gap-5">
+          <div className="h-20 w-20 animate-pulse rounded-full bg-muted" />
+          <div className="space-y-2">
+            <div className="h-5 w-32 animate-pulse rounded-lg bg-muted" />
+            <div className="h-4 w-48 animate-pulse rounded-lg bg-muted" />
           </div>
-        </main>
+        </div>
+        <div className="h-4 animate-pulse rounded-full bg-muted" />
+        <div className="h-16 animate-pulse rounded-xl bg-muted" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="h-12 animate-pulse rounded-lg bg-muted" />
+          <div className="h-12 animate-pulse rounded-lg bg-muted" />
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />)}
+        </div>
+        <div className="h-28 animate-pulse rounded-xl bg-muted" />
+        <div className="h-11 animate-pulse rounded-xl bg-muted" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex h-screen bg-[#f4f2ee]" style={lightTheme}>
-        <Sidebar />
-        <main className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="mx-auto max-w-2xl">
-            <div className="mt-16 rounded-2xl border border-white/10 bg-card p-8 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <User className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h2 className="mb-1 text-lg font-bold">Sign in to view your profile</h2>
-              <p className="mb-6 text-sm text-muted-foreground">
-                Build your player profile, get verified, and be discovered by scouts.
-              </p>
-              <a href="/login"
-                className="block w-full rounded-xl bg-[#1a5c2a] py-3 text-sm font-bold text-white mb-3 text-center">
-                Sign in →
-              </a>
-              <a href="/register"
-                className="block w-full rounded-xl border border-white/20 py-3 text-sm font-bold text-white/70 hover:text-white text-center transition-colors">
-                Create free account →
-              </a>
-            </div>
+      <div className="mx-auto max-w-2xl p-4 md:p-6">
+        <div className="mt-16 rounded-2xl border border-white/10 bg-card p-8 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+            <User className="h-8 w-8 text-muted-foreground" />
           </div>
-        </main>
+          <h2 className="mb-1 text-lg font-bold">Sign in to view your profile</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Build your player profile, get verified, and be discovered by scouts.
+          </p>
+          <a href="/login"
+            className="block w-full rounded-xl bg-[#1a5c2a] py-3 text-sm font-bold text-white mb-3 text-center">
+            Sign in →
+          </a>
+          <a href="/register"
+            className="block w-full rounded-xl border border-white/20 py-3 text-sm font-bold text-white/70 hover:text-white text-center transition-colors">
+            Create free account →
+          </a>
+        </div>
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div className="flex h-screen bg-[#f4f2ee]" style={lightTheme}>
-        <Sidebar />
-        <main className="flex-1 overflow-auto p-6">
-          <div className="mx-auto max-w-2xl mt-16">
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-              <p className="text-sm font-semibold text-red-700 mb-3">{loadError}</p>
-              <button
-                onClick={() => { setLoadError(""); setLoading(true); window.location.reload(); }}
-                className="rounded-xl bg-[#1a5c2a] px-5 py-2 text-sm font-bold text-white"
-              >
-                Refresh
-              </button>
-            </div>
-          </div>
-        </main>
+      <div className="mx-auto max-w-2xl mt-16 p-6">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
+          <p className="text-sm font-semibold text-red-700 mb-3">{loadError}</p>
+          <button
+            onClick={() => { setLoadError(""); setLoading(true); window.location.reload(); }}
+            className="rounded-xl bg-[#1a5c2a] px-5 py-2 text-sm font-bold text-white"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
     );
   }
 
   // ── PDF download ──────────────────────────────────────────────────────────
-  const downloadProfile = () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { jsPDF } = require("jspdf");
+  const downloadProfile = async () => {
+    const { jsPDF } = await import("jspdf");
     const doc = new jsPDF();
 
     // Header bar
@@ -695,7 +679,7 @@ If no AI analysis data is provided, write a strong profile from position and spo
   const LiveIconComponent = POSITION_ICON_REGISTRY[lookupKey] || Award;
 
   return (
-    <div className="flex h-screen bg-[#f4f2ee]" style={lightTheme}>
+    <div style={lightTheme}>
 
       {/* ── Photo Crop Modal ───────────────────────────────────────────────── */}
       {cropSrc && (
@@ -740,9 +724,7 @@ If no AI analysis data is provided, write a strong profile from position and spo
         </div>
       )}
 
-      <Sidebar />
-      <main className="flex-1 overflow-auto p-4 md:p-6">
-        <div className="mx-auto max-w-2xl space-y-4">
+      <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
 
           <ProUpgradeBanner />
 
@@ -1369,7 +1351,6 @@ If no AI analysis data is provided, write a strong profile from position and spo
           </div>
 
         </div>
-      </main>
     </div>
   );
 }
