@@ -152,7 +152,8 @@ export default function AdminCaseDetailPage() {
     }
   };
 
-  // Load report once token is ready
+  // Load report once token is ready.
+  // adminShow returns an array — take the first (most recent) item.
   useEffect(() => {
     if (!token || !id || reportLoaded) return;
     setReportLoaded(true);
@@ -160,7 +161,11 @@ export default function AdminCaseDetailPage() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.data) setReport(j.data); })
+      .then((j) => {
+        const raw = j?.data;
+        const item = Array.isArray(raw) ? (raw[0] ?? null) : (raw ?? null);
+        if (item?.id) setReport(item);
+      })
       .catch(() => {});
   }, [token, id, base, reportLoaded]);
 
@@ -594,7 +599,7 @@ export default function AdminCaseDetailPage() {
                 report.status === "flagged"  ? "bg-red-100 text-red-700" :
                                                "bg-gray-100 text-gray-600"
               }`}>
-                {report.status} · v{report.version}
+                {report.status}{report.version != null ? ` · v${report.version}` : ""}
               </span>
             )}
             <button
@@ -634,7 +639,9 @@ export default function AdminCaseDetailPage() {
           <>
             <div className="flex items-start justify-between gap-3 mb-2">
               <div className="text-xs text-gray-400">
-                Generated {new Date(report.generated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                {report.generated_at
+                  ? `Generated ${new Date(report.generated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`
+                  : "Generation time unknown"}
               </div>
               {report.level_band && (
                 <span className="flex-shrink-0 text-xs font-semibold bg-[#1a5c2a]/10 text-[#1a5c2a] px-2 py-0.5 rounded-full capitalize">
