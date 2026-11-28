@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import TrustBadge, { TrustLevel } from "@/components/sponsorship/TrustBadge";
 import EligibilityChecklist from "@/components/sponsorship/EligibilityChecklist";
@@ -64,11 +64,12 @@ function dateShort(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-export default function AdminCaseDetailPage({ params }: { params: { id: string } }) {
+export default function AdminCaseDetailPage() {
+  const params    = useParams<{ id: string }>();
+  const id        = params?.id;
   const token     = useAuthStore((s) => s.token);
   const router    = useRouter();
   const base      = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
-  const { id }    = params;
 
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [loading, setLoading]   = useState(true);
@@ -105,7 +106,7 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
   const [payeeMsg,       setPayeeMsg]       = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !id) return;
     fetch(`${base}/admin/sponsorships/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -115,7 +116,7 @@ export default function AdminCaseDetailPage({ params }: { params: { id: string }
       .finally(() => setLoading(false));
   }, [id, token, base]);
 
-  // Load payee details once token is ready
+  // Load payee details once token is ready — guard against undefined id
   useEffect(() => {
     if (!token || !id || payeeLoaded) return;
     setPayeeLoaded(true);
