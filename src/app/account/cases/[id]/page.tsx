@@ -608,6 +608,14 @@ GrassRoots Sports — grassrootssports.live` : "";
             <h1 className="text-base font-bold text-gray-900 truncate">{caseData.title}</h1>
             <p className="text-xs text-gray-500 capitalize">{caseData.sport} · {caseData.category}</p>
           </div>
+          {caseData.status === "draft" && (
+            <Link
+              href={`/sponsorships/new?case=${caseData.id}`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#1a5c2a] px-3 py-1.5 text-xs font-semibold text-[#1a5c2a] hover:bg-[#f0fdf4]"
+            >
+              Continue editing
+            </Link>
+          )}
           {caseData.status === "live" && caseData.public_code && (
             <Link
               href={`/sponsorships/${caseData.public_code}`}

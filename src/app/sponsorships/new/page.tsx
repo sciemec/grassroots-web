@@ -510,8 +510,9 @@ function NewSponsorshipWizardInner() {
       if (story.trim().length <= 20 || !supportMethod) return false;
       // No need rows with zero cost
       if (needItems.some((n) => n.unit_cost_cents <= 0)) return false;
-      // pay_supplier requires a name
+      // pay_supplier requires a name and a quote upload
       if (supportMethod === "pay_supplier" && !payeeName.trim()) return false;
+      if (supportMethod === "pay_supplier" && !payeeQuoteUrl.trim()) return false;
       return true;
     }
     if (step === 4) return hasCover;
