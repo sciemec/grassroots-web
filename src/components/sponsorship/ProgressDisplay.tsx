@@ -50,14 +50,24 @@ export default function ProgressDisplay({ progress }: Props) {
 
   const coveredCount = needs.filter((n) => n.covered).length;
 
+  // Milestone badges — 25 / 50 / 75 / 100 %
+  const MILESTONES = [25, 50, 75, 100] as const;
+  const highestMilestone = MILESTONES.filter((m) => verified_pct >= m).pop() ?? null;
+  const MILESTONE_CFG: Record<number, { label: string; badge: string; text: string }> = {
+    25:  { label: "25% reached 🎉",     badge: "bg-blue-50 border-blue-200",     text: "text-blue-700"   },
+    50:  { label: "Halfway there 🌟",   badge: "bg-amber-50 border-amber-200",   text: "text-amber-700"  },
+    75:  { label: "75% reached 💪",     badge: "bg-orange-50 border-orange-200", text: "text-orange-700" },
+    100: { label: "Fully supported 🏆", badge: "bg-green-50 border-green-200",   text: "text-green-700"  },
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="font-semibold text-gray-900 text-sm">Support Progress</h2>
-        {verified_pct === 100 && (
-          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-green-100 text-green-800">
-            Fully supported 🏆
+        {highestMilestone != null && (
+          <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${MILESTONE_CFG[highestMilestone].badge} ${MILESTONE_CFG[highestMilestone].text}`}>
+            {MILESTONE_CFG[highestMilestone].label}
           </span>
         )}
       </div>
@@ -76,26 +86,45 @@ export default function ProgressDisplay({ progress }: Props) {
             <span className="font-semibold text-gray-700">{verified_pct}%</span>
           </div>
 
-          {/* Bar */}
-          <div className="relative h-3 rounded-full bg-gray-100 overflow-hidden">
-            {/* Verified segment (solid green) */}
+          {/* Bar — overflow:visible so tick marks show above rounded corners */}
+          <div className="relative h-3 rounded-full bg-gray-100 overflow-visible">
             {verified_pct > 0 && (
               <div
-                className="absolute left-0 top-0 h-full rounded-full bg-[#1a5c2a] transition-all"
+                className="absolute left-0 top-0 h-full rounded-full bg-[#1a5c2a] transition-all overflow-hidden"
                 style={{ width: `${verified_pct}%` }}
               />
             )}
-            {/* Unverified segment (lighter, starts after verified) */}
             {unverified_pct > 0 && (
               <div
-                className="absolute top-0 h-full bg-[#a8d5b5] transition-all"
+                className="absolute top-0 h-full bg-[#a8d5b5] transition-all overflow-hidden"
                 style={{ left: `${verified_pct}%`, width: `${unverified_pct}%` }}
               />
             )}
+            {/* Milestone tick marks at 25 / 50 / 75% */}
+            {([25, 50, 75] as const).map((m) => (
+              <div
+                key={m}
+                className="absolute top-0 h-full w-px bg-white/70 z-10"
+                style={{ left: `${m}%` }}
+              />
+            ))}
+          </div>
+
+          {/* Tick labels */}
+          <div className="relative mt-0.5" style={{ height: "14px" }}>
+            {([25, 50, 75] as const).map((m) => (
+              <span
+                key={m}
+                className="absolute text-[9px] text-gray-300 -translate-x-1/2 select-none"
+                style={{ left: `${m}%` }}
+              >
+                {m}%
+              </span>
+            ))}
           </div>
 
           {unverified_cents > 0 && (
-            <p className="text-xs text-gray-400 mt-1.5">
+            <p className="text-xs text-gray-400 mt-0.5">
               <span className="inline-block w-2 h-2 rounded-full bg-[#a8d5b5] mr-1" />
               Lighter segment = owner-reported, not yet verified by GRS
             </p>
