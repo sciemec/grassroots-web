@@ -23,6 +23,7 @@ interface SponsorshipCase {
   age_group: string | null;
   vouched: boolean;
   trust_level?: string | null;
+  is_strong_case?: boolean;
   introduction_count: number;
   target_cents: number | null;
   deadline_at: string | null;
@@ -132,11 +133,16 @@ function CaseCard({ c }: { c: SponsorshipCase }) {
         <span className="absolute top-3 left-3 bg-white/90 text-[#1a5c2a] text-xs font-semibold px-2 py-0.5 rounded-full capitalize">
           {sportEmoji} {c.sport}
         </span>
-        {c.trust_level && c.trust_level !== "unverified" && (
-          <span className="absolute top-3 right-3">
+        <span className="absolute top-3 right-3 flex flex-col items-end gap-1">
+          {c.is_strong_case && (
+            <span className="bg-[#c8962a] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+              ★ Strong case
+            </span>
+          )}
+          {c.trust_level && c.trust_level !== "unverified" && (
             <TrustBadge level={c.trust_level as TrustLevel} />
-          </span>
-        )}
+          )}
+        </span>
       </div>
 
       <div className="p-4">
@@ -201,10 +207,11 @@ export default function SponsorshipsPage() {
   const [cases, setCases]       = useState<SponsorshipCase[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
-  const [sport, setSport]       = useState("All");
-  const [search, setSearch]     = useState("");
-  const [page, setPage]         = useState(1);
-  const [lastPage, setLastPage] = useState(1);
+  const [sport, setSport]           = useState("All");
+  const [search, setSearch]         = useState("");
+  const [strongOnly, setStrongOnly] = useState(false);
+  const [page, setPage]             = useState(1);
+  const [lastPage, setLastPage]     = useState(1);
 
   // My introductions state
   const [myIntros, setMyIntros]           = useState<MyIntro[]>([]);
@@ -216,7 +223,7 @@ export default function SponsorshipsPage() {
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
   // Reset page when browse filters change
-  useEffect(() => { setPage(1); }, [sport, search]);
+  useEffect(() => { setPage(1); }, [sport, search, strongOnly]);
 
   // Fetch browse cases
   useEffect(() => {
@@ -228,6 +235,7 @@ export default function SponsorshipsPage() {
     const params = new URLSearchParams({ page: String(page) });
     if (sport !== "All") params.set("sport", sport.toLowerCase());
     if (search.trim()) params.set("search", search.trim());
+    if (strongOnly) params.set("strong_only", "1");
 
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -239,7 +247,7 @@ export default function SponsorshipsPage() {
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, [sport, search, page, token, view, base]);
+  }, [sport, search, strongOnly, page, token, view, base]);
 
   // Fetch my introductions (once, lazily on first switch to that view)
   useEffect(() => {
@@ -360,6 +368,16 @@ export default function SponsorshipsPage() {
                   </button>
                 ))}
               </div>
+              <button
+                onClick={() => setStrongOnly((v) => !v)}
+                className={`ml-auto flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                  strongOnly
+                    ? "bg-[#c8962a] text-white border-[#c8962a]"
+                    : "bg-white text-gray-600 border-gray-300 hover:border-[#c8962a] hover:text-[#c8962a]"
+                }`}
+              >
+                ★ Strong cases only
+              </button>
             </div>
           </section>
 

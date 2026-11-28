@@ -38,10 +38,13 @@ const AGE_GROUPS = [
 ];
 
 const SUPPORT_METHODS = [
-  { value: "items_direct",    label: "Items delivered directly to the athlete" },
-  { value: "pay_supplier",    label: "Pay a named shop or supplier on the athlete's behalf" },
-  { value: "pay_institution", label: "Pay the school or academy directly" },
+  { value: "send_money_directly", label: "Send money directly to a named account (EcoCash, OneMoney, InnBucks, or bank)" },
+  { value: "items_direct",        label: "Items delivered directly to the athlete" },
+  { value: "pay_supplier",        label: "Pay a named shop or supplier on the athlete's behalf" },
+  { value: "pay_institution",     label: "Pay the school or academy directly" },
 ];
+
+const MONEY_PROVIDERS = ["EcoCash", "OneMoney", "InnBucks", "Bank transfer"];
 
 const MINOR_GROUPS = new Set(["under_13", "13_17"]);
 
@@ -135,16 +138,21 @@ function NewSponsorshipWizardInner() {
   const [newNeedUsd,    setNewNeedUsd]    = useState("");
 
   // Step 3 — Payee details
-  const [payeeMethod,       setPayeeMethod]       = useState("");
-  const [payeeName,         setPayeeName]         = useState("");
-  const [payeeTown,         setPayeeTown]         = useState("");
-  const [payeeContact,      setPayeeContact]      = useState("");
-  const [payeePhone,        setPayeePhone]        = useState("");
-  const [payeePaymentMethod,setPayeePaymentMethod]= useState("");
-  const [payeeInstructions, setPayeeInstructions] = useState("");
-  const [payeeQuoteUrl,     setPayeeQuoteUrl]     = useState("");
-  const [payeeUploading,    setPayeeUploading]    = useState(false);
-  const [payeeSaving,       setPayeeSaving]       = useState(false);
+  const [payeeMethod,          setPayeeMethod]          = useState("");
+  // send_money_directly fields
+  const [payeeProvider,        setPayeeProvider]        = useState("");
+  const [payeeAccountName,     setPayeeAccountName]     = useState("");
+  const [payeeAccountNumber,   setPayeeAccountNumber]   = useState("");
+  // legacy fields
+  const [payeeName,            setPayeeName]            = useState("");
+  const [payeeTown,            setPayeeTown]            = useState("");
+  const [payeeContact,         setPayeeContact]         = useState("");
+  const [payeePhone,           setPayeePhone]           = useState("");
+  const [payeePaymentMethod,   setPayeePaymentMethod]   = useState("");
+  const [payeeInstructions,    setPayeeInstructions]    = useState("");
+  const [payeeQuoteUrl,        setPayeeQuoteUrl]        = useState("");
+  const [payeeUploading,       setPayeeUploading]       = useState(false);
+  const [payeeSaving,          setPayeeSaving]          = useState(false);
 
   // Step 4 — Media
   const [hasCover, setHasCover] = useState(false);
@@ -510,6 +518,10 @@ function NewSponsorshipWizardInner() {
       if (story.trim().length <= 20 || !supportMethod) return false;
       // No need rows with zero cost
       if (needItems.some((n) => n.unit_cost_cents <= 0)) return false;
+      // send_money_directly requires provider + account_name + account_number
+      if (supportMethod === "send_money_directly" && !payeeProvider.trim()) return false;
+      if (supportMethod === "send_money_directly" && !payeeAccountName.trim()) return false;
+      if (supportMethod === "send_money_directly" && !payeeAccountNumber.trim()) return false;
       // pay_supplier requires a name and a quote upload
       if (supportMethod === "pay_supplier" && !payeeName.trim()) return false;
       if (supportMethod === "pay_supplier" && !payeeQuoteUrl.trim()) return false;
@@ -737,13 +749,16 @@ function NewSponsorshipWizardInner() {
         try {
           await api.put(`/sponsorships/${id}/payee-details`, {
             method:               supportMethod,
-            name:                 payeeName.trim() || null,
-            town:                 payeeTown.trim() || null,
-            contact_name:         payeeContact.trim() || null,
-            contact_phone:        payeePhone.trim() || null,
-            payment_method:       payeePaymentMethod || null,
-            payment_instructions: payeeInstructions.trim() || null,
-            quote_file_url:       payeeQuoteUrl || null,
+            provider:             payeeProvider.trim()       || null,
+            account_name:         payeeAccountName.trim()    || null,
+            account_number:       payeeAccountNumber.trim()  || null,
+            name:                 payeeName.trim()           || null,
+            town:                 payeeTown.trim()           || null,
+            contact_name:         payeeContact.trim()        || null,
+            contact_phone:        payeePhone.trim()          || null,
+            payment_method:       payeePaymentMethod         || null,
+            payment_instructions: payeeInstructions.trim()   || null,
+            quote_file_url:       payeeQuoteUrl              || null,
           });
         } catch { /* non-blocking — admin will request during review */ }
         finally { setPayeeSaving(false); }
@@ -852,13 +867,16 @@ function NewSponsorshipWizardInner() {
       try {
         await api.put(`/sponsorships/${id}/payee-details`, {
           method:               supportMethod,
-          name:                 payeeName.trim()         || null,
-          town:                 payeeTown.trim()         || null,
-          contact_name:         payeeContact.trim()      || null,
-          contact_phone:        payeePhone.trim()        || null,
-          payment_method:       payeePaymentMethod       || null,
-          payment_instructions: payeeInstructions.trim() || null,
-          quote_file_url:       payeeQuoteUrl            || null,
+          provider:             payeeProvider.trim()       || null,
+          account_name:         payeeAccountName.trim()    || null,
+          account_number:       payeeAccountNumber.trim()  || null,
+          name:                 payeeName.trim()           || null,
+          town:                 payeeTown.trim()           || null,
+          contact_name:         payeeContact.trim()        || null,
+          contact_phone:        payeePhone.trim()          || null,
+          payment_method:       payeePaymentMethod         || null,
+          payment_instructions: payeeInstructions.trim()   || null,
+          quote_file_url:       payeeQuoteUrl              || null,
         });
       } catch { /* non-blocking */ }
     }
@@ -1239,11 +1257,37 @@ function NewSponsorshipWizardInner() {
                   ))}
                 </div>
                 <SectionNote>
-                  <strong>GRS never handles money.</strong> Sponsors give items or pay suppliers and institutions directly. Personal bank accounts cannot be used.
+                  <strong>GRS never holds money.</strong> Sponsors send funds directly to the named account or pay suppliers/institutions directly. Payment details are shared only with an accepted sponsor.
                 </SectionNote>
               </div>
 
               {/* Payee details — contextual fields per method */}
+              {supportMethod === "send_money_directly" && (
+                <div className="space-y-3 border border-gray-100 rounded-xl p-4 bg-gray-50">
+                  <p className="text-xs font-semibold text-gray-700">Account details <span className="text-red-500">*</span></p>
+                  {MINOR_GROUPS.has(ageGroup) && (
+                    <SectionNote>Minor beneficiary: the account must belong to the guardian/parent, not the child.</SectionNote>
+                  )}
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 block mb-1">Provider <span className="text-red-500">*</span></label>
+                    <select value={payeeProvider} onChange={(e) => setPayeeProvider(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30">
+                      <option value="">Select provider…</option>
+                      {MONEY_PROVIDERS.map((p) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                  <input type="text" value={payeeAccountName} onChange={(e) => setPayeeAccountName(e.target.value)}
+                    placeholder="Account holder name *"
+                    className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 ${!payeeAccountName.trim() ? "border-amber-400" : "border-gray-300"}`} />
+                  {!payeeAccountName.trim() && <p className="text-xs text-amber-700 -mt-2">Required</p>}
+                  <input type="text" value={payeeAccountNumber} onChange={(e) => setPayeeAccountNumber(e.target.value)}
+                    placeholder="Account number or phone number *"
+                    className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]/30 ${!payeeAccountNumber.trim() ? "border-amber-400" : "border-gray-300"}`} />
+                  {!payeeAccountNumber.trim() && <p className="text-xs text-amber-700 -mt-2">Required</p>}
+                  <SectionNote>These details are kept private and only shared with an accepted sponsor after GRS verification.</SectionNote>
+                </div>
+              )}
+
               {supportMethod === "items_direct" && (
                 <div className="space-y-3 border border-gray-100 rounded-xl p-4 bg-gray-50">
                   <p className="text-xs font-semibold text-gray-700">Drop-off details <span className="text-gray-400 font-normal">(optional)</span></p>

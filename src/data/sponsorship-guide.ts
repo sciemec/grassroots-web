@@ -17,11 +17,11 @@ export const HOW_IT_WORKS_STEPS = [
 ];
 
 export const FIVE_TIPS = [
-  { icon: "📸", tip: "A strong cover photo — players in action or the whole squad together." },
-  { icon: "⏰", tip: "A clear deadline — supporters act when they know the window closes." },
-  { icon: "📖", tip: "A real story — who the team is, what they've achieved, and what this campaign unlocks." },
-  { icon: "🙏", tip: "A thank-you plan — something supporters receive when it's done." },
-  { icon: "🔔", tip: "Regular updates — results, photos and progress, so supporters feel part of the journey." },
+  { icon: "📸", tip: "Cover photo set + story written with at least one specific need item — these are required before your case can go live." },
+  { icon: "🏃", tip: "Complete 3+ physical passport axes and 2+ technical drill assessments to earn the Strong case badge." },
+  { icon: "🎥", tip: "Upload 5+ videos on 5 different days over at least 14 days to your Arena or Highlight Vault — this boosts your case to Strong." },
+  { icon: "🔍", tip: "Run a Match Eye analysis and get a THUTO/Amara scouting report — both are needed for the Strong case badge." },
+  { icon: "🔔", tip: "Post proof updates (photos/receipts) after support arrives — sponsors trust cases that show follow-through." },
 ];
 
 export const GUIDE_SECTIONS: GuideSection[] = [
@@ -79,7 +79,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       `• List every cost: kit, balls, boots, transport, entry fees, and thank-you items.\n` +
       `• Aim to secure about 30% in the first week from your closest circle. If you can't see that happening, lower the target.\n` +
       `• List items, not just a money total — supporters trust "18 jerseys, 2 match balls, bus fare" more than "$480".\n\n` +
-      `GRS never holds or handles money. Sponsors provide items directly or pay the supplier named in your agreement.\n\n` +
+      `GRS never holds money. Sponsors send funds directly to the named account, or pay a supplier or institution directly. Payment details are shared only with an accepted sponsor after GRS verification.\n\n` +
       `If the total feels too big, split it into stages: Stage 1: Kit, then Stage 2: Tournament travel.`,
   },
   {

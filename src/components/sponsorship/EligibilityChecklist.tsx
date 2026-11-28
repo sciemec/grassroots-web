@@ -43,38 +43,42 @@ interface Props {
 // ── Gate metadata (labels + fix links) ───────────────────────────────────────
 
 const GATE_META: Record<string, { label: string; fixHref?: string; fixLabel?: string }> = {
-  owner_verified:         { label: "Owner verified (WhatsApp or identity)" },
-  player_photo:           { label: "Player has a profile photo",         fixHref: "/player/profile",  fixLabel: "Add photo" },
-  passport_physical:      { label: "Passport physical axes (Level 1)",   fixHref: "/player/passport", fixLabel: "AI Physical Test" },
-  passport_technical:     { label: "Passport technical axes (Level 1)",  fixHref: "/player/passport", fixLabel: "AI Drill Test" },
-  arena_videos:           { label: "Arena videos (Level 1)",             fixHref: "/arena",           fixLabel: "Upload to Arena" },
-  minor_consent:          { label: "Guardian consent on file" },
-  passport_physical_l2:   { label: "Passport physical axes (Level 2)",   fixHref: "/player/passport", fixLabel: "AI Physical Test" },
-  passport_technical_l2:  { label: "Passport technical axes (Level 2)",  fixHref: "/player/passport", fixLabel: "AI Drill Test" },
-  coach_position_test:    { label: "Coach Assisted Position Test",       fixHref: "/player/passport", fixLabel: "Ask your coach" },
-  arena_videos_l2:        { label: "Arena videos (Level 2)",             fixHref: "/arena",           fixLabel: "Upload to Arena" },
-  squad_min:              { label: "Active squad members" },
-  team_videos:            { label: "Team tagged arena videos",           fixHref: "/arena",           fixLabel: "Tag videos" },
-  team_photo:             { label: "Team / cover photo" },
-  no_player:              { label: "Beneficiary player linked" },
+  // Level 1 — required to go live
+  owner_verified:    { label: "Owner verified (WhatsApp or identity)" },
+  cover_photo:       { label: "Cover photo set" },
+  story_needs:       { label: "Story written + at least 1 need item" },
+  trust_level:       { label: "Vouched by a coach or GRS-verified" },
+  minor_consent:     { label: "Guardian consent on file" },
+  payee_verified:    { label: "Payee details verified by GRS" },
+  // Level 2 — Strong case badge
+  passport_physical: { label: "Physical passport axes",  fixHref: "/player/passport", fixLabel: "AI Physical Test" },
+  passport_technical:{ label: "Technical passport axes", fixHref: "/player/passport", fixLabel: "AI Drill Test" },
+  arena_videos:      { label: "Arena / Vault videos",    fixHref: "/arena",           fixLabel: "Upload to Arena" },
+  match_eye_report:  { label: "Match Eye analysis done", fixHref: "/player/analyse",  fixLabel: "Run Match Eye" },
+  thuto_report:      { label: "THUTO/Amara scouting report" },
+  // Team gates
+  squad_min:         { label: "Active squad members" },
+  team_videos:       { label: "Team tagged arena videos", fixHref: "/arena", fixLabel: "Tag videos" },
+  team_photo:        { label: "Team / cover photo" },
+  no_player:         { label: "Beneficiary player linked" },
 };
 
 const L1_GATES = new Set([
-  "owner_verified", "player_photo", "passport_physical", "passport_technical",
-  "arena_videos", "minor_consent",
+  "owner_verified", "cover_photo", "story_needs", "trust_level",
+  "minor_consent", "payee_verified",
 ]);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseVideoDetail(detail: string) {
-  // "Need ≥ 5 videos on ≥ 5 distinct days over ≥ 14 days (found 3 videos, 2 days, 6-day span)"
+  // "Strong case: ≥ 5 videos on ≥ 5 different days over ≥ 14 days (found 3 videos, 2 days, 6-day span)"
   const m = detail.match(/found (\d+) videos?, (\d+) days?, (\d+)-day span/);
   if (!m) return null;
   return { videos: +m[1], days: +m[2], span: +m[3] };
 }
 
-function parseL2VideoDetail(detail: string) {
-  // "Strong case needs ≥ 10 videos over ≥ 30 days (found 3 videos, 6-day span)"
+function parseTeamVideoDetail(detail: string) {
+  // "Need ≥ 3 tagged videos spanning ≥ 14 days (found 1 videos, 3-day span)"
   const m = detail.match(/found (\d+) videos?, (\d+)-day span/);
   if (!m) return null;
   return { videos: +m[1], span: +m[2] };
@@ -160,26 +164,17 @@ export default function EligibilityChecklist({
       if (g.gate === "arena_videos") {
         const v = parseVideoDetail(g.detail);
         if (v) extra = <CountBadge>Videos: {v.videos}/5 · Days: {v.days}/5 · Span: {v.span}/14</CountBadge>;
-      } else if (g.gate === "arena_videos_l2") {
-        const v = parseL2VideoDetail(g.detail);
-        if (v) extra = <CountBadge>Videos: {v.videos}/10 · Span: {v.span}/30</CountBadge>;
-      } else if (g.gate === "passport_physical" || g.gate === "passport_physical_l2") {
+      } else if (g.gate === "passport_physical") {
         const v = parsePhysicalDetail(g.detail);
-        if (v) {
-          const req = g.gate === "passport_physical" ? 3 : 5;
-          extra = <CountBadge>{v.found}/{req} axes</CountBadge>;
-        }
-      } else if (g.gate === "passport_technical" || g.gate === "passport_technical_l2") {
+        if (v) extra = <CountBadge>{v.found}/{v.req} axes</CountBadge>;
+      } else if (g.gate === "passport_technical") {
         const v = parsePhysicalDetail(g.detail);
-        if (v) {
-          const req = g.gate === "passport_technical" ? 2 : 3;
-          extra = <CountBadge>{v.found}/{req} axes</CountBadge>;
-        }
+        if (v) extra = <CountBadge>{v.found}/{v.req} axes</CountBadge>;
       } else if (g.gate === "squad_min") {
         const m = g.detail.match(/found (\d+)\)/);
         if (m) extra = <CountBadge>{m[1]}/8 members</CountBadge>;
       } else if (g.gate === "team_videos") {
-        const v = parseL2VideoDetail(g.detail);
+        const v = parseTeamVideoDetail(g.detail);
         if (v) extra = <CountBadge>Videos: {v.videos}/3 · Span: {v.span}/14</CountBadge>;
       }
     }
@@ -236,27 +231,32 @@ export default function EligibilityChecklist({
         </div>
       </div>
 
-      {/* Level 1 gates */}
+      {/* Level 1 gates — required to go live */}
       <div>
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Level 1 — Minimum</p>
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Required to go live</p>
         <ul className="divide-y divide-gray-50">
           {l1Gates.map(renderGate)}
         </ul>
       </div>
 
-      {/* Level 2 gates */}
+      {/* Level 2 gates — strong case badge */}
       {l2Gates.length > 0 && (
         <div>
           <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${
-            result.l2_required ? "text-amber-700" : "text-gray-500"
+            result.l2_required ? "text-amber-700" : "text-[#1a5c2a]"
           }`}>
-            Level 2 — Strong case{result.l2_required ? " (required)" : " (optional)"}
+            {result.l2_required
+              ? "Strong case badge — required (target > $300)"
+              : "Boost your case: get the Strong case badge"}
           </p>
           <ul className="divide-y divide-gray-50">
             {l2Gates.map(renderGate)}
           </ul>
           {l2Passed && (
-            <p className="text-xs text-green-700 font-medium mt-1.5">Strong case — sponsors will see this badge.</p>
+            <p className="text-xs text-green-700 font-medium mt-1.5">Strong case badge earned — sponsors will see this.</p>
+          )}
+          {!l2Passed && !result.l2_required && (
+            <p className="text-xs text-gray-400 mt-1.5">These are optional for cases under $300, but help attract more sponsors.</p>
           )}
         </div>
       )}
