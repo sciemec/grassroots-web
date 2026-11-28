@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -71,7 +71,7 @@ const DOCUMENT_TYPES = [
   { value: "school_id", label: "School ID Card" },
 ];
 
-export default function PlayerVerificationPage() {
+function PlayerVerificationPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const user = useAuthStore((s) => s.user);
@@ -90,8 +90,6 @@ export default function PlayerVerificationPage() {
   const [phone, setPhone] = useState("");
   const [payError, setPayError] = useState("");
   const [payStep, setPayStep] = useState<"idle" | "initiating" | "waiting" | "confirming">("idle");
-  const [pollUrl, setPollUrl] = useState<string | null>(null);
-  const [paynowRef, setPaynowRef] = useState<string | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Selfie camera state
@@ -105,7 +103,7 @@ export default function PlayerVerificationPage() {
 
   useEffect(() => {
     if (!_hasHydrated) return;
-    if (!user) { router.push("/login"); return; }
+    if (!user) { router.replace(`/login?next=${encodeURIComponent("/player/verification")}`); return; }
     api.get("/verification/status")
       .then((res) => setVerif(res.data))
       .catch(() => setVerif({
@@ -124,10 +122,11 @@ export default function PlayerVerificationPage() {
   // If Paynow redirected back with ?fee_paid=1 — the user approved on phone.
   // The webhook may not have fired yet, so just refresh status from the backend.
   useEffect(() => {
+    if (!_hasHydrated || !user) return;
     if (searchParams?.get("fee_paid") === "1") {
       api.get("/verification/status").then((res) => setVerif(res.data)).catch(() => {});
     }
-  }, [searchParams]);
+  }, [searchParams, _hasHydrated, user]);
 
   // Clear poll interval on unmount
   useEffect(() => {
@@ -156,8 +155,6 @@ export default function PlayerVerificationPage() {
         setPayStep("idle");
         return;
       }
-      setPollUrl(data.poll_url ?? null);
-      setPaynowRef(data.paynow_ref ?? null);
       setPayStep("waiting");
       // Poll every 4 seconds
       pollIntervalRef.current = setInterval(async () => {
@@ -277,18 +274,14 @@ export default function PlayerVerificationPage() {
     }
     setSubmitError("");
     setFile(f);
-    setPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(f);
-    });
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(URL.createObjectURL(f));
   };
 
   const clearFile = () => {
     setFile(null);
-    setPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
     setSubmitError("");
   };
 
@@ -701,5 +694,13 @@ export default function PlayerVerificationPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function PlayerVerificationPage() {
+  return (
+    <Suspense>
+      <PlayerVerificationPageInner />
+    </Suspense>
   );
 }
